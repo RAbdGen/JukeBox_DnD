@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="fr">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>JukeBox DnD</title>
+    <link rel="stylesheet" href="./styles.css" />
+</head>
+
+<body>
+    <div id="app">
+        <header>
+            <h1>JukeBox DnD</h1>
+        </header>
+
+        <main>
+            <div class="container">
+                <h2>Bienvenue dans votre JukeBox pour Donjons & Dragons</h2>
+                <p>Votre lecteur audio est prêt !</p>
+
+                <div id="track-info">
+                    <div class="track-name">
+                        <span class="label">En cours :</span>
+                        <span id="current-track">Aucun fichier chargé</span>
+                    </div>
+                    <div id="track-status" class="status">Arrêté</div>
+                </div>
+
+                <div id="player-controls">
+                    <button id="play-btn">Play</button>
+                    <button id="pause-btn">Pause</button>
+                    <button id="stop-btn">Stop</button>
+                </div>
+
+                <div id="volume-control">
+                    <label for="volume">Volume:</label>
+                    <input type="range" id="volume" min="0" max="100" value="50" />
+                    <span id="volume-value">50%</span>
+                </div>
+            </div>
+        </main>
+
+        <footer>
+            <p>Powered by Electron & Howler.js</p>
+        </footer>
+    </div>
+
+    <script src="./renderer.js" type="module"></script>
+</body>
+
+</html>

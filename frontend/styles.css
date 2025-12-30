@@ -1,0 +1,229 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: linear-gradient(135deg, #1e3a8a 0%, #312e81 100%);
+    color: #ffffff;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+header {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+header h1 {
+    font-size: 2.5rem;
+    font-weight: bold;
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+    background: linear-gradient(45deg, #fbbf24, #f59e0b);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+main {
+    flex: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 2rem;
+}
+
+.container {
+    background: rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    border-radius: 20px;
+    padding: 3rem;
+    max-width: 600px;
+    width: 100%;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.container h2 {
+    margin-bottom: 1rem;
+    font-size: 1.8rem;
+    text-align: center;
+}
+
+.container p {
+    text-align: center;
+    margin-bottom: 2rem;
+    opacity: 0.9;
+}
+
+#track-info {
+    background: rgba(0, 0, 0, 0.2);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin-bottom: 2rem;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.track-name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    margin-bottom: 0.8rem;
+}
+
+.track-name .label {
+    font-weight: bold;
+    color: #fbbf24;
+    font-size: 0.9rem;
+}
+
+#current-track {
+    font-size: 1.1rem;
+    font-weight: 600;
+    color: #ffffff;
+}
+
+.status {
+    text-align: center;
+    padding: 0.5rem 1rem;
+    border-radius: 8px;
+    font-size: 0.9rem;
+    font-weight: bold;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    transition: all 0.3s ease;
+}
+
+.status.arrêté {
+    background: rgba(239, 68, 68, 0.2);
+    color: #fca5a5;
+}
+
+.status.prêt {
+    background: rgba(59, 130, 246, 0.2);
+    color: #93c5fd;
+}
+
+.status.en-lecture {
+    background: rgba(34, 197, 94, 0.2);
+    color: #86efac;
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.status.en-pause {
+    background: rgba(251, 191, 36, 0.2);
+    color: #fde047;
+}
+
+.status.terminé {
+    background: rgba(168, 85, 247, 0.2);
+    color: #d8b4fe;
+}
+
+@keyframes pulse {
+
+    0%,
+    100% {
+        opacity: 1;
+    }
+
+    50% {
+        opacity: 0.7;
+    }
+}
+
+#player-controls {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    margin-bottom: 2rem;
+}
+
+button {
+    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
+    border: none;
+    color: #1e3a8a;
+    padding: 0.8rem 2rem;
+    font-size: 1rem;
+    font-weight: bold;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(251, 191, 36, 0.5);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+#volume-control {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+#volume-control label {
+    font-weight: bold;
+    font-size: 1.1rem;
+}
+
+#volume {
+    width: 100%;
+    max-width: 300px;
+    height: 8px;
+    border-radius: 5px;
+    background: rgba(255, 255, 255, 0.2);
+    outline: none;
+    cursor: pointer;
+}
+
+#volume::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fbbf24;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(251, 191, 36, 0.5);
+}
+
+#volume::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    border-radius: 50%;
+    background: #fbbf24;
+    cursor: pointer;
+    box-shadow: 0 2px 10px rgba(251, 191, 36, 0.5);
+    border: none;
+}
+
+#volume-value {
+    font-weight: bold;
+    color: #fbbf24;
+}
+
+footer {
+    background: rgba(0, 0, 0, 0.3);
+    padding: 1rem;
+    text-align: center;
+    font-size: 0.9rem;
+    opacity: 0.8;
+}
