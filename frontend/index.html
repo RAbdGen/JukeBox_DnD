@@ -12,38 +12,247 @@
     <div id="app">
         <header>
             <h1>JukeBox DnD</h1>
+            <p class="subtitle">Ambiance musicale dynamique pour vos parties</p>
         </header>
 
         <main>
             <div class="container">
-                <h2>Bienvenue dans votre JukeBox pour Donjons & Dragons</h2>
-                <p>Votre lecteur audio est prêt !</p>
+                <!-- Onglets -->
+                <div id="view-tabs">
+                    <button class="tab-btn active" data-view="player">🎵 Lecteur</button>
+                    <button class="tab-btn" data-view="library">📚 Bibliothèque</button>
+                </div>
 
-                <div id="track-info">
-                    <div class="track-name">
-                        <span class="label">En cours :</span>
-                        <span id="current-track">Aucun fichier chargé</span>
+                <!-- ======================== -->
+                <!-- VUE LECTEUR              -->
+                <!-- ======================== -->
+                <div id="player-view" class="view">
+                    <!-- Sélecteur de playlist -->
+                    <div id="playlist-selector">
+                        <label>Playlist :</label>
+                        <select id="playlist-select">
+                            <option value="">-- Choisir une playlist --</option>
+                        </select>
+                        <button id="create-playlist-btn" class="icon-btn" title="Créer une playlist">➕</button>
+                        <button id="delete-playlist-btn" class="icon-btn danger-icon"
+                            title="Supprimer la playlist">🗑️</button>
                     </div>
-                    <div id="track-status" class="status">Arrêté</div>
+
+                    <!-- Indicateur piste actuelle -->
+                    <div id="current-track-indicator">
+                        <span class="track-number">Piste 0/0</span>
+                        <span class="track-title">Aucune piste</span>
+                    </div>
+
+                    <!-- Informations de la piste -->
+                    <div id="track-info">
+                        <div class="track-name">
+                            <span class="label">Version :</span>
+                            <span id="current-version">-</span>
+                        </div>
+                        <div id="track-status" class="status arrêté">Arrêté</div>
+                    </div>
+
+                    <!-- Sélecteur de version -->
+                    <div id="version-switcher">
+                        <h3>Ambiance</h3>
+                        <div id="version-buttons" class="version-buttons">
+                            <!-- Généré dynamiquement selon les versions de la piste -->
+                        </div>
+                    </div>
+
+                    <!-- Navigation playlist -->
+                    <div id="navigation-controls">
+                        <button id="prev-btn" class="nav-btn">⏮ Précédent</button>
+                        <button id="next-btn" class="nav-btn">Suivant ⏭</button>
+                    </div>
+
+                    <!-- Contrôles de lecture -->
+                    <div id="player-controls">
+                        <button id="play-btn" class="control-btn">▶ Play</button>
+                        <button id="pause-btn" class="control-btn">⏸ Pause</button>
+                        <button id="stop-btn" class="control-btn">⏹ Stop</button>
+                    </div>
+
+                    <!-- Mode de lecture -->
+                    <div id="play-mode-selector">
+                        <div class="mode-buttons">
+                            <button class="mode-btn active" data-mode="noLoop">➡️ Normal</button>
+                            <button class="mode-btn" data-mode="loopOne">🔂 Boucle</button>
+                            <button class="mode-btn" data-mode="loopAll">🔁 Tout</button>
+                        </div>
+                    </div>
+
+                    <!-- Barre de progression -->
+                    <div id="progress-container">
+                        <div class="time-display">
+                            <span id="current-time">0:00</span>
+                            <span id="duration">0:00</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div id="progress-fill" class="progress-fill"></div>
+                        </div>
+                    </div>
+
+                    <!-- Volume -->
+                    <div id="volume-control">
+                        <label for="volume">🔊 Volume:</label>
+                        <input type="range" id="volume" min="0" max="100" value="50" />
+                        <span id="volume-value">50%</span>
+                    </div>
+
+                    <!-- Liste pistes de la playlist -->
+                    <div id="playlist-tracks-container">
+                        <h3>📀 Pistes</h3>
+                        <div id="playlist-tracks">
+                            <p class="empty-message">Aucune piste. Ajoutez des musiques depuis la bibliothèque.</p>
+                        </div>
+                    </div>
                 </div>
 
-                <div id="player-controls">
-                    <button id="play-btn">Play</button>
-                    <button id="pause-btn">Pause</button>
-                    <button id="stop-btn">Stop</button>
+                <!-- ======================== -->
+                <!-- VUE BIBLIOTHÈQUE         -->
+                <!-- ======================== -->
+                <div id="library-view" class="view hidden">
+                    <div class="library-header">
+                        <h3>📚 Ma Bibliothèque</h3>
+                        <button id="add-track-btn" class="primary-btn">➕ Ajouter une musique</button>
+                    </div>
+
+                    <div id="library-tracks">
+                        <p class="empty-message">Bibliothèque vide. Cliquez sur "Ajouter une musique" pour commencer.
+                        </p>
+                    </div>
+                </div>
+        </main>
+    </div>
+
+    <!-- ======================== -->
+    <!-- MODAL AJOUT DE PISTE     -->
+    <!-- ======================== -->
+    <div id="add-track-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>➕ Ajouter une musique</h2>
+                <button class="close-modal-btn">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <!-- Titre -->
+                <div class="form-group">
+                    <label>Titre de la piste *</label>
+                    <input type="text" id="new-track-title" placeholder="Ex: Taverne Médiévale" required />
                 </div>
 
-                <div id="volume-control">
-                    <label for="volume">Volume:</label>
-                    <input type="range" id="volume" min="0" max="100" value="50" />
-                    <span id="volume-value">50%</span>
+                <!-- Versions -->
+                <div class="form-group">
+                    <label>Versions audio</label>
+                    <div id="version-inputs">
+                        <div class="version-input" data-index="0">
+                            <input type="text" class="version-name" placeholder="Nom (calm, combat...)" value="calm" />
+                            <button type="button" class="select-file-btn">📁 Fichier</button>
+                            <span class="file-path">Aucun fichier</span>
+                            <input type="hidden" class="file-path-value" />
+                        </div>
+                    </div>
+                    <button type="button" id="add-version-input-btn" class="secondary-btn">+ Ajouter une
+                        version</button>
+                </div>
+
+                <!-- Volume par défaut -->
+                <div class="form-group">
+                    <label>Volume par défaut</label>
+                    <div class="volume-slider-group">
+                        <input type="range" id="new-track-volume" min="0" max="100" value="50" />
+                        <span id="new-track-volume-value">50%</span>
+                    </div>
+                </div>
+
+                <!-- Playlists -->
+                <div class="form-group">
+                    <label>Ajouter aux playlists</label>
+                    <div id="playlist-checkboxes">
+                        <!-- Généré dynamiquement -->
+                    </div>
+                    <div class="inline-create">
+                        <input type="text" id="new-playlist-name" placeholder="Nouvelle playlist..." />
+                        <button type="button" id="create-playlist-inline-btn" class="secondary-btn">Créer</button>
+                    </div>
                 </div>
             </div>
-        </main>
 
-        <footer>
-            <p>Powered by Electron & Howler.js</p>
-        </footer>
+            <div class="modal-footer">
+                <button type="button" id="cancel-add-track" class="secondary-btn">Annuler</button>
+                <button type="button" id="confirm-add-track" class="primary-btn">Ajouter la piste</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================== -->
+    <!-- MODAL CRÉATION PLAYLIST  -->
+    <!-- ======================== -->
+    <div id="create-playlist-modal" class="modal hidden">
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h2>➕ Nouvelle Playlist</h2>
+                <button class="close-modal-btn">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Nom de la playlist</label>
+                    <input type="text" id="playlist-name-input" placeholder="Ex: Ambiance Donjon" />
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="cancel-modal-btn secondary-btn">Annuler</button>
+                <button type="button" id="confirm-create-playlist" class="primary-btn">Créer</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- ======================== -->
+    <!-- MODAL ÉDITION PISTE      -->
+    <!-- ======================== -->
+    <div id="edit-track-modal" class="modal hidden">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>✏️ Modifier la piste</h2>
+                <button class="close-modal-btn">&times;</button>
+            </div>
+
+            <div class="modal-body">
+                <input type="hidden" id="edit-track-id" />
+
+                <div class="form-group">
+                    <label>Titre</label>
+                    <input type="text" id="edit-track-title" />
+                </div>
+
+                <div class="form-group">
+                    <label>Versions</label>
+                    <div id="edit-version-list">
+                        <!-- Généré dynamiquement -->
+                    </div>
+                    <button type="button" id="add-edit-version-btn" class="secondary-btn">+ Ajouter une version</button>
+                </div>
+
+                <div class="form-group">
+                    <label>Volume par défaut</label>
+                    <div class="volume-slider-group">
+                        <input type="range" id="edit-track-volume" min="0" max="100" value="50" />
+                        <span id="edit-track-volume-value">50%</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" id="delete-track-btn" class="danger-btn">🗑️ Supprimer</button>
+                <button type="button" class="cancel-modal-btn secondary-btn">Annuler</button>
+                <button type="button" id="save-track-edits" class="primary-btn">Sauvegarder</button>
+            </div>
+        </div>
     </div>
 
     <script src="./renderer.js" type="module"></script>

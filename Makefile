@@ -43,6 +43,11 @@ dev: ## Lancer l'application en mode développement (Vite + Electron)
 	@echo "$(YELLOW)   Electron se lancera automatiquement$(NC)"
 	npm run dev
 
+dev-nosandbox: ## Mode dev avec sandbox désactivé (fix Linux)
+	@echo "$(BLUE)🚀 Démarrage en mode développement (sandbox désactivé)...$(NC)"
+	@echo "$(YELLOW)   Vite démarrera sur http://localhost:3000$(NC)"
+	ELECTRON_DISABLE_SANDBOX=1 npm run dev
+
 start: ## Lancer l'application Electron en mode production
 	@echo "$(BLUE)🚀 Démarrage de l'application...$(NC)"
 	npm start
@@ -59,16 +64,17 @@ build-app: ## Builder uniquement l'application Electron (sans recompiler Vite)
 	npm run build:app
 	@echo "$(GREEN)✅ Application Electron buildée !$(NC)"
 
+build-linux: ## Créer un AppImage pour Linux
+	@echo "$(BLUE)🐧 Build pour Linux (AppImage)...$(NC)"
+	npm run build:linux
+	@echo "$(GREEN)✅ AppImage créé dans dist/ !$(NC)"
+
+build-win: ## Créer un exécutable portable pour Windows
+	@echo "$(BLUE)🪟 Build pour Windows (portable .exe)...$(NC)"
+	npm run build:win
+	@echo "$(GREEN)✅ Exécutable Windows créé dans dist/ !$(NC)"
+
 ##@ Qualité de code
-
-lint: ## Vérifier la qualité du code avec ESLint
-	@echo "$(BLUE)🔍 Vérification du code...$(NC)"
-	npm run lint
-
-lint-fix: ## Corriger automatiquement les erreurs ESLint
-	@echo "$(BLUE)🔧 Correction automatique du code...$(NC)"
-	npm run lint -- --fix
-	@echo "$(GREEN)✅ Code corrigé !$(NC)"
 
 audit: ## Vérifier les vulnérabilités de sécurité
 	@echo "$(BLUE)🔒 Audit de sécurité...$(NC)"

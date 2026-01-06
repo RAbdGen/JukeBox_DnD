@@ -1,3 +1,28 @@
+/* ============================================
+   D&D JUKEBOX - Medieval Fantasy Theme
+   ============================================ */
+
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lato:wght@300;400;700&display=swap');
+
+:root {
+    /* D&D Color Palette */
+    --bg-dark: #0d0d0d;
+    --bg-stone: #1a1a1a;
+    --bg-leather: #2d1f1f;
+    --gold-primary: #d4af37;
+    --gold-secondary: #c9a227;
+    --gold-glow: rgba(212, 175, 55, 0.4);
+    --red-blood: #8b0000;
+    --red-fire: #a52a2a;
+    --blue-calm: #1e3a5f;
+    --blue-magic: #4a90d9;
+    --orange-tension: #cc6600;
+    --orange-ember: #e07000;
+    --text-light: #e8e0d5;
+    --text-muted: rgba(232, 224, 213, 0.6);
+    --border-stone: rgba(139, 90, 43, 0.4);
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -5,9 +30,13 @@
 }
 
 body {
-    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, #1e3a8a 0%, #312e81 100%);
-    color: #ffffff;
+    font-family: 'Lato', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background: var(--bg-dark);
+    background-image:
+        radial-gradient(ellipse at top, rgba(45, 31, 31, 0.8) 0%, transparent 50%),
+        radial-gradient(ellipse at bottom, rgba(26, 26, 26, 0.9) 0%, transparent 50%),
+        linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-stone) 50%, var(--bg-dark) 100%);
+    color: var(--text-light);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -19,119 +48,1067 @@ body {
     min-height: 100vh;
 }
 
+/* ============================================
+   Header - Medieval Banner Style
+   ============================================ */
+
 header {
-    background: rgba(0, 0, 0, 0.3);
+    background: linear-gradient(180deg, var(--bg-leather) 0%, var(--bg-stone) 100%);
     padding: 1.5rem;
     text-align: center;
-    box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+    box-shadow:
+        0 4px 20px rgba(0, 0, 0, 0.8),
+        inset 0 -2px 10px rgba(0, 0, 0, 0.5);
+    border-bottom: 3px solid var(--border-stone);
+    position: relative;
+}
+
+header::before,
+header::after {
+    content: '⚔️';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.5rem;
+    opacity: 0.6;
+}
+
+header::before {
+    left: 2rem;
+}
+
+header::after {
+    right: 2rem;
 }
 
 header h1 {
-    font-size: 2.5rem;
-    font-weight: bold;
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-    background: linear-gradient(45deg, #fbbf24, #f59e0b);
+    font-family: 'Cinzel', serif;
+    font-size: 2.8rem;
+    font-weight: 700;
+    text-shadow:
+        2px 2px 4px rgba(0, 0, 0, 0.8),
+        0 0 20px var(--gold-glow);
+    background: linear-gradient(180deg, #f5d773 0%, var(--gold-primary) 50%, #b8860b 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    margin-bottom: 0.5rem;
+    letter-spacing: 3px;
 }
+
+.subtitle {
+    font-family: 'Cinzel', serif;
+    font-size: 0.95rem;
+    color: var(--text-muted);
+    margin-top: 0.5rem;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+}
+
+/* ============================================
+   Main Container - Parchment/Stone Style
+   ============================================ */
 
 main {
     flex: 1;
     display: flex;
-    align-items: center;
+    align-items: flex-start;
     justify-content: center;
     padding: 2rem;
+    overflow-y: auto;
 }
 
 .container {
-    background: rgba(255, 255, 255, 0.1);
-    backdrop-filter: blur(10px);
-    border-radius: 20px;
-    padding: 3rem;
-    max-width: 600px;
+    background: linear-gradient(180deg, var(--bg-stone) 0%, var(--bg-dark) 100%);
+    border-radius: 12px;
+    padding: 2rem;
+    max-width: 900px;
     width: 100%;
-    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-    border: 1px solid rgba(255, 255, 255, 0.2);
+    box-shadow:
+        0 8px 40px rgba(0, 0, 0, 0.6),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    border: 2px solid var(--border-stone);
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
 }
 
-.container h2 {
-    margin-bottom: 1rem;
-    font-size: 1.8rem;
-    text-align: center;
-}
+/* ============================================
+   Tabs - Tavern Sign Style
+   ============================================ */
 
-.container p {
-    text-align: center;
+#view-tabs {
+    display: flex;
     margin-bottom: 2rem;
-    opacity: 0.9;
+    background: var(--bg-dark);
+    padding: 6px;
+    border-radius: 8px;
+    border: 1px solid var(--border-stone);
 }
 
+.tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-muted);
+    padding: 12px;
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 6px;
+    transition: all 0.3s ease;
+    letter-spacing: 1px;
+}
+
+.tab-btn:hover {
+    color: var(--text-light);
+    background: rgba(212, 175, 55, 0.1);
+}
+
+.tab-btn.active {
+    background: linear-gradient(135deg, var(--bg-leather) 0%, rgba(45, 31, 31, 0.8) 100%);
+    color: var(--gold-primary);
+    box-shadow:
+        0 2px 8px rgba(0, 0, 0, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+    border: 1px solid var(--gold-glow);
+}
+
+.view.hidden {
+    display: none;
+}
+
+/* ============================================
+   Player View - D&D Medieval Style
+   ============================================ */
+
+/* Playlist Selector */
+#playlist-selector {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    background: var(--bg-dark);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-stone);
+}
+
+#playlist-selector label {
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    color: var(--gold-primary);
+}
+
+#playlist-select {
+    flex: 1;
+    padding: 10px;
+    border-radius: 6px;
+    background: var(--bg-stone);
+    border: 1px solid var(--border-stone);
+    color: var(--text-light);
+    cursor: pointer;
+    font-family: 'Lato', sans-serif;
+}
+
+#playlist-select:focus {
+    outline: none;
+    border-color: var(--gold-primary);
+    box-shadow: 0 0 8px var(--gold-glow);
+}
+
+#playlist-select option {
+    background: var(--bg-stone);
+    color: var(--text-light);
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    color: var(--gold-primary);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 6px var(--gold-glow));
+}
+
+.danger-icon {
+    color: var(--red-fire);
+}
+
+.danger-icon:hover {
+    color: var(--red-blood);
+}
+
+/* Current Track - Scroll Banner */
+#current-track-indicator {
+    background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(139, 90, 43, 0.2) 100%);
+    border-radius: 8px;
+    padding: 1.2rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    border: 2px solid var(--gold-glow);
+    box-shadow:
+        inset 0 0 20px rgba(0, 0, 0, 0.3),
+        0 4px 15px rgba(0, 0, 0, 0.4);
+}
+
+.track-number {
+    display: block;
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    color: var(--gold-primary);
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    letter-spacing: 1px;
+}
+
+.track-title {
+    display: block;
+    font-family: 'Cinzel', serif;
+    font-size: 1.6rem;
+    font-weight: 700;
+    color: var(--text-light);
+    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
+}
+
+/* Track Info */
 #track-info {
-    background: rgba(0, 0, 0, 0.2);
-    border-radius: 15px;
-    padding: 1.5rem;
-    margin-bottom: 2rem;
-    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: var(--bg-dark);
+    border-radius: 8px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid var(--border-stone);
 }
 
 .track-name {
     display: flex;
     align-items: center;
     gap: 0.5rem;
-    margin-bottom: 0.8rem;
 }
 
 .track-name .label {
-    font-weight: bold;
-    color: #fbbf24;
-    font-size: 0.9rem;
-}
-
-#current-track {
-    font-size: 1.1rem;
+    font-family: 'Cinzel', serif;
     font-weight: 600;
-    color: #ffffff;
+    color: var(--gold-primary);
 }
 
 .status {
-    text-align: center;
-    padding: 0.5rem 1rem;
-    border-radius: 8px;
-    font-size: 0.9rem;
-    font-weight: bold;
+    padding: 0.4rem 1rem;
+    border-radius: 4px;
+    font-size: 0.75rem;
+    font-weight: 700;
     text-transform: uppercase;
     letter-spacing: 1px;
-    transition: all 0.3s ease;
+    font-family: 'Lato', sans-serif;
 }
 
 .status.arrêté {
-    background: rgba(239, 68, 68, 0.2);
-    color: #fca5a5;
-}
-
-.status.prêt {
-    background: rgba(59, 130, 246, 0.2);
-    color: #93c5fd;
+    background: rgba(139, 0, 0, 0.3);
+    color: #ff6b6b;
+    border: 1px solid rgba(139, 0, 0, 0.5);
 }
 
 .status.en-lecture {
-    background: rgba(34, 197, 94, 0.2);
-    color: #86efac;
-    animation: pulse 2s ease-in-out infinite;
+    background: rgba(34, 139, 34, 0.3);
+    color: #7cfc00;
+    border: 1px solid rgba(34, 139, 34, 0.5);
+    animation: pulse-glow 2s infinite;
 }
 
 .status.en-pause {
-    background: rgba(251, 191, 36, 0.2);
-    color: #fde047;
+    background: rgba(212, 175, 55, 0.3);
+    color: var(--gold-primary);
+    border: 1px solid var(--gold-glow);
 }
 
-.status.terminé {
-    background: rgba(168, 85, 247, 0.2);
-    color: #d8b4fe;
+/* ============================================
+   Version Switcher - Ambiance Buttons
+   ============================================ */
+
+#version-switcher {
+    margin-bottom: 2rem;
+    text-align: center;
+    padding: 1rem;
+    background: var(--bg-dark);
+    border-radius: 8px;
+    border: 1px solid var(--border-stone);
 }
 
-@keyframes pulse {
+#version-switcher h3 {
+    font-family: 'Cinzel', serif;
+    margin-bottom: 1rem;
+    font-size: 1rem;
+    color: var(--gold-primary);
+    text-transform: uppercase;
+    letter-spacing: 3px;
+}
+
+.version-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Base Version Button */
+.version-btn {
+    padding: 1rem 2rem;
+    min-width: 140px;
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    text-transform: capitalize;
+    position: relative;
+    overflow: hidden;
+}
+
+/* CALM - Blue/Purple peaceful style */
+.version-btn[data-version="calm"] {
+    background: linear-gradient(135deg, var(--blue-calm) 0%, #14274e 100%);
+    border: 2px solid var(--blue-magic);
+    color: #87ceeb;
+    box-shadow: 0 4px 15px rgba(74, 144, 217, 0.2);
+}
+
+.version-btn[data-version="calm"]:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 25px rgba(74, 144, 217, 0.4);
+}
+
+.version-btn[data-version="calm"].active {
+    background: linear-gradient(135deg, var(--blue-magic) 0%, #3a7bd5 100%);
+    color: #ffffff;
+    box-shadow:
+        0 0 20px rgba(74, 144, 217, 0.6),
+        inset 0 0 15px rgba(255, 255, 255, 0.1);
+    animation: calm-pulse 3s ease-in-out infinite;
+}
+
+/* TENSION - Orange/Amber suspenseful style */
+.version-btn[data-version="tension"] {
+    background: linear-gradient(135deg, #4a3000 0%, #2d1f00 100%);
+    border: 2px solid var(--orange-tension);
+    color: #ffb347;
+    box-shadow: 0 4px 15px rgba(204, 102, 0, 0.2);
+}
+
+.version-btn[data-version="tension"]:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 25px rgba(204, 102, 0, 0.4);
+}
+
+.version-btn[data-version="tension"].active {
+    background: linear-gradient(135deg, var(--orange-ember) 0%, var(--orange-tension) 100%);
+    color: #ffffff;
+    box-shadow:
+        0 0 20px rgba(224, 112, 0, 0.6),
+        inset 0 0 15px rgba(255, 255, 255, 0.1);
+    animation: tension-pulse 1.5s ease-in-out infinite;
+}
+
+/* COMBAT - Red/Fire aggressive style */
+.version-btn[data-version="combat"] {
+    background: linear-gradient(135deg, #3d0000 0%, #1a0000 100%);
+    border: 2px solid var(--red-blood);
+    color: #ff6b6b;
+    box-shadow: 0 4px 15px rgba(139, 0, 0, 0.2);
+}
+
+.version-btn[data-version="combat"]:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 25px rgba(139, 0, 0, 0.4);
+}
+
+.version-btn[data-version="combat"].active {
+    background: linear-gradient(135deg, #b22222 0%, var(--red-blood) 100%);
+    color: #ffffff;
+    box-shadow:
+        0 0 25px rgba(178, 34, 34, 0.7),
+        inset 0 0 15px rgba(255, 100, 100, 0.2);
+    animation: combat-pulse 0.8s ease-in-out infinite;
+}
+
+/* Default/Other version buttons */
+.version-btn:not([data-version="calm"]):not([data-version="tension"]):not([data-version="combat"]) {
+    background: linear-gradient(135deg, var(--bg-leather) 0%, var(--bg-stone) 100%);
+    border: 2px solid var(--border-stone);
+    color: var(--text-light);
+}
+
+.version-btn:not([data-version="calm"]):not([data-version="tension"]):not([data-version="combat"]):hover {
+    border-color: var(--gold-primary);
+    transform: translateY(-2px);
+}
+
+.version-btn:not([data-version="calm"]):not([data-version="tension"]):not([data-version="combat"]).active {
+    background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
+    border-color: var(--gold-primary);
+    color: var(--bg-dark);
+    box-shadow: 0 0 15px var(--gold-glow);
+}
+
+/* ============================================
+   Player Controls - Medieval Stone Buttons
+   ============================================ */
+
+.nav-btn,
+.control-btn {
+    border: none;
+    color: var(--text-light);
+    padding: 12px 24px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.nav-btn {
+    background: linear-gradient(180deg, var(--bg-leather) 0%, var(--bg-stone) 100%);
+    border: 1px solid var(--border-stone);
+}
+
+.nav-btn:hover {
+    background: linear-gradient(180deg, #3d2a2a 0%, var(--bg-leather) 100%);
+    border-color: var(--gold-glow);
+    transform: translateY(-2px);
+}
+
+.control-btn {
+    background: linear-gradient(180deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
+    color: var(--bg-dark);
+    padding: 14px 28px;
+    font-size: 1rem;
+    box-shadow:
+        0 4px 15px rgba(212, 175, 55, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3);
+    border: 1px solid #b8860b;
+}
+
+.control-btn:hover {
+    background: linear-gradient(180deg, #e8c547 0%, var(--gold-primary) 100%);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
+}
+
+.control-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+}
+
+#player-controls,
+#navigation-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* ============================================
+   Progress Bar - Medieval Scroll Style
+   ============================================ */
+
+#progress-container {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: var(--bg-dark);
+    border-radius: 8px;
+    border: 1px solid var(--border-stone);
+}
+
+.time-display {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.85rem;
+    font-family: 'Lato', sans-serif;
+    color: var(--text-muted);
+    margin-bottom: 8px;
+}
+
+.progress-bar {
+    height: 10px;
+    background: linear-gradient(180deg, #0d0d0d 0%, #1a1a1a 100%);
+    border-radius: 5px;
+    overflow: hidden;
+    border: 1px solid var(--border-stone);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+    cursor: pointer;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-secondary) 0%, var(--gold-primary) 50%, #f5d773 100%);
+    width: 0%;
+    transition: width 0.3s linear;
+    box-shadow: 0 0 10px var(--gold-glow);
+    position: relative;
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 3px;
+    background: #fff;
+    box-shadow: 0 0 8px var(--gold-primary);
+}
+
+/* ============================================
+   Play Mode Selector
+   ============================================ */
+
+#play-mode-selector {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+}
+
+.mode-btn {
+    background: var(--bg-dark);
+    border: 1px solid var(--border-stone);
+    color: var(--text-muted);
+    padding: 8px 16px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    font-family: 'Lato', sans-serif;
+    transition: all 0.2s ease;
+}
+
+.mode-btn:hover {
+    border-color: var(--gold-glow);
+    color: var(--text-light);
+}
+
+.mode-btn.active {
+    background: linear-gradient(135deg, var(--gold-secondary) 0%, var(--gold-primary) 100%);
+    border-color: var(--gold-primary);
+    color: var(--bg-dark);
+    font-weight: 600;
+}
+
+/* ============================================
+   Volume Control - Vertical Slider
+   ============================================ */
+
+#volume-control {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.8rem;
+    background: var(--bg-dark);
+    padding: 1rem;
+    border-radius: 8px;
+    border: 1px solid var(--border-stone);
+    position: fixed;
+    right: 2rem;
+    top: 50%;
+    transform: translateY(-50%);
+    z-index: 100;
+}
+
+#volume-control label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+    color: var(--gold-primary);
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    transform: rotate(180deg);
+}
+
+#volume {
+    writing-mode: vertical-lr;
+    direction: rtl;
+    height: 150px;
+    width: 30px;
+    -webkit-appearance: none;
+    appearance: none;
+    background: transparent;
+    cursor: pointer;
+}
+
+#volume::-webkit-slider-runnable-track {
+    width: 8px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--gold-primary) 0%, var(--bg-stone) 100%);
+    border-radius: 4px;
+    border: 1px solid var(--border-stone);
+}
+
+#volume::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
+    border-radius: 50%;
+    border: 2px solid var(--gold-primary);
+    cursor: pointer;
+    box-shadow: 0 0 10px var(--gold-glow);
+    margin-left: -6px;
+}
+
+#volume::-moz-range-track {
+    width: 8px;
+    height: 100%;
+    background: linear-gradient(180deg, var(--gold-primary) 0%, var(--bg-stone) 100%);
+    border-radius: 4px;
+    border: 1px solid var(--border-stone);
+}
+
+#volume::-moz-range-thumb {
+    width: 20px;
+    height: 20px;
+    background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
+    border-radius: 50%;
+    border: 2px solid var(--gold-primary);
+    cursor: pointer;
+    box-shadow: 0 0 10px var(--gold-glow);
+}
+
+#volume-value {
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+    color: var(--gold-primary);
+    font-weight: 600;
+}
+
+/* ============================================
+   Playlist Tracks - Scroll List Style
+   ============================================ */
+
+#playlist-tracks-container h3 {
+    font-family: 'Cinzel', serif;
+    text-align: left;
+    margin-bottom: 1rem;
+    color: var(--gold-primary);
+    font-size: 1.1rem;
+    letter-spacing: 1px;
+}
+
+#playlist-tracks {
+    max-height: 300px;
+    overflow-y: auto;
+    padding-right: 5px;
+}
+
+#playlist-tracks::-webkit-scrollbar {
+    width: 6px;
+}
+
+#playlist-tracks::-webkit-scrollbar-track {
+    background: var(--bg-dark);
+    border-radius: 3px;
+}
+
+#playlist-tracks::-webkit-scrollbar-thumb {
+    background: var(--gold-secondary);
+    border-radius: 3px;
+}
+
+.playlist-track {
+    display: flex;
+    align-items: center;
+    padding: 12px;
+    background: var(--bg-dark);
+    margin-bottom: 6px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+}
+
+.playlist-track:hover {
+    background: var(--bg-leather);
+    border-color: var(--border-stone);
+}
+
+.playlist-track.active {
+    border-left: 4px solid var(--gold-primary);
+    background: linear-gradient(90deg, rgba(212, 175, 55, 0.15) 0%, var(--bg-dark) 100%);
+    border-color: var(--gold-glow);
+}
+
+.playlist-track-number {
+    width: 30px;
+    font-family: 'Cinzel', serif;
+    color: var(--gold-primary);
+    font-weight: 600;
+}
+
+.playlist-track-title {
+    flex: 1;
+    font-family: 'Lato', sans-serif;
+}
+
+/* ============================================
+   Library View - D&D Tome Style
+   ============================================ */
+
+.library-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+}
+
+.library-header h3 {
+    font-family: 'Cinzel', serif;
+    color: var(--gold-primary);
+}
+
+.primary-btn {
+    background: linear-gradient(180deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
+    border: 1px solid #b8860b;
+    color: var(--bg-dark);
+    padding: 12px 24px;
+    border-radius: 6px;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.primary-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.4);
+    background: linear-gradient(180deg, #e8c547 0%, var(--gold-primary) 100%);
+}
+
+.secondary-btn {
+    background: var(--bg-leather);
+    border: 1px solid var(--border-stone);
+    color: var(--text-light);
+    padding: 10px 18px;
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: 'Lato', sans-serif;
+    transition: all 0.2s ease;
+}
+
+.secondary-btn:hover {
+    background: #3d2a2a;
+    border-color: var(--gold-glow);
+}
+
+.danger-btn {
+    background: rgba(139, 0, 0, 0.3);
+    border: 1px solid var(--red-blood);
+    color: #ff6b6b;
+    padding: 8px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.danger-btn:hover {
+    background: rgba(139, 0, 0, 0.5);
+    box-shadow: 0 0 10px rgba(139, 0, 0, 0.4);
+}
+
+.danger-btn-small {
+    background: none;
+    border: none;
+    color: #ff6b6b;
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 5px;
+    transition: all 0.2s ease;
+}
+
+.danger-btn-small:hover {
+    color: #ff4444;
+    transform: scale(1.1);
+}
+
+.library-track {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--bg-dark);
+    padding: 1rem;
+    border-radius: 8px;
+    margin-bottom: 0.8rem;
+    border: 1px solid var(--border-stone);
+    transition: all 0.2s ease;
+}
+
+.library-track:hover {
+    border-color: var(--gold-glow);
+    background: var(--bg-leather);
+}
+
+.track-details {
+    display: block;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    margin-top: 4px;
+}
+
+/* ============================================
+   Modals - Ancient Scroll Style
+   ============================================ */
+
+.modal {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    backdrop-filter: blur(8px);
+}
+
+.modal.hidden {
+    display: none;
+}
+
+.modal-content {
+    background: linear-gradient(180deg, var(--bg-leather) 0%, var(--bg-stone) 100%);
+    border: 2px solid var(--border-stone);
+    border-radius: 12px;
+    width: 90%;
+    max-width: 600px;
+    max-height: 90vh;
+    display: flex;
+    flex-direction: column;
+    box-shadow:
+        0 20px 60px rgba(0, 0, 0, 0.8),
+        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+}
+
+.modal-content.modal-small {
+    max-width: 400px;
+}
+
+.modal-header {
+    padding: 1.5rem;
+    border-bottom: 2px solid var(--border-stone);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: linear-gradient(180deg, rgba(45, 31, 31, 0.8) 0%, transparent 100%);
+}
+
+.modal-header h2 {
+    font-family: 'Cinzel', serif;
+    font-size: 1.4rem;
+    color: var(--gold-primary);
+    letter-spacing: 1px;
+}
+
+.close-modal-btn {
+    background: none;
+    border: none;
+    color: var(--text-muted);
+    font-size: 1.8rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    line-height: 1;
+}
+
+.close-modal-btn:hover {
+    color: var(--gold-primary);
+    transform: scale(1.1);
+}
+
+.modal-body {
+    padding: 1.5rem;
+    overflow-y: auto;
+}
+
+.modal-footer {
+    padding: 1rem 1.5rem;
+    border-top: 2px solid var(--border-stone);
+    display: flex;
+    justify-content: flex-end;
+    gap: 1rem;
+    background: var(--bg-dark);
+    border-radius: 0 0 10px 10px;
+}
+
+/* Form Groups */
+.form-group {
+    margin-bottom: 1.5rem;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    color: var(--gold-primary);
+    font-size: 0.9rem;
+    letter-spacing: 0.5px;
+}
+
+.form-group input[type="text"] {
+    width: 100%;
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-stone);
+    background: var(--bg-dark);
+    color: var(--text-light);
+    font-family: 'Lato', sans-serif;
+    transition: all 0.2s ease;
+}
+
+.form-group input:focus {
+    border-color: var(--gold-primary);
+    outline: none;
+    box-shadow: 0 0 10px var(--gold-glow);
+}
+
+/* Version Inputs */
+.version-input {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+    align-items: center;
+    background: var(--bg-dark);
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--border-stone);
+}
+
+.version-input .version-name {
+    width: 120px;
+}
+
+.version-input .file-path {
+    flex: 1;
+    font-size: 0.8rem;
+    color: var(--text-muted);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.version-input .file-path.file-loaded {
+    color: #7cfc00;
+    font-weight: 600;
+}
+
+.version-input.has-file {
+    border-color: rgba(34, 139, 34, 0.5);
+    background: linear-gradient(90deg, rgba(34, 139, 34, 0.1) 0%, var(--bg-dark) 100%);
+}
+
+.select-file-btn {
+    background: var(--bg-leather);
+    border: 1px solid var(--border-stone);
+    color: var(--gold-primary);
+    padding: 6px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 0.85rem;
+    transition: all 0.2s ease;
+}
+
+.select-file-btn:hover {
+    background: #3d2a2a;
+    border-color: var(--gold-glow);
+}
+
+/* Playlist Checkboxes */
+#playlist-checkboxes {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 10px;
+    max-height: 150px;
+    overflow-y: auto;
+    margin-bottom: 10px;
+    background: var(--bg-dark);
+    padding: 12px;
+    border-radius: 6px;
+    border: 1px solid var(--border-stone);
+}
+
+.checkbox-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+    font-size: 0.9rem;
+    color: var(--text-light);
+}
+
+.checkbox-label input[type="checkbox"] {
+    accent-color: var(--gold-primary);
+    width: 16px;
+    height: 16px;
+}
+
+.inline-create {
+    display: flex;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+/* Volume Slider in Modals */
+.volume-slider-group {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+}
+
+.volume-slider-group input[type="range"] {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 8px;
+    background: var(--bg-dark);
+    border-radius: 4px;
+    border: 1px solid var(--border-stone);
+    cursor: pointer;
+}
+
+.volume-slider-group input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 18px;
+    height: 18px;
+    background: var(--gold-primary);
+    border-radius: 50%;
+    cursor: pointer;
+    box-shadow: 0 0 8px var(--gold-glow);
+}
+
+.volume-slider-group span {
+    color: var(--gold-primary);
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    min-width: 45px;
+}
+
+/* ============================================
+   Animations - D&D Ambiance Effects
+   ============================================ */
+
+/* Base pulse */
+@keyframes pulse-glow {
 
     0%,
     100% {
@@ -143,87 +1120,112 @@ main {
     }
 }
 
-#player-controls {
-    display: flex;
-    gap: 1rem;
-    justify-content: center;
-    margin-bottom: 2rem;
+/* Calm - Slow, peaceful breathing */
+@keyframes calm-pulse {
+
+    0%,
+    100% {
+        box-shadow:
+            0 0 20px rgba(74, 144, 217, 0.6),
+            inset 0 0 15px rgba(255, 255, 255, 0.1);
+    }
+
+    50% {
+        box-shadow:
+            0 0 30px rgba(74, 144, 217, 0.8),
+            inset 0 0 20px rgba(135, 206, 235, 0.15);
+    }
 }
 
-button {
-    background: linear-gradient(135deg, #fbbf24 0%, #f59e0b 100%);
-    border: none;
-    color: #1e3a8a;
-    padding: 0.8rem 2rem;
-    font-size: 1rem;
-    font-weight: bold;
-    border-radius: 10px;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 15px rgba(251, 191, 36, 0.3);
+/* Tension - Medium pulsing, uneasy feeling */
+@keyframes tension-pulse {
+
+    0%,
+    100% {
+        box-shadow:
+            0 0 20px rgba(224, 112, 0, 0.6),
+            inset 0 0 15px rgba(255, 255, 255, 0.1);
+    }
+
+    50% {
+        box-shadow:
+            0 0 35px rgba(224, 112, 0, 0.9),
+            inset 0 0 20px rgba(255, 179, 71, 0.2);
+    }
 }
 
-button:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(251, 191, 36, 0.5);
+/* Combat - Fast, aggressive pulsing */
+@keyframes combat-pulse {
+
+    0%,
+    100% {
+        box-shadow:
+            0 0 25px rgba(178, 34, 34, 0.7),
+            inset 0 0 15px rgba(255, 100, 100, 0.2);
+        transform: scale(1);
+    }
+
+    50% {
+        box-shadow:
+            0 0 40px rgba(255, 0, 0, 0.9),
+            inset 0 0 25px rgba(255, 100, 100, 0.3);
+        transform: scale(1.02);
+    }
 }
 
-button:active {
-    transform: translateY(0);
+/* Empty message styling */
+.empty-message {
+    color: var(--text-muted);
+    font-style: italic;
+    text-align: center;
+    padding: 2rem;
 }
 
-#volume-control {
-    display: flex;
-    flex-direction: column;
-    gap: 0.5rem;
-    align-items: center;
-}
-
-#volume-control label {
-    font-weight: bold;
-    font-size: 1.1rem;
-}
-
-#volume {
-    width: 100%;
-    max-width: 300px;
-    height: 8px;
-    border-radius: 5px;
-    background: rgba(255, 255, 255, 0.2);
-    outline: none;
-    cursor: pointer;
-}
-
-#volume::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    appearance: none;
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #fbbf24;
-    cursor: pointer;
-    box-shadow: 0 2px 10px rgba(251, 191, 36, 0.5);
-}
-
-#volume::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    border-radius: 50%;
-    background: #fbbf24;
-    cursor: pointer;
-    box-shadow: 0 2px 10px rgba(251, 191, 36, 0.5);
-    border: none;
-}
-
-#volume-value {
-    font-weight: bold;
-    color: #fbbf24;
-}
+/* ============================================
+   Footer - Tavern Sign
+   ============================================ */
 
 footer {
-    background: rgba(0, 0, 0, 0.3);
-    padding: 1rem;
+    margin-top: auto;
+    padding: 1.5rem;
     text-align: center;
-    font-size: 0.9rem;
-    opacity: 0.8;
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    color: var(--text-muted);
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
+    border-top: 1px solid var(--border-stone);
+    letter-spacing: 1px;
+}
+
+/* ============================================
+   Responsive Adjustments
+   ============================================ */
+
+@media (max-width: 768px) {
+    #volume-control {
+        position: static;
+        transform: none;
+        flex-direction: row;
+        margin-bottom: 1.5rem;
+    }
+
+    #volume-control label {
+        writing-mode: horizontal-tb;
+        transform: none;
+    }
+
+    #volume {
+        writing-mode: horizontal-tb;
+        direction: ltr;
+        height: auto;
+        width: 100%;
+    }
+
+    .version-buttons {
+        flex-direction: column;
+    }
+
+    .version-btn {
+        width: 100%;
+    }
 }
