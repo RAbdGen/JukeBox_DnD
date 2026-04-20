@@ -323,8 +323,14 @@ function updateUI() {
     // Playlist
     renderPlaylistUI();
 
-    // Status
-    if (audioManager.isPlaying()) updateStatus('En lecture');
+    // Status : toujours mis à jour pour refléter l'état réel
+    if (audioManager.isPlaying()) {
+        updateStatus('En lecture');
+    } else if (audioManager.currentTrack && audioManager.currentTrack.currentVersion) {
+        updateStatus('En pause');
+    } else {
+        updateStatus('Arrêté');
+    }
 }
 
 // ========================================
