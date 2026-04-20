@@ -315,10 +315,16 @@ export class AudioManager {
             this.currentTrack.stop();
         }
 
+        // Réinitialiser à la première version disponible de la nouvelle piste
+        const availableVersions = Object.keys(track.versionPaths);
+        if (availableVersions.length > 0) {
+            this.currentVersion = availableVersions[0];
+        }
+
         // Appliquer le mode de loop
         track.setLoop(this.playMode === 'loopOne');
 
-        // Jouer la piste avec la version en cours
+        // Jouer la piste avec la première version
         track.play(this.currentVersion);
         this.currentTrack = track;
 
