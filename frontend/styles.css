@@ -23,6 +23,10 @@
     --border-stone: rgba(139, 90, 43, 0.4);
 }
 
+html {
+    scrollbar-gutter: stable; /* Réserve l'espace scrollbar — évite le layout jump à l'ouverture des modals */
+}
+
 * {
     margin: 0;
     padding: 0;
@@ -192,7 +196,7 @@ main::-webkit-scrollbar {
 
 .tab-btn:hover {
     color: var(--text-light);
-    background: rgba(212, 175, 55, 0.1);
+    background: rgba(201, 168, 76, 0.1);
 }
 
 .tab-btn.active {
@@ -978,6 +982,11 @@ main::-webkit-scrollbar {
 .modal-body {
     padding: 1.5rem;
     overflow-y: auto;
+    scrollbar-width: none; /* Firefox */
+}
+
+.modal-body::-webkit-scrollbar {
+    display: none; /* Chromium / Electron */
 }
 
 .modal-footer {
@@ -1089,6 +1098,11 @@ main::-webkit-scrollbar {
     padding: 12px;
     border-radius: 6px;
     border: 1px solid var(--border-stone);
+    scrollbar-width: none; /* Firefox */
+}
+
+#playlist-checkboxes::-webkit-scrollbar {
+    display: none; /* Chromium / Electron */
 }
 
 .checkbox-label {

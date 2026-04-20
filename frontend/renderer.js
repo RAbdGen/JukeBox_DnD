@@ -464,6 +464,7 @@ document.addEventListener('DOMContentLoaded', () => {
             </label>
         `).join('');
 
+        document.body.style.overflow = 'hidden';
         addTrackModal.classList.remove('hidden');
     });
 
@@ -471,6 +472,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.querySelectorAll('.close-modal-btn, #cancel-add-track, .cancel-modal-btn').forEach(btn => {
         btn.addEventListener('click', () => {
             document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden'));
+            document.body.style.overflow = '';
         });
     });
 
@@ -507,7 +509,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
                     // Update file path display with success indicator
                     const filePathSpan = parent.querySelector('.file-path');
-                    filePathSpan.textContent = `✅ ${fileName}`;
+                    filePathSpan.textContent = fileName;
                     filePathSpan.classList.add('file-loaded');
 
                     // Store the path
@@ -517,7 +519,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     parent.classList.add('has-file');
 
                     // Update button text
-                    e.target.textContent = '📁 Modifier';
+                    e.target.textContent = 'Modifier';
                 }
             });
         });
@@ -573,6 +575,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('confirm-add-track').textContent = 'Ajout...';
             await window.electronAPI.addTrack(trackData, selectedPlaylists);
 
+            document.body.style.overflow = '';
             addTrackModal.classList.add('hidden');
             document.getElementById('confirm-add-track').textContent = 'Ajouter la piste';
 
@@ -596,6 +599,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Button from Player view
     document.getElementById('create-playlist-btn').addEventListener('click', () => {
+        document.body.style.overflow = 'hidden';
         createPlaylistModal.classList.remove('hidden');
     });
 
@@ -625,6 +629,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await loadPlaylists();
             document.getElementById('playlist-select').value = playlist.id;
             loadPlaylist(playlist.id); // Switch to new
+            document.body.style.overflow = '';
             createPlaylistModal.classList.add('hidden');
         }
     });
