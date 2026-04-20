@@ -321,8 +321,12 @@ export class AudioManager {
             this.currentVersion = availableVersions[0];
         }
 
-        // Appliquer le mode de loop
-        track.setLoop(this.playMode === 'loopOne');
+        // Appliquer le mode de loop directement sur le Howl ciblé.
+        // On ne passe pas par track.setLoop() car track.currentVersion est encore null ici
+        // (la piste n'a pas encore été jouée), ce qui ferait ignorer l'appel.
+        if (track.versions[this.currentVersion]) {
+            track.versions[this.currentVersion].loop(this.playMode === 'loopOne');
+        }
 
         // Jouer la piste avec la première version
         track.play(this.currentVersion);
