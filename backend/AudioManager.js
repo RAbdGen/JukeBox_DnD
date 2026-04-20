@@ -270,6 +270,13 @@ export class AudioManager {
     loadPlaylist(playlistConfig) {
         console.log(`📀 Chargement de la playlist (${playlistConfig.length} pistes)`);
 
+        // Arrêter la piste en cours avant de charger une nouvelle playlist
+        if (this.currentTrack) {
+            this.currentTrack.stop();
+            this.currentTrack = null;
+        }
+        this.currentTrackIndex = 0;
+
         this.playlist = [];
 
         playlistConfig.forEach((trackConfig, index) => {
