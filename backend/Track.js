@@ -98,9 +98,9 @@ export class Track {
     /**
      * Effectuer un crossfade entre deux versions
      * @param {string} toVersion - Version cible
-     * @param {number} duration - Durée du crossfade en ms (défaut: 2000)
+     * @param {number} durationPercent - Durée du crossfade en fraction de la piste (0.0–1.0, défaut: 0.1 = 10%)
      */
-    crossfade(toVersion, duration = 2000) {
+    crossfade(toVersion, durationPercent = 0.1) {
         if (!this.currentVersion) {
             console.warn('⚠️ Aucune version en cours, démarrage direct');
             this.play(toVersion);
@@ -122,7 +122,11 @@ export class Track {
             return;
         }
 
-        console.log(`🔀 Crossfade: ${this.currentVersion} → ${toVersion} (${duration}ms)`);
+        // Calcul de la durée réelle : % de la longueur de la piste, encadrée entre 500 ms et 5000 ms
+        const trackDurationMs = (this.versions[this.currentVersion].duration() || 30) * 1000;
+        const duration = Math.min(Math.max(Math.floor(trackDurationMs * durationPercent), 500), 5000);
+
+        console.log(`🔀 Crossfade: ${this.currentVersion} → ${toVersion} (${duration}ms / ${Math.round(durationPercent * 100)}% de la piste)`);
 
         this.isCrossfading = true;
 

@@ -93,15 +93,15 @@ export class AudioManager {
     /**
      * Effectuer un crossfade vers une autre version de la piste actuelle
      * @param {string} toVersion - Version cible
-     * @param {number} duration - Durée du crossfade en ms
+     * @param {number} durationPercent - Durée en fraction de la piste (0.0–1.0, défaut: 0.1 = 10%)
      */
-    crossfade(toVersion, duration = 2000) {
+    crossfade(toVersion, durationPercent = 0.1) {
         if (!this.currentTrack) {
             console.warn('⚠️ Aucune piste en cours de lecture');
             return;
         }
 
-        this.currentTrack.crossfade(toVersion, duration);
+        this.currentTrack.crossfade(toVersion, durationPercent);
 
         // Callback
         if (this.callbacks.onVersionChange) {

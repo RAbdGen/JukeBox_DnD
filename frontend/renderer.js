@@ -213,7 +213,7 @@ function handleVersionChange(targetVersion) {
 
     const state = audioManager.getState();
     if (state.currentTrack && state.currentTrack.currentVersion !== targetVersion) {
-        audioManager.crossfade(targetVersion, 2000);
+        audioManager.crossfade(targetVersion, 0.1); // 10% de la durée de la piste
         audioManager.currentVersion = targetVersion;
 
         // UI updates will happen via confirmation, but let's force visual feedback
