@@ -276,15 +276,33 @@ main::-webkit-scrollbar {
 
 /* Current Track - Scroll Banner */
 #current-track-indicator {
-    background: linear-gradient(135deg, rgba(212, 175, 55, 0.15) 0%, rgba(139, 90, 43, 0.2) 100%);
+    background: linear-gradient(135deg, rgba(201, 168, 76, 0.1) 0%, rgba(139, 90, 43, 0.18) 100%);
     border-radius: 8px;
-    padding: 1.2rem;
+    padding: 1rem 1.2rem 1.2rem;
     margin-bottom: 1.5rem;
     text-align: center;
-    border: 2px solid var(--gold-glow);
-    box-shadow:
-        inset 0 0 20px rgba(0, 0, 0, 0.3),
-        0 4px 15px rgba(0, 0, 0, 0.4);
+    border: 1px solid var(--gold-glow);
+    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.25);
+    position: relative;
+}
+
+#current-track-indicator::before,
+#current-track-indicator::after {
+    content: '— ✦ —';
+    display: block;
+    font-family: 'IM Fell English', serif;
+    font-size: 0.6rem;
+    color: var(--gold-secondary);
+    letter-spacing: 8px;
+    opacity: 0.7;
+}
+
+#current-track-indicator::before {
+    margin-bottom: 0.8rem;
+}
+
+#current-track-indicator::after {
+    margin-top: 0.8rem;
 }
 
 .track-number {
@@ -299,11 +317,12 @@ main::-webkit-scrollbar {
 
 .track-title {
     display: block;
-    font-family: 'Cinzel', serif;
-    font-size: 1.6rem;
-    font-weight: 700;
+    font-family: 'IM Fell English', serif;
+    font-size: 1.7rem;
+    font-weight: 400;
+    font-style: italic;
     color: var(--text-light);
-    text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6);
+    text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.7);
 }
 
 /* Track Info */
@@ -373,12 +392,12 @@ main::-webkit-scrollbar {
 }
 
 #version-switcher h3 {
-    font-family: 'Cinzel', serif;
+    font-family: 'IM Fell English', serif;
+    font-weight: 400;
     margin-bottom: 1rem;
-    font-size: 1rem;
+    font-size: 1.15rem;
     color: var(--gold-primary);
-    text-transform: uppercase;
-    letter-spacing: 3px;
+    letter-spacing: 1px;
 }
 
 .version-buttons {
@@ -444,7 +463,7 @@ main::-webkit-scrollbar {
     box-shadow:
         0 0 20px rgba(224, 112, 0, 0.6),
         inset 0 0 15px rgba(255, 255, 255, 0.1);
-    animation: tension-pulse 1.5s ease-in-out infinite;
+    animation: tension-pulse 2.5s ease-in-out infinite;
 }
 
 /* COMBAT - Red/Fire aggressive style */
@@ -466,7 +485,7 @@ main::-webkit-scrollbar {
     box-shadow:
         0 0 25px rgba(178, 34, 34, 0.7),
         inset 0 0 15px rgba(255, 100, 100, 0.2);
-    animation: combat-pulse 0.8s ease-in-out infinite;
+    animation: combat-pulse 1.2s ease-in-out infinite;
 }
 
 /* Default/Other version buttons */
@@ -500,10 +519,11 @@ main::-webkit-scrollbar {
     border-radius: 6px;
     cursor: pointer;
     font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
     font-weight: 600;
     transition: all 0.2s ease;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: 1.5px;
 }
 
 .nav-btn {
@@ -518,25 +538,25 @@ main::-webkit-scrollbar {
 }
 
 .control-btn {
-    background: linear-gradient(180deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
+    background: linear-gradient(180deg, var(--gold-primary) 0%, #a07830 100%);
     color: var(--bg-dark);
     padding: 14px 28px;
-    font-size: 1rem;
+    font-size: 0.85rem;
     box-shadow:
-        0 4px 15px rgba(212, 175, 55, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.3);
-    border: 1px solid #b8860b;
+        0 4px 15px rgba(201, 168, 76, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.25);
+    border: 1px solid #8a6420;
 }
 
 .control-btn:hover {
-    background: linear-gradient(180deg, #e8c547 0%, var(--gold-primary) 100%);
+    background: linear-gradient(180deg, var(--gold-secondary) 0%, var(--gold-primary) 100%);
     transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(212, 175, 55, 0.5);
+    box-shadow: 0 6px 20px rgba(201, 168, 76, 0.45);
 }
 
 .control-btn:active {
     transform: translateY(1px);
-    box-shadow: 0 2px 8px rgba(212, 175, 55, 0.3);
+    box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3);
 }
 
 #player-controls,
@@ -613,11 +633,14 @@ main::-webkit-scrollbar {
     background: var(--bg-dark);
     border: 1px solid var(--border-stone);
     color: var(--text-muted);
-    padding: 8px 16px;
+    padding: 8px 18px;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.85rem;
-    font-family: 'Lato', sans-serif;
+    font-size: 0.75rem;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 1px;
     transition: all 0.2s ease;
 }
 
@@ -627,10 +650,9 @@ main::-webkit-scrollbar {
 }
 
 .mode-btn.active {
-    background: linear-gradient(135deg, var(--gold-secondary) 0%, var(--gold-primary) 100%);
+    background: linear-gradient(135deg, var(--gold-primary) 0%, #a07830 100%);
     border-color: var(--gold-primary);
     color: var(--bg-dark);
-    font-weight: 600;
 }
 
 /* ============================================
@@ -639,84 +661,66 @@ main::-webkit-scrollbar {
 
 #volume-control {
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
     align-items: center;
-    gap: 0.8rem;
+    gap: 1rem;
     background: var(--bg-dark);
-    padding: 1rem;
+    padding: 0.75rem 1rem;
     border-radius: 8px;
     border: 1px solid var(--border-stone);
-    position: fixed;
-    right: 2rem;
-    top: 50%;
-    transform: translateY(-50%);
-    z-index: 100;
+    margin-bottom: 1.5rem;
 }
 
 #volume-control label {
     font-family: 'Cinzel', serif;
-    font-size: 0.9rem;
+    font-size: 0.8rem;
+    font-weight: 600;
     color: var(--gold-primary);
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
-    transform: rotate(180deg);
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    white-space: nowrap;
 }
 
 #volume {
-    writing-mode: vertical-lr;
-    direction: rtl;
-    height: 150px;
-    width: 30px;
+    flex: 1;
     -webkit-appearance: none;
     appearance: none;
-    background: transparent;
-    cursor: pointer;
-}
-
-#volume::-webkit-slider-runnable-track {
-    width: 8px;
-    height: 100%;
-    background: linear-gradient(180deg, var(--gold-primary) 0%, var(--bg-stone) 100%);
-    border-radius: 4px;
+    height: 6px;
+    background: linear-gradient(90deg, var(--gold-primary) 0%, var(--bg-stone) 100%);
+    border-radius: 3px;
     border: 1px solid var(--border-stone);
+    cursor: pointer;
 }
 
 #volume::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 20px;
-    height: 20px;
-    background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, var(--gold-secondary) 0%, var(--gold-primary) 100%);
     border-radius: 50%;
     border: 2px solid var(--gold-primary);
     cursor: pointer;
-    box-shadow: 0 0 10px var(--gold-glow);
-    margin-left: -6px;
-}
-
-#volume::-moz-range-track {
-    width: 8px;
-    height: 100%;
-    background: linear-gradient(180deg, var(--gold-primary) 0%, var(--bg-stone) 100%);
-    border-radius: 4px;
-    border: 1px solid var(--border-stone);
+    box-shadow: 0 0 8px var(--gold-glow);
 }
 
 #volume::-moz-range-thumb {
-    width: 20px;
-    height: 20px;
-    background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
+    width: 18px;
+    height: 18px;
+    background: linear-gradient(135deg, var(--gold-secondary) 0%, var(--gold-primary) 100%);
     border-radius: 50%;
     border: 2px solid var(--gold-primary);
     cursor: pointer;
-    box-shadow: 0 0 10px var(--gold-glow);
+    box-shadow: 0 0 8px var(--gold-glow);
 }
 
 #volume-value {
     font-family: 'Cinzel', serif;
-    font-size: 0.9rem;
+    font-size: 0.85rem;
     color: var(--gold-primary);
     font-weight: 600;
+    min-width: 38px;
+    text-align: right;
 }
 
 /* ============================================
@@ -1188,12 +1192,12 @@ main::-webkit-scrollbar {
 
     50% {
         box-shadow:
-            0 0 35px rgba(224, 112, 0, 0.9),
-            inset 0 0 20px rgba(255, 179, 71, 0.2);
+            0 0 32px rgba(224, 112, 0, 0.85),
+            inset 0 0 18px rgba(255, 179, 71, 0.15);
     }
 }
 
-/* Combat - Fast, aggressive pulsing */
+/* Combat - Aggressive pulsing, sans scale pour éviter le tremblement visuel */
 @keyframes combat-pulse {
 
     0%,
@@ -1201,14 +1205,12 @@ main::-webkit-scrollbar {
         box-shadow:
             0 0 25px rgba(178, 34, 34, 0.7),
             inset 0 0 15px rgba(255, 100, 100, 0.2);
-        transform: scale(1);
     }
 
     50% {
         box-shadow:
-            0 0 40px rgba(255, 0, 0, 0.9),
-            inset 0 0 25px rgba(255, 100, 100, 0.3);
-        transform: scale(1.02);
+            0 0 40px rgba(220, 20, 20, 0.9),
+            inset 0 0 22px rgba(255, 100, 100, 0.25);
     }
 }
 
@@ -1241,25 +1243,6 @@ footer {
    ============================================ */
 
 @media (max-width: 768px) {
-    #volume-control {
-        position: static;
-        transform: none;
-        flex-direction: row;
-        margin-bottom: 1.5rem;
-    }
-
-    #volume-control label {
-        writing-mode: horizontal-tb;
-        transform: none;
-    }
-
-    #volume {
-        writing-mode: horizontal-tb;
-        direction: ltr;
-        height: auto;
-        width: 100%;
-    }
-
     .version-buttons {
         flex-direction: column;
     }

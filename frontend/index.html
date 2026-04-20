@@ -19,8 +19,8 @@
             <div class="container">
                 <!-- Onglets -->
                 <div id="view-tabs">
-                    <button class="tab-btn active" data-view="player">🎵 Lecteur</button>
-                    <button class="tab-btn" data-view="library">📚 Bibliothèque</button>
+                    <button class="tab-btn active" data-view="player">Lecteur</button>
+                    <button class="tab-btn" data-view="library">Bibliothèque</button>
                 </div>
 
                 <!-- ======================== -->
@@ -33,9 +33,9 @@
                         <select id="playlist-select">
                             <option value="">-- Choisir une playlist --</option>
                         </select>
-                        <button id="create-playlist-btn" class="icon-btn" title="Créer une playlist">➕</button>
+                        <button id="create-playlist-btn" class="icon-btn" title="Créer une playlist">+</button>
                         <button id="delete-playlist-btn" class="icon-btn danger-icon"
-                            title="Supprimer la playlist">🗑️</button>
+                            title="Supprimer la playlist">×</button>
                     </div>
 
                     <!-- Indicateur piste actuelle -->
@@ -63,23 +63,23 @@
 
                     <!-- Navigation playlist -->
                     <div id="navigation-controls">
-                        <button id="prev-btn" class="nav-btn">⏮ Précédent</button>
-                        <button id="next-btn" class="nav-btn">Suivant ⏭</button>
+                        <button id="prev-btn" class="nav-btn">Précédent</button>
+                        <button id="next-btn" class="nav-btn">Suivant</button>
                     </div>
 
                     <!-- Contrôles de lecture -->
                     <div id="player-controls">
-                        <button id="play-btn" class="control-btn">▶ Play</button>
-                        <button id="pause-btn" class="control-btn">⏸ Pause</button>
-                        <button id="stop-btn" class="control-btn">⏹ Stop</button>
+                        <button id="play-btn" class="control-btn">Play</button>
+                        <button id="pause-btn" class="control-btn">Pause</button>
+                        <button id="stop-btn" class="control-btn">Stop</button>
                     </div>
 
                     <!-- Mode de lecture -->
                     <div id="play-mode-selector">
                         <div class="mode-buttons">
-                            <button class="mode-btn active" data-mode="noLoop">➡️ Normal</button>
-                            <button class="mode-btn" data-mode="loopOne">🔂 Boucle</button>
-                            <button class="mode-btn" data-mode="loopAll">🔁 Tout</button>
+                            <button class="mode-btn active" data-mode="noLoop">Normal</button>
+                            <button class="mode-btn" data-mode="loopOne">Boucle</button>
+                            <button class="mode-btn" data-mode="loopAll">Tout répéter</button>
                         </div>
                     </div>
 
@@ -96,14 +96,14 @@
 
                     <!-- Volume -->
                     <div id="volume-control">
-                        <label for="volume">🔊 Volume:</label>
+                        <label for="volume">Volume</label>
                         <input type="range" id="volume" min="0" max="100" value="50" />
                         <span id="volume-value">50%</span>
                     </div>
 
                     <!-- Liste pistes de la playlist -->
                     <div id="playlist-tracks-container">
-                        <h3>📀 Pistes</h3>
+                        <h3>Pistes</h3>
                         <div id="playlist-tracks">
                             <p class="empty-message">Aucune piste. Ajoutez des musiques depuis la bibliothèque.</p>
                         </div>
@@ -115,8 +115,8 @@
                 <!-- ======================== -->
                 <div id="library-view" class="view hidden">
                     <div class="library-header">
-                        <h3>📚 Ma Bibliothèque</h3>
-                        <button id="add-track-btn" class="primary-btn">➕ Ajouter une musique</button>
+                        <h3>Ma Bibliothèque</h3>
+                        <button id="add-track-btn" class="primary-btn">Ajouter une musique</button>
                     </div>
 
                     <div id="library-tracks">
@@ -133,7 +133,7 @@
     <div id="add-track-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>➕ Ajouter une musique</h2>
+                <h2>Ajouter une musique</h2>
                 <button class="close-modal-btn">&times;</button>
             </div>
 
@@ -150,7 +150,7 @@
                     <div id="version-inputs">
                         <div class="version-input" data-index="0">
                             <input type="text" class="version-name" placeholder="Nom (calm, combat...)" value="calm" />
-                            <button type="button" class="select-file-btn">📁 Fichier</button>
+                            <button type="button" class="select-file-btn">Fichier</button>
                             <span class="file-path">Aucun fichier</span>
                             <input type="hidden" class="file-path-value" />
                         </div>
@@ -194,7 +194,7 @@
     <div id="create-playlist-modal" class="modal hidden">
         <div class="modal-content modal-small">
             <div class="modal-header">
-                <h2>➕ Nouvelle Playlist</h2>
+                <h2>Nouvelle Playlist</h2>
                 <button class="close-modal-btn">&times;</button>
             </div>
 
@@ -218,7 +218,7 @@
     <div id="edit-track-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>✏️ Modifier la piste</h2>
+                <h2>Modifier la piste</h2>
                 <button class="close-modal-btn">&times;</button>
             </div>
 
@@ -248,7 +248,7 @@
             </div>
 
             <div class="modal-footer">
-                <button type="button" id="delete-track-btn" class="danger-btn">🗑️ Supprimer</button>
+                <button type="button" id="delete-track-btn" class="danger-btn">Supprimer</button>
                 <button type="button" class="cancel-modal-btn secondary-btn">Annuler</button>
                 <button type="button" id="save-track-edits" class="primary-btn">Sauvegarder</button>
             </div>
