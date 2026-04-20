@@ -116,6 +116,11 @@ main {
     justify-content: center;
     padding: 2rem;
     overflow-y: auto;
+    scrollbar-width: none; /* Firefox */
+}
+
+main::-webkit-scrollbar {
+    display: none; /* Chromium / Electron WebView2 */
 }
 
 .container {
