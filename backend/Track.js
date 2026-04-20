@@ -72,17 +72,27 @@ export class Track {
             return;
         }
 
-        const version = this.versions[versionName];
+        const howl = this.versions[versionName];
 
         // Arrêter toutes les autres versions
         this.stopAllVersions();
 
-        // Démarrer cette version
-        version.volume(this.defaultVolume);
-        version.play();
-
         this.currentVersion = versionName;
-        this.isPlaying = true;
+
+        const startPlay = () => {
+            howl.volume(this.defaultVolume);
+            howl.play();
+            this.isPlaying = true;
+        };
+
+        // Avec html5: true, le fichier peut ne pas être encore chargé au premier clic.
+        // On attend l'événement 'load' avant de jouer pour éviter le silence au premier appel.
+        if (howl.state() === 'loaded') {
+            startPlay();
+        } else {
+            console.log(`⏳ Attente chargement "${versionName}" pour "${this.name}"...`);
+            howl.once('load', startPlay);
+        }
     }
 
     /**
