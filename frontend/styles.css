@@ -2,24 +2,24 @@
    D&D JUKEBOX - Medieval Fantasy Theme
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Lato:wght@300;400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=Lato:wght@300;400;700&display=swap');
 
 :root {
     /* D&D Color Palette */
     --bg-dark: #0d0d0d;
     --bg-stone: #1a1a1a;
     --bg-leather: #2d1f1f;
-    --gold-primary: #d4af37;
-    --gold-secondary: #c9a227;
-    --gold-glow: rgba(212, 175, 55, 0.4);
+    --gold-primary: #C9A84C;
+    --gold-secondary: #E8C96A;
+    --gold-glow: rgba(201, 168, 76, 0.4);
     --red-blood: #8b0000;
     --red-fire: #a52a2a;
     --blue-calm: #1e3a5f;
     --blue-magic: #4a90d9;
     --orange-tension: #cc6600;
     --orange-ember: #e07000;
-    --text-light: #e8e0d5;
-    --text-muted: rgba(232, 224, 213, 0.6);
+    --text-light: #F0E6C8;
+    --text-muted: rgba(240, 230, 200, 0.6);
     --border-stone: rgba(139, 90, 43, 0.4);
 }
 
@@ -40,6 +40,19 @@ body {
     min-height: 100vh;
     display: flex;
     flex-direction: column;
+}
+
+/* Grain — texture organique par-dessus tout le contenu */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.04;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 300px 300px;
 }
 
 #app {
@@ -65,12 +78,13 @@ header {
 
 header::before,
 header::after {
-    content: '⚔️';
+    content: '✦';
     position: absolute;
     top: 50%;
     transform: translateY(-50%);
-    font-size: 1.5rem;
-    opacity: 0.6;
+    font-size: 1.2rem;
+    color: var(--gold-secondary);
+    opacity: 0.5;
 }
 
 header::before {
@@ -82,18 +96,19 @@ header::after {
 }
 
 header h1 {
-    font-family: 'Cinzel', serif;
+    font-family: 'IM Fell English', serif;
     font-size: 2.8rem;
-    font-weight: 700;
+    font-weight: 400;
+    font-style: italic;
     text-shadow:
         2px 2px 4px rgba(0, 0, 0, 0.8),
         0 0 20px var(--gold-glow);
-    background: linear-gradient(180deg, #f5d773 0%, var(--gold-primary) 50%, #b8860b 100%);
+    background: linear-gradient(180deg, var(--gold-secondary) 0%, var(--gold-primary) 50%, #a0782a 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
     margin-bottom: 0.5rem;
-    letter-spacing: 3px;
+    letter-spacing: 2px;
 }
 
 .subtitle {
@@ -103,6 +118,15 @@ header h1 {
     margin-top: 0.5rem;
     letter-spacing: 2px;
     text-transform: uppercase;
+}
+
+/* Titres de section — IM Fell English pour l'identité "grimoire" */
+#version-switcher h3,
+#playlist-tracks-container h3,
+.library-header h3,
+.modal-header h2 {
+    font-family: 'IM Fell English', serif;
+    font-weight: 400;
 }
 
 /* ============================================
