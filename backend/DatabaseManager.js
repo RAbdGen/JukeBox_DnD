@@ -115,18 +115,14 @@ export class DatabaseManager {
     // ============================================
 
     async getLibrary() {
-        await this.db.read();
         return this.db.data.library || [];
     }
 
     async getTrack(trackId) {
-        await this.db.read();
         return this.db.data.library.find(t => t.id === trackId);
     }
 
     async addTrackToLibrary(track) {
-        await this.db.read();
-
         // Ajouter metadata si manquante
         if (!track.metadata) {
             track.metadata = {
@@ -146,8 +142,6 @@ export class DatabaseManager {
     }
 
     async updateTrack(trackId, updates) {
-        await this.db.read();
-
         const track = this.db.data.library.find(t => t.id === trackId);
 
         if (!track) {
@@ -171,8 +165,6 @@ export class DatabaseManager {
     }
 
     async deleteTrack(trackId) {
-        await this.db.read();
-
         // Supprimer de la bibliothèque
         const initialLength = this.db.data.library.length;
         this.db.data.library = this.db.data.library.filter(t => t.id !== trackId);
@@ -193,8 +185,6 @@ export class DatabaseManager {
     }
 
     async addVersionToTrack(trackId, versionName, originalPath, localPath) {
-        await this.db.read();
-
         const track = this.db.data.library.find(t => t.id === trackId);
 
         if (!track) {
@@ -226,17 +216,14 @@ export class DatabaseManager {
     // ============================================
 
     async getPlaylists() {
-        await this.db.read();
         return this.db.data.playlists || [];
     }
 
     async getPlaylist(id) {
-        await this.db.read();
         return this.db.data.playlists.find(p => p.id === id);
     }
 
     async getPlaylistWithTracks(playlistId) {
-        await this.db.read();
 
         const playlist = this.db.data.playlists.find(p => p.id === playlistId);
 
@@ -256,8 +243,6 @@ export class DatabaseManager {
     }
 
     async savePlaylist(playlist) {
-        await this.db.read();
-
         const index = this.db.data.playlists.findIndex(p => p.id === playlist.id);
 
         // Assurer que trackIds existe
@@ -285,8 +270,6 @@ export class DatabaseManager {
     }
 
     async deletePlaylist(id) {
-        await this.db.read();
-
         const initialLength = this.db.data.playlists.length;
         this.db.data.playlists = this.db.data.playlists.filter(p => p.id !== id);
 
@@ -308,8 +291,6 @@ export class DatabaseManager {
     }
 
     async addTrackIdToPlaylist(playlistId, trackId) {
-        await this.db.read();
-
         const playlist = this.db.data.playlists.find(p => p.id === playlistId);
         const track = this.db.data.library.find(t => t.id === trackId);
 
@@ -344,8 +325,6 @@ export class DatabaseManager {
     }
 
     async removeTrackIdFromPlaylist(playlistId, trackId) {
-        await this.db.read();
-
         const playlist = this.db.data.playlists.find(p => p.id === playlistId);
         const track = this.db.data.library.find(t => t.id === trackId);
 
@@ -376,8 +355,6 @@ export class DatabaseManager {
     // ============================================
 
     async saveSettings(settings) {
-        await this.db.read();
-
         this.db.data.settings = {
             ...this.db.data.settings,
             ...settings
@@ -392,7 +369,6 @@ export class DatabaseManager {
     }
 
     async getSettings() {
-        await this.db.read();
         return this.db.data.settings || this.getDefaultData().settings;
     }
 
@@ -401,7 +377,6 @@ export class DatabaseManager {
     // ============================================
 
     async exportData() {
-        await this.db.read();
         return JSON.stringify(this.db.data, null, 2);
     }
 
