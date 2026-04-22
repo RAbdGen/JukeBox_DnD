@@ -8,7 +8,7 @@
     "start": "electron .",
     "dev": "concurrently -k \"npm run dev:vite\" \"npm run dev:electron\"",
     "dev:vite": "vite --port 3000",
-    "dev:electron": "wait-on http://localhost:3000 && cross-env NODE_ENV=development electronmon .",
+    "dev:electron": "wait-on http://localhost:3000 && node scripts/dev-electron.cjs",
     "build": "vite build && electron-builder",
     "build:linux": "vite build && electron-builder --linux",
     "build:win": "vite build && electron-builder --win",
@@ -23,6 +23,7 @@
     "wait-on": "^7.0.1"
   },
   "devDependencies": {
+    "cross-env": "^10.1.0",
     "electron": "^37.2.5",
     "electron-builder": "^26.0.12",
     "electronmon": "^2.0.3",

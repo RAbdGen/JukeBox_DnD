@@ -3,6 +3,7 @@ const path = require('path');
 const fs = require('fs').promises;
 const { pathToFileURL } = require('url');
 
+
 let dbManager;
 let fileManager;
 let mainWindow;
