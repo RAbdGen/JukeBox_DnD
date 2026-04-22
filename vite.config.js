@@ -1,12 +1,20 @@
 import { defineConfig } from 'vite';
 
-// https://vite.dev/config/
 export default defineConfig({
   root: 'frontend',
-  base: './', // Use relative paths for Electron production build
+  base: './',
   build: {
     outDir: '../dist',
     emptyOutDir: true,
+    target: 'es2020',
+    minify: 'esbuild',
+    sourcemap: false,
+    rollupOptions: {
+      output: {
+        // Un seul chunk pour une app de cette taille — évite les requêtes multiples
+        manualChunks: undefined,
+      },
+    },
   },
   server: {
     port: 3000,
