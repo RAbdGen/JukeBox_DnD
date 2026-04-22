@@ -41,7 +41,7 @@ export class Track {
                 html5: true, // Use HTML5 Audio for file:// URLs
                 loop: false, // Pas de boucle pour permettre la progression de playlist
                 volume: 0,
-                preload: true,
+                preload: false, // Chargement à la première lecture, pas au démarrage
                 onload: () => {
                     console.log(`✅ Version "${versionName}" de "${this.name}" chargée`);
                 },
