@@ -90,8 +90,10 @@ export class Track {
         if (howl.state() === 'loaded') {
             startPlay();
         } else {
-            console.log(`⏳ Attente chargement "${versionName}" pour "${this.name}"...`);
             howl.once('load', startPlay);
+            if (howl.state() === 'unloaded') {
+                howl.load(); // Déclenche le chargement (preload: false)
+            }
         }
     }
 
