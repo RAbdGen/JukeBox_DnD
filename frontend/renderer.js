@@ -10,8 +10,12 @@ let updateInterval = null;
 
 async function init() {
     try {
-        // Charger les réglages
-        const settings = await window.electronAPI.getSettings();
+        // Charger settings et playlists en parallèle
+        const [settings, playlists] = await Promise.all([
+            window.electronAPI.getSettings(),
+            window.electronAPI.getAllPlaylists(),
+        ]);
+
         if (settings) {
             if (settings.volume !== undefined) {
                 audioManager.setVolume(settings.volume);
@@ -27,16 +31,14 @@ async function init() {
             }
         }
 
-        // Charger les playlists
-        await loadPlaylists();
+        // Peupler le sélecteur de playlists à partir des données déjà chargées
+        populatePlaylists(playlists);
 
-        // Si une playlist par défaut existe, la charger
-        if (currentPlaylistId) {
-            await loadPlaylist(currentPlaylistId);
-        }
-
-        // Initialiser la bibliothèque
-        await loadLibrary();
+        // Charger la playlist active et la bibliothèque en parallèle
+        await Promise.all([
+            currentPlaylistId ? loadPlaylist(currentPlaylistId) : Promise.resolve(),
+            loadLibrary(),
+        ]);
 
         console.log('✅ JukeBox DnD initialisé');
     } catch (error) {
@@ -48,14 +50,16 @@ async function init() {
 // Gestion des Playlists
 // ========================================
 
-async function loadPlaylists() {
-    const playlists = await window.electronAPI.getAllPlaylists();
+// Peuple le sélecteur à partir de données déjà chargées (sans IPC)
+function populatePlaylists(playlists) {
     const select = document.getElementById('playlist-select');
-
-    // Sauvegarder la sélection actuelle
     const currentSelection = select.value;
 
-    select.innerHTML = '<option value="">-- Choisir une playlist --</option>';
+    select.replaceChildren();
+    const defaultOpt = document.createElement('option');
+    defaultOpt.value = '';
+    defaultOpt.textContent = '-- Choisir une playlist --';
+    select.appendChild(defaultOpt);
 
     playlists.forEach(p => {
         const option = document.createElement('option');
@@ -64,7 +68,6 @@ async function loadPlaylists() {
         select.appendChild(option);
     });
 
-    // Restaurer ou définir par défaut
     if (playlists.length > 0) {
         if (currentSelection && playlists.find(p => p.id === currentSelection)) {
             select.value = currentSelection;
@@ -76,6 +79,11 @@ async function loadPlaylists() {
             currentPlaylistId = playlists[0].id;
         }
     }
+}
+
+async function loadPlaylists() {
+    const playlists = await window.electronAPI.getAllPlaylists();
+    populatePlaylists(playlists);
 }
 
 async function loadPlaylist(id) {
