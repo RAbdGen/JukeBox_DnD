@@ -3,21 +3,29 @@ const path = require('path');
 const fs = require('fs').promises;
 const { pathToFileURL } = require('url');
 
-// Import du DatabaseManager et FileManager (ESM modules)
 let dbManager;
 let fileManager;
-
 let mainWindow;
 
+// Resolves once initManagers() completes — IPC handlers await this before touching managers
+let managersReadyResolve;
+const managersReadyPromise = new Promise(resolve => { managersReadyResolve = resolve; });
+
+// Wrapper : enregistre un IPC handler qui attend que les managers soient prêts
+function ipcHandle(channel, handler) {
+    ipcMain.handle(channel, async (event, ...args) => {
+        await managersReadyPromise;
+        return handler(event, ...args);
+    });
+}
+
 async function initManagers() {
-    // Import dynamique des modules ESM - use file:// URLs for asar compatibility
     const dbManagerPath = pathToFileURL(path.join(__dirname, '..', 'backend', 'DatabaseManager.js')).href;
     const fileManagerPath = pathToFileURL(path.join(__dirname, '..', 'backend', 'FileManager.js')).href;
 
     const { DatabaseManager } = await import(dbManagerPath);
     const { FileManager } = await import(fileManagerPath);
 
-    // Initialiser avec le userData path d'Electron
     const userDataPath = app.getPath('userData');
 
     dbManager = new DatabaseManager(userDataPath);
@@ -27,30 +35,35 @@ async function initManagers() {
     await fileManager.init();
 
     console.log('✅ Database et FileManager initialisés');
+    managersReadyResolve();
 }
 
 function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1400,
         height: 950,
+        show: false, // Affiché seulement via ready-to-show, évite le flash blanc
         icon: path.join(__dirname, '..', 'build', 'icon.png'),
-        autoHideMenuBar: true, // Hide the menu bar
+        autoHideMenuBar: true,
         webPreferences: {
             preload: path.join(__dirname, 'preload.cjs'),
             contextIsolation: true,
             nodeIntegration: false,
-            // Allow loading local audio files from file:// URLs
             webSecurity: false,
+            backgroundThrottling: false, // Pas de throttling quand l'app est en arrière-plan
         },
     });
 
-    // Remove the menu bar completely
     mainWindow.setMenu(null);
 
-    // En développement, charger depuis Vite
+    // Afficher la fenêtre seulement quand le renderer a fini son premier paint
+    mainWindow.once('ready-to-show', () => {
+        mainWindow.show();
+    });
+
     if (process.env.NODE_ENV === 'development') {
         mainWindow.loadURL('http://localhost:3000');
-        mainWindow.webContents.openDevTools();
+        // DevTools : ouvrir manuellement avec F12 ou Ctrl+Shift+I
     } else {
         mainWindow.loadFile(path.join(__dirname, '../dist/index.html'));
     }
@@ -61,7 +74,7 @@ function createWindow() {
 }
 
 // ========================================
-// IPC HANDLERS - Dialogues
+// IPC HANDLERS - Dialogues (pas besoin des managers)
 // ========================================
 
 ipcMain.handle('dialog:openFiles', async () => {
@@ -112,26 +125,24 @@ ipcMain.handle('dialog:scanFolder', async (event, folderPath) => {
 // IPC HANDLERS - Library
 // ========================================
 
-ipcMain.handle('library:addTrack', async (event, trackData, selectedPlaylists) => {
+ipcHandle('library:addTrack', async (event, trackData, selectedPlaylists) => {
     try {
         const trackId = fileManager.generateTrackId();
 
-        // Copier les fichiers audio vers userData/music
-        const localPaths = {};
-        for (const [versionName, sourcePath] of Object.entries(trackData.versions)) {
-            localPaths[versionName] = await fileManager.copyAudioFile(
-                sourcePath,
-                trackId,
-                versionName
-            );
-        }
+        // Copier les fichiers audio en parallèle
+        const copiedPairs = await Promise.all(
+            Object.entries(trackData.versions).map(async ([versionName, sourcePath]) => {
+                const localPath = await fileManager.copyAudioFile(sourcePath, trackId, versionName);
+                return [versionName, localPath];
+            })
+        );
+        const localPaths = Object.fromEntries(copiedPairs);
 
-        // Créer l'objet track
         const track = {
             id: trackId,
             title: trackData.title,
             originalPaths: trackData.versions,
-            localPaths: localPaths,
+            localPaths,
             defaultVersion: trackData.defaultVersion || 'calm',
             defaultVolume: trackData.defaultVolume || 0.5,
             metadata: {
@@ -141,13 +152,12 @@ ipcMain.handle('library:addTrack', async (event, trackData, selectedPlaylists) =
             inPlaylists: selectedPlaylists || []
         };
 
-        // Ajouter à la bibliothèque
         await dbManager.addTrackToLibrary(track);
 
-        // Ajouter aux playlists
-        for (const playlistId of selectedPlaylists) {
-            await dbManager.addTrackIdToPlaylist(playlistId, trackId);
-        }
+        // Ajouter à toutes les playlists en parallèle
+        await Promise.all(
+            selectedPlaylists.map(playlistId => dbManager.addTrackIdToPlaylist(playlistId, trackId))
+        );
 
         console.log(`✅ Piste "${track.title}" ajoutée`);
         return track;
@@ -157,7 +167,7 @@ ipcMain.handle('library:addTrack', async (event, trackData, selectedPlaylists) =
     }
 });
 
-ipcMain.handle('library:getLibrary', async () => {
+ipcHandle('library:getLibrary', async () => {
     try {
         return await dbManager.getLibrary();
     } catch (error) {
@@ -166,7 +176,7 @@ ipcMain.handle('library:getLibrary', async () => {
     }
 });
 
-ipcMain.handle('library:getTrack', async (event, trackId) => {
+ipcHandle('library:getTrack', async (event, trackId) => {
     try {
         return await dbManager.getTrack(trackId);
     } catch (error) {
@@ -175,7 +185,7 @@ ipcMain.handle('library:getTrack', async (event, trackId) => {
     }
 });
 
-ipcMain.handle('library:updateTrack', async (event, trackId, updates) => {
+ipcHandle('library:updateTrack', async (event, trackId, updates) => {
     try {
         return await dbManager.updateTrack(trackId, updates);
     } catch (error) {
@@ -184,14 +194,10 @@ ipcMain.handle('library:updateTrack', async (event, trackId, updates) => {
     }
 });
 
-ipcMain.handle('library:deleteTrack', async (event, trackId) => {
+ipcHandle('library:deleteTrack', async (event, trackId) => {
     try {
         const track = await dbManager.getTrack(trackId);
-
-        // Supprimer les fichiers
         await fileManager.deleteTrackFiles(track);
-
-        // Supprimer de la DB
         return await dbManager.deleteTrack(trackId);
     } catch (error) {
         console.error('❌ Erreur deleteTrack:', error);
@@ -199,12 +205,9 @@ ipcMain.handle('library:deleteTrack', async (event, trackId) => {
     }
 });
 
-ipcMain.handle('library:addVersion', async (event, trackId, versionName, filePath) => {
+ipcHandle('library:addVersion', async (event, trackId, versionName, filePath) => {
     try {
-        // Copier le fichier
         const localPath = await fileManager.copyAudioFile(filePath, trackId, versionName);
-
-        // Mettre à jour la DB
         return await dbManager.addVersionToTrack(trackId, versionName, filePath, localPath);
     } catch (error) {
         console.error('❌ Erreur addVersion:', error);
@@ -216,7 +219,7 @@ ipcMain.handle('library:addVersion', async (event, trackId, versionName, filePat
 // IPC HANDLERS - Playlists
 // ========================================
 
-ipcMain.handle('playlist:getAll', async () => {
+ipcHandle('playlist:getAll', async () => {
     try {
         return await dbManager.getPlaylists();
     } catch (error) {
@@ -225,7 +228,7 @@ ipcMain.handle('playlist:getAll', async () => {
     }
 });
 
-ipcMain.handle('playlist:get', async (event, id) => {
+ipcHandle('playlist:get', async (event, id) => {
     try {
         return await dbManager.getPlaylist(id);
     } catch (error) {
@@ -234,7 +237,7 @@ ipcMain.handle('playlist:get', async (event, id) => {
     }
 });
 
-ipcMain.handle('playlist:getWithTracks', async (event, id) => {
+ipcHandle('playlist:getWithTracks', async (event, id) => {
     try {
         return await dbManager.getPlaylistWithTracks(id);
     } catch (error) {
@@ -243,7 +246,7 @@ ipcMain.handle('playlist:getWithTracks', async (event, id) => {
     }
 });
 
-ipcMain.handle('playlist:save', async (event, playlist) => {
+ipcHandle('playlist:save', async (event, playlist) => {
     try {
         return await dbManager.savePlaylist(playlist);
     } catch (error) {
@@ -252,7 +255,7 @@ ipcMain.handle('playlist:save', async (event, playlist) => {
     }
 });
 
-ipcMain.handle('playlist:create', async (event, playlistName) => {
+ipcHandle('playlist:create', async (event, playlistName) => {
     try {
         const playlist = {
             id: fileManager.generatePlaylistId(),
@@ -260,7 +263,6 @@ ipcMain.handle('playlist:create', async (event, playlistName) => {
             trackIds: [],
             createdAt: new Date().toISOString()
         };
-
         return await dbManager.savePlaylist(playlist);
     } catch (error) {
         console.error('❌ Erreur createPlaylist:', error);
@@ -268,7 +270,7 @@ ipcMain.handle('playlist:create', async (event, playlistName) => {
     }
 });
 
-ipcMain.handle('playlist:delete', async (event, id) => {
+ipcHandle('playlist:delete', async (event, id) => {
     try {
         return await dbManager.deletePlaylist(id);
     } catch (error) {
@@ -277,7 +279,7 @@ ipcMain.handle('playlist:delete', async (event, id) => {
     }
 });
 
-ipcMain.handle('playlist:addTrack', async (event, playlistId, trackId) => {
+ipcHandle('playlist:addTrack', async (event, playlistId, trackId) => {
     try {
         return await dbManager.addTrackIdToPlaylist(playlistId, trackId);
     } catch (error) {
@@ -286,7 +288,7 @@ ipcMain.handle('playlist:addTrack', async (event, playlistId, trackId) => {
     }
 });
 
-ipcMain.handle('playlist:removeTrack', async (event, playlistId, trackId) => {
+ipcHandle('playlist:removeTrack', async (event, playlistId, trackId) => {
     try {
         return await dbManager.removeTrackIdFromPlaylist(playlistId, trackId);
     } catch (error) {
@@ -299,7 +301,7 @@ ipcMain.handle('playlist:removeTrack', async (event, playlistId, trackId) => {
 // IPC HANDLERS - Settings
 // ========================================
 
-ipcMain.handle('settings:save', async (event, settings) => {
+ipcHandle('settings:save', async (event, settings) => {
     try {
         return await dbManager.saveSettings(settings);
     } catch (error) {
@@ -308,7 +310,7 @@ ipcMain.handle('settings:save', async (event, settings) => {
     }
 });
 
-ipcMain.handle('settings:get', async () => {
+ipcHandle('settings:get', async () => {
     try {
         return await dbManager.getSettings();
     } catch (error) {
@@ -321,9 +323,12 @@ ipcMain.handle('settings:get', async () => {
 // Lifecycle de l'app
 // ========================================
 
-app.whenReady().then(async () => {
-    await initManagers();
+app.whenReady().then(() => {
+    // Lancer la fenêtre et l'init des managers en parallèle.
+    // La fenêtre commence à charger immédiatement ; les IPC handlers
+    // attendent managersReadyPromise avant d'exécuter.
     createWindow();
+    initManagers();
 });
 
 app.on('window-all-closed', () => {
