@@ -29,6 +29,9 @@ async function init() {
                 audioManager.setPlayMode(settings.playMode);
                 updateModeButtons(settings.playMode);
             }
+            if (settings.lastPlaylistId) {
+                currentPlaylistId = settings.lastPlaylistId;
+            }
         }
 
         // Peupler le sélecteur de playlists à partir des données déjà chargées
@@ -363,7 +366,10 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Playlist Select ---
     document.getElementById('playlist-select').addEventListener('change', (e) => {
         const id = e.target.value;
-        if (id) loadPlaylist(id);
+        if (id) {
+            loadPlaylist(id);
+            window.electronAPI.saveSettings({ lastPlaylistId: id });
+        }
     });
 
     // --- Player Controls ---
