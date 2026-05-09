@@ -1,30 +1,56 @@
 /* ============================================
-   D&D JUKEBOX - Medieval Fantasy Theme
+   JukeBox DnD — DA "Grimoire Sonore"
    ============================================ */
 
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=Lato:wght@300;400;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-    /* D&D Color Palette */
-    --bg-dark: #0d0d0d;
-    --bg-stone: #1a1a1a;
-    --bg-leather: #2d1f1f;
-    --gold-primary: #C9A84C;
-    --gold-secondary: #E8C96A;
-    --gold-glow: rgba(201, 168, 76, 0.4);
-    --red-blood: #8b0000;
-    --red-fire: #a52a2a;
-    --blue-calm: #1e3a5f;
-    --blue-magic: #4a90d9;
-    --orange-tension: #cc6600;
-    --orange-ember: #e07000;
-    --text-light: #F0E6C8;
-    --text-muted: rgba(240, 230, 200, 0.6);
-    --border-stone: rgba(139, 90, 43, 0.4);
+    /* ── Backgrounds — "Nuit" (default, matches screenshot) ── */
+    --ink-0:   #0a0908;
+    --ink-1:   #141210;
+    --ink-2:   #1e1c18;
+    --ink-3:   #2c2820;
+    --ink-4:   #3c3428;
+
+    /* ── Ink gradient stops (replace hardcoded values) ── */
+    --ink-dark:  #060504;
+    --ink-warm:  #111009;
+    --ink-mid:   #181512;
+    --ink-top:   #1c1a14;
+
+    /* ── Or — 4 niveaux ── */
+    --gold-1:  #7a5c1e;
+    --gold-2:  #a07c28;
+    --gold-3:  #c9a84c;
+    --gold-4:  #e8c96a;
+    --gold-glow: rgba(201, 168, 76, 0.15);
+
+    /* ── Texte / Parchemin ── */
+    --bone:       #f0e6c8;
+    --bone-dim:   rgba(240, 230, 200, 0.50);
+    --bone-faint: rgba(240, 230, 200, 0.12);
+
+    /* ── Sémantique (boutons de version, statuts) ── */
+    --red-blood:      #6b1414;
+    --red-fire:       #8c2222;
+    --blue-calm:      #162840;
+    --blue-magic:     #1e5280;
+    --orange-tension: #3a2000;
+    --orange-ember:   #6b3c00;
+
+    /* ── Aliases legacy (tous les var() existants restent valides) ── */
+    --bg-dark:        var(--ink-0);
+    --bg-stone:       var(--ink-1);
+    --bg-leather:     var(--ink-2);
+    --gold-primary:   var(--gold-3);
+    --gold-secondary: var(--gold-4);
+    --text-light:     var(--bone);
+    --text-muted:     var(--bone-dim);
+    --border-stone:   var(--ink-3);
 }
 
 html {
-    scrollbar-gutter: stable; /* Réserve l'espace scrollbar — évite le layout jump à l'ouverture des modals */
+    scrollbar-gutter: stable;
 }
 
 * {
@@ -34,26 +60,25 @@ html {
 }
 
 body {
-    font-family: 'Lato', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: var(--bg-dark);
+    font-family: 'IM Fell English', 'Iowan Old Style', Georgia, serif;
+    background: var(--ink-0);
     background-image:
-        radial-gradient(ellipse at top, rgba(45, 31, 31, 0.8) 0%, transparent 50%),
-        radial-gradient(ellipse at bottom, rgba(26, 26, 26, 0.9) 0%, transparent 50%),
-        linear-gradient(180deg, var(--bg-dark) 0%, var(--bg-stone) 50%, var(--bg-dark) 100%);
-    color: var(--text-light);
+        radial-gradient(ellipse 120% 80% at 50% -10%, var(--ink-top) 0%, var(--ink-0) 55%, var(--ink-dark) 100%),
+        linear-gradient(180deg, var(--ink-0) 0%, var(--ink-1) 50%, var(--ink-0) 100%);
+    color: var(--bone);
     min-height: 100vh;
     display: flex;
     flex-direction: column;
 }
 
-/* Grain — texture organique par-dessus tout le contenu */
+/* Grain — texture organique */
 body::before {
     content: '';
     position: fixed;
     inset: 0;
     pointer-events: none;
     z-index: 9999;
-    opacity: 0.04;
+    opacity: 0.045;
     background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
     background-repeat: repeat;
     background-size: 300px 300px;
@@ -66,17 +91,18 @@ body::before {
 }
 
 /* ============================================
-   Header - Medieval Banner Style
+   Header
    ============================================ */
 
 header {
-    background: linear-gradient(180deg, var(--bg-leather) 0%, var(--bg-stone) 100%);
+    background: linear-gradient(180deg, var(--ink-warm) 0%, var(--ink-0) 100%);
     padding: 1.5rem;
     text-align: center;
     box-shadow:
-        0 4px 20px rgba(0, 0, 0, 0.8),
-        inset 0 -2px 10px rgba(0, 0, 0, 0.5);
-    border-bottom: 3px solid var(--border-stone);
+        0 4px 24px rgba(0, 0, 0, 0.8),
+        inset 0 1px 0 rgba(255, 220, 170, 0.05),
+        inset 0 -1px 0 rgba(255, 220, 170, 0.04);
+    border-bottom: 1px solid var(--ink-3);
     position: relative;
 }
 
@@ -87,44 +113,38 @@ header::after {
     top: 50%;
     transform: translateY(-50%);
     font-size: 1.2rem;
-    color: var(--gold-secondary);
-    opacity: 0.5;
+    color: var(--gold-2);
+    opacity: 0.4;
 }
 
-header::before {
-    left: 2rem;
-}
-
-header::after {
-    right: 2rem;
-}
+header::before { left: 2rem; }
+header::after  { right: 2rem; }
 
 header h1 {
     font-family: 'IM Fell English', serif;
     font-size: 2.8rem;
     font-weight: 400;
     font-style: italic;
-    text-shadow:
-        2px 2px 4px rgba(0, 0, 0, 0.8),
-        0 0 20px var(--gold-glow);
-    background: linear-gradient(180deg, var(--gold-secondary) 0%, var(--gold-primary) 50%, #a0782a 100%);
+    background: linear-gradient(180deg, var(--gold-4) 0%, var(--gold-3) 55%, var(--gold-1) 100%);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
+    text-shadow: none;
     margin-bottom: 0.5rem;
     letter-spacing: 2px;
+    filter: drop-shadow(0 0 12px var(--gold-glow));
 }
 
 .subtitle {
     font-family: 'Cinzel', serif;
-    font-size: 0.95rem;
-    color: var(--text-muted);
+    font-size: 0.85rem;
+    color: var(--bone-dim);
     margin-top: 0.5rem;
-    letter-spacing: 2px;
+    letter-spacing: .22em;
     text-transform: uppercase;
 }
 
-/* Titres de section — IM Fell English pour l'identité "grimoire" */
+/* Titres de section */
 #version-switcher h3,
 #playlist-tracks-container h3,
 .library-header h3,
@@ -134,7 +154,7 @@ header h1 {
 }
 
 /* ============================================
-   Main Container - Parchment/Stone Style
+   Main Container
    ============================================ */
 
 main {
@@ -144,68 +164,74 @@ main {
     justify-content: center;
     padding: 2rem;
     overflow-y: auto;
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: none;
 }
 
 main::-webkit-scrollbar {
-    display: none; /* Chromium / Electron WebView2 */
+    display: none;
 }
 
 .container {
-    background: linear-gradient(180deg, var(--bg-stone) 0%, var(--bg-dark) 100%);
-    border-radius: 12px;
+    background: linear-gradient(180deg, var(--ink-1) 0%, var(--ink-0) 100%);
+    border-radius: 8px;
     padding: 2rem;
     max-width: 900px;
     width: 100%;
     box-shadow:
-        0 8px 40px rgba(0, 0, 0, 0.6),
-        inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    border: 2px solid var(--border-stone);
+        0 18px 40px -12px #000,
+        0 0 24px -8px var(--gold-glow),
+        inset 0 1px 0 rgba(255, 220, 170, 0.05),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--ink-3);
     min-height: 80vh;
     display: flex;
     flex-direction: column;
 }
 
 /* ============================================
-   Tabs - Tavern Sign Style
+   Tabs
    ============================================ */
 
 #view-tabs {
     display: flex;
     margin-bottom: 2rem;
-    background: var(--bg-dark);
+    background: var(--ink-0);
     padding: 6px;
-    border-radius: 8px;
-    border: 1px solid var(--border-stone);
+    border-radius: 6px;
+    border: 1px solid var(--ink-3);
+    box-shadow: inset 0 1px 0 rgba(255, 220, 170, 0.03);
 }
 
 .tab-btn {
     flex: 1;
     background: transparent;
     border: none;
-    color: var(--text-muted);
+    color: var(--bone-dim);
     padding: 12px;
     font-family: 'Cinzel', serif;
-    font-size: 1rem;
+    font-size: 0.9rem;
     font-weight: 600;
     cursor: pointer;
-    border-radius: 6px;
-    transition: all 0.3s ease;
-    letter-spacing: 1px;
+    border-radius: 4px;
+    transition: all 0.25s ease;
+    letter-spacing: .18em;
+    text-transform: uppercase;
 }
 
 .tab-btn:hover {
-    color: var(--text-light);
-    background: rgba(201, 168, 76, 0.1);
+    color: var(--bone);
+    background: rgba(214, 174, 84, 0.06);
 }
 
 .tab-btn.active {
-    background: linear-gradient(135deg, var(--bg-leather) 0%, rgba(45, 31, 31, 0.8) 100%);
-    color: var(--gold-primary);
+    background: linear-gradient(180deg, var(--ink-2) 0%, var(--ink-mid) 100%);
+    color: var(--gold-3);
     box-shadow:
-        0 2px 8px rgba(0, 0, 0, 0.4),
-        inset 0 1px 0 rgba(255, 255, 255, 0.05);
-    border: 1px solid var(--gold-glow);
+        inset 0 1px 0 rgba(255, 220, 170, 0.06),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 2px var(--ink-2),
+        0 0 12px -4px var(--gold-glow);
+    border: 1px solid var(--gold-2);
 }
 
 .view.hidden {
@@ -213,7 +239,7 @@ main::-webkit-scrollbar {
 }
 
 /* ============================================
-   Player View - D&D Medieval Style
+   Player View
    ============================================ */
 
 /* Playlist Selector */
@@ -222,44 +248,53 @@ main::-webkit-scrollbar {
     gap: 1rem;
     align-items: center;
     margin-bottom: 1.5rem;
-    background: var(--bg-dark);
+    background: var(--ink-0);
     padding: 1rem;
-    border-radius: 8px;
-    border: 1px solid var(--border-stone);
+    border-radius: 6px;
+    border: 1px solid var(--ink-3);
+    box-shadow: inset 0 1px 0 rgba(255, 220, 170, 0.03);
 }
 
 #playlist-selector label {
     font-family: 'Cinzel', serif;
     font-weight: 600;
-    color: var(--gold-primary);
+    font-size: 0.8rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--gold-3);
 }
 
 #playlist-select {
     flex: 1;
     padding: 10px;
-    border-radius: 6px;
-    background: var(--bg-stone);
-    border: 1px solid var(--border-stone);
-    color: var(--text-light);
+    border-radius: 4px;
+    background: var(--ink-1);
+    border: 1px solid var(--ink-3);
+    color: var(--bone);
     cursor: pointer;
-    font-family: 'Lato', sans-serif;
+    font-family: 'IM Fell English', serif;
+    font-size: 0.95rem;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 #playlist-select:focus {
     outline: none;
-    border-color: var(--gold-primary);
-    box-shadow: 0 0 8px var(--gold-glow);
+    border-color: var(--gold-2);
+    box-shadow:
+        inset 0 1px 2px rgba(0, 0, 0, 0.8),
+        0 0 0 1px var(--gold-2),
+        0 0 10px var(--gold-glow);
 }
 
 #playlist-select option {
-    background: var(--bg-stone);
-    color: var(--text-light);
+    background: var(--ink-1);
+    color: var(--bone);
 }
 
 .icon-btn {
     background: none;
     border: none;
-    color: var(--gold-primary);
+    color: var(--gold-3);
     font-size: 1.2rem;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -271,22 +306,25 @@ main::-webkit-scrollbar {
 }
 
 .danger-icon {
-    color: var(--red-fire);
+    color: #c87070;
 }
 
 .danger-icon:hover {
-    color: var(--red-blood);
+    color: #e08080;
 }
 
-/* Current Track - Scroll Banner */
+/* Current Track Indicator */
 #current-track-indicator {
-    background: linear-gradient(135deg, rgba(201, 168, 76, 0.1) 0%, rgba(139, 90, 43, 0.18) 100%);
-    border-radius: 8px;
+    background: linear-gradient(180deg, var(--ink-warm) 0%, var(--ink-0) 100%);
+    border-radius: 6px;
     padding: 1rem 1.2rem 1.2rem;
     margin-bottom: 1.5rem;
     text-align: center;
-    border: 1px solid var(--gold-glow);
-    box-shadow: inset 0 0 30px rgba(0, 0, 0, 0.25);
+    border: 1px solid var(--ink-3);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.05),
+        inset 0 -8px 18px rgba(0, 0, 0, 0.5),
+        0 0 22px -10px var(--gold-glow);
     position: relative;
 }
 
@@ -296,27 +334,23 @@ main::-webkit-scrollbar {
     display: block;
     font-family: 'IM Fell English', serif;
     font-size: 0.6rem;
-    color: var(--gold-secondary);
+    color: var(--gold-2);
     letter-spacing: 8px;
-    opacity: 0.7;
+    opacity: 0.5;
 }
 
-#current-track-indicator::before {
-    margin-bottom: 0.8rem;
-}
-
-#current-track-indicator::after {
-    margin-top: 0.8rem;
-}
+#current-track-indicator::before { margin-bottom: 0.8rem; }
+#current-track-indicator::after  { margin-top: 0.8rem; }
 
 .track-number {
     display: block;
     font-family: 'Cinzel', serif;
-    font-size: 0.85rem;
-    color: var(--gold-primary);
+    font-size: 0.75rem;
+    color: var(--gold-2);
     font-weight: 600;
     margin-bottom: 0.4rem;
-    letter-spacing: 1px;
+    letter-spacing: .25em;
+    text-transform: uppercase;
 }
 
 .track-title {
@@ -325,20 +359,21 @@ main::-webkit-scrollbar {
     font-size: 1.7rem;
     font-weight: 400;
     font-style: italic;
-    color: var(--text-light);
-    text-shadow: 2px 2px 6px rgba(0, 0, 0, 0.7);
+    color: var(--bone);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
 }
 
 /* Track Info */
 #track-info {
-    background: var(--bg-dark);
-    border-radius: 8px;
+    background: var(--ink-0);
+    border-radius: 6px;
     padding: 1rem;
     margin-bottom: 1.5rem;
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border: 1px solid var(--border-stone);
+    border: 1px solid var(--ink-3);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .track-name {
@@ -349,59 +384,63 @@ main::-webkit-scrollbar {
 
 .track-name .label {
     font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
     font-weight: 600;
-    color: var(--gold-primary);
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--gold-3);
 }
 
 .status {
-    padding: 0.4rem 1rem;
-    border-radius: 4px;
-    font-size: 0.75rem;
-    font-weight: 700;
+    padding: 0.35rem 0.9rem;
+    border-radius: 2px;
+    font-size: 0.7rem;
+    font-weight: 500;
     text-transform: uppercase;
-    letter-spacing: 1px;
-    font-family: 'Lato', sans-serif;
+    letter-spacing: .22em;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
 
 .status.arrêté {
-    background: rgba(139, 0, 0, 0.3);
-    color: #ff6b6b;
-    border: 1px solid rgba(139, 0, 0, 0.5);
+    background: rgba(107, 20, 20, 0.3);
+    color: #c87070;
+    border: 1px solid rgba(107, 20, 20, 0.6);
 }
 
 .status.en-lecture {
-    background: rgba(34, 139, 34, 0.3);
-    color: #7cfc00;
-    border: 1px solid rgba(34, 139, 34, 0.5);
-    animation: pulse-glow 2s infinite;
+    background: rgba(138, 102, 34, 0.2);
+    color: var(--gold-3);
+    border: 1px solid var(--gold-2);
+    animation: pulse-glow 2.5s infinite;
 }
 
 .status.en-pause {
-    background: rgba(212, 175, 55, 0.3);
-    color: var(--gold-primary);
-    border: 1px solid var(--gold-glow);
+    background: rgba(58, 47, 32, 0.4);
+    color: var(--gold-2);
+    border: 1px solid var(--ink-3);
 }
 
 /* ============================================
-   Version Switcher - Ambiance Buttons
+   Version Switcher
    ============================================ */
 
 #version-switcher {
     margin-bottom: 2rem;
     text-align: center;
     padding: 1rem;
-    background: var(--bg-dark);
-    border-radius: 8px;
-    border: 1px solid var(--border-stone);
+    background: var(--ink-0);
+    border-radius: 6px;
+    border: 1px solid var(--ink-3);
+    box-shadow: inset 0 1px 0 rgba(255, 220, 170, 0.03);
 }
 
 #version-switcher h3 {
     font-family: 'IM Fell English', serif;
     font-weight: 400;
     margin-bottom: 1rem;
-    font-size: 1.15rem;
-    color: var(--gold-primary);
-    letter-spacing: 1px;
+    font-size: 1.1rem;
+    color: var(--gold-3);
+    letter-spacing: .04em;
 }
 
 .version-buttons {
@@ -413,154 +452,200 @@ main::-webkit-scrollbar {
 
 /* Base Version Button */
 .version-btn {
-    padding: 1rem 2rem;
+    padding: 0.85rem 1.8rem;
     min-width: 140px;
     font-family: 'Cinzel', serif;
-    font-size: 1rem;
+    font-size: 0.8rem;
     font-weight: 600;
-    border-radius: 8px;
+    border-radius: 4px;
     cursor: pointer;
-    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    text-transform: capitalize;
+    transition: all 0.25s ease;
+    text-transform: uppercase;
+    letter-spacing: .18em;
     position: relative;
     overflow: hidden;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.04),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 2px var(--ink-2),
+        0 6px 16px -8px #000;
 }
 
-/* CALM - Blue/Purple peaceful style */
+/* CALM */
 .version-btn[data-version="calm"] {
-    background: linear-gradient(135deg, var(--blue-calm) 0%, #14274e 100%);
-    border: 2px solid var(--blue-magic);
-    color: #87ceeb;
-    box-shadow: 0 4px 15px rgba(74, 144, 217, 0.2);
+    background: linear-gradient(180deg, #1a2f45 0%, #0f1e2e 100%);
+    border: 1px solid #1e3a5a;
+    color: #7aaac8;
 }
 
 .version-btn[data-version="calm"]:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 25px rgba(74, 144, 217, 0.4);
+    border-color: #2a5580;
+    color: #9ac0da;
+    box-shadow:
+        inset 0 1px 0 rgba(100, 160, 220, 0.06),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 2px #1a2f45,
+        0 0 16px -4px rgba(40, 90, 150, 0.5);
 }
 
 .version-btn[data-version="calm"].active {
-    background: linear-gradient(135deg, var(--blue-magic) 0%, #3a7bd5 100%);
-    color: #ffffff;
+    background: linear-gradient(180deg, #1e4a7a 0%, #162840 100%);
+    border: 1px solid #2a6090;
+    color: #b0d4ea;
     box-shadow:
-        0 0 20px rgba(74, 144, 217, 0.6),
-        inset 0 0 15px rgba(255, 255, 255, 0.1);
+        inset 0 1px 0 rgba(100, 180, 240, 0.08),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.7),
+        inset 0 0 0 2px #162840,
+        0 0 20px -4px rgba(40, 100, 180, 0.6);
     animation: calm-pulse 3s ease-in-out infinite;
 }
 
-/* TENSION - Orange/Amber suspenseful style */
+/* TENSION */
 .version-btn[data-version="tension"] {
-    background: linear-gradient(135deg, #4a3000 0%, #2d1f00 100%);
-    border: 2px solid var(--orange-tension);
-    color: #ffb347;
-    box-shadow: 0 4px 15px rgba(204, 102, 0, 0.2);
+    background: linear-gradient(180deg, #3a2400 0%, #241600 100%);
+    border: 1px solid #5a3800;
+    color: #c89050;
 }
 
 .version-btn[data-version="tension"]:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 25px rgba(204, 102, 0, 0.4);
+    border-color: #7a4e00;
+    color: #d8a870;
+    box-shadow:
+        inset 0 1px 0 rgba(220, 170, 80, 0.06),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 2px #3a2400,
+        0 0 16px -4px rgba(120, 80, 0, 0.5);
 }
 
 .version-btn[data-version="tension"].active {
-    background: linear-gradient(135deg, var(--orange-ember) 0%, var(--orange-tension) 100%);
-    color: #ffffff;
+    background: linear-gradient(180deg, #6b3c00 0%, #3a2000 100%);
+    border: 1px solid #9a5800;
+    color: #f0c070;
     box-shadow:
-        0 0 20px rgba(224, 112, 0, 0.6),
-        inset 0 0 15px rgba(255, 255, 255, 0.1);
+        inset 0 1px 0 rgba(240, 180, 80, 0.08),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.7),
+        inset 0 0 0 2px #3a2000,
+        0 0 20px -4px rgba(140, 90, 0, 0.6);
     animation: tension-pulse 2.5s ease-in-out infinite;
 }
 
-/* COMBAT - Red/Fire aggressive style */
+/* COMBAT */
 .version-btn[data-version="combat"] {
-    background: linear-gradient(135deg, #3d0000 0%, #1a0000 100%);
-    border: 2px solid var(--red-blood);
-    color: #ff6b6b;
-    box-shadow: 0 4px 15px rgba(139, 0, 0, 0.2);
+    background: linear-gradient(180deg, #2a0a0a 0%, #1a0505 100%);
+    border: 1px solid #4a1212;
+    color: #c07070;
 }
 
 .version-btn[data-version="combat"]:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 6px 25px rgba(139, 0, 0, 0.4);
+    border-color: #6a1818;
+    color: #d08888;
+    box-shadow:
+        inset 0 1px 0 rgba(220, 100, 100, 0.06),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 2px #2a0a0a,
+        0 0 16px -4px rgba(120, 30, 30, 0.5);
 }
 
 .version-btn[data-version="combat"].active {
-    background: linear-gradient(135deg, #b22222 0%, var(--red-blood) 100%);
-    color: #ffffff;
+    background: linear-gradient(180deg, #8c2222 0%, #5a1212 100%);
+    border: 1px solid #aa3030;
+    color: #f0a0a0;
     box-shadow:
-        0 0 25px rgba(178, 34, 34, 0.7),
-        inset 0 0 15px rgba(255, 100, 100, 0.2);
+        inset 0 1px 0 rgba(240, 120, 120, 0.08),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.7),
+        inset 0 0 0 2px #5a1212,
+        0 0 20px -4px rgba(160, 40, 40, 0.65);
     animation: combat-pulse 1.2s ease-in-out infinite;
 }
 
-/* Default/Other version buttons */
+/* Autres versions */
 .version-btn:not([data-version="calm"]):not([data-version="tension"]):not([data-version="combat"]) {
-    background: linear-gradient(135deg, var(--bg-leather) 0%, var(--bg-stone) 100%);
-    border: 2px solid var(--border-stone);
-    color: var(--text-light);
+    background: linear-gradient(180deg, var(--ink-2) 0%, var(--ink-1) 100%);
+    border: 1px solid var(--ink-3);
+    color: var(--bone-dim);
 }
 
 .version-btn:not([data-version="calm"]):not([data-version="tension"]):not([data-version="combat"]):hover {
-    border-color: var(--gold-primary);
-    transform: translateY(-2px);
+    border-color: var(--gold-2);
+    color: var(--bone);
 }
 
 .version-btn:not([data-version="calm"]):not([data-version="tension"]):not([data-version="combat"]).active {
-    background: linear-gradient(135deg, var(--gold-primary) 0%, var(--gold-secondary) 100%);
-    border-color: var(--gold-primary);
-    color: var(--bg-dark);
-    box-shadow: 0 0 15px var(--gold-glow);
+    background: linear-gradient(180deg, var(--gold-2) 0%, var(--gold-1) 100%);
+    border-color: var(--gold-3);
+    color: var(--ink-0);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.12),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.5),
+        0 0 14px -4px var(--gold-glow);
 }
 
 /* ============================================
-   Player Controls - Medieval Stone Buttons
+   Player Controls
    ============================================ */
 
 .nav-btn,
 .control-btn {
     border: none;
-    color: var(--text-light);
+    color: var(--bone);
     padding: 12px 24px;
-    border-radius: 6px;
+    border-radius: 4px;
     cursor: pointer;
     font-family: 'Cinzel', serif;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     font-weight: 600;
     transition: all 0.2s ease;
     text-transform: uppercase;
-    letter-spacing: 1.5px;
+    letter-spacing: .18em;
 }
 
 .nav-btn {
-    background: linear-gradient(180deg, var(--bg-leather) 0%, var(--bg-stone) 100%);
-    border: 1px solid var(--border-stone);
+    background: linear-gradient(180deg, var(--ink-2) 0%, var(--ink-1) 100%);
+    border: 1px solid var(--ink-3);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.04),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 2px var(--ink-2),
+        0 6px 16px -8px #000;
 }
 
 .nav-btn:hover {
-    background: linear-gradient(180deg, #3d2a2a 0%, var(--bg-leather) 100%);
-    border-color: var(--gold-glow);
-    transform: translateY(-2px);
+    border-color: var(--gold-2);
+    color: var(--bone);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.06),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 2px var(--ink-2),
+        0 0 12px -4px var(--gold-glow);
 }
 
 .control-btn {
-    background: linear-gradient(180deg, var(--gold-primary) 0%, #a07830 100%);
-    color: var(--bg-dark);
+    background: linear-gradient(180deg, var(--gold-4) 0%, var(--gold-3) 55%, var(--gold-1) 100%);
+    color: var(--ink-0);
     padding: 14px 28px;
-    font-size: 0.85rem;
+    font-size: 0.75rem;
     box-shadow:
-        0 4px 15px rgba(201, 168, 76, 0.3),
-        inset 0 1px 0 rgba(255, 255, 255, 0.25);
-    border: 1px solid #8a6420;
+        inset 0 1px 0 rgba(255, 220, 170, 0.12),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.5),
+        inset 0 0 0 2px #4a3814,
+        0 0 22px -4px var(--gold-glow);
+    border: 1px solid var(--gold-2);
 }
 
 .control-btn:hover {
-    background: linear-gradient(180deg, var(--gold-secondary) 0%, var(--gold-primary) 100%);
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(201, 168, 76, 0.45);
+    background: linear-gradient(180deg, #fff8e0 0%, var(--gold-4) 55%, var(--gold-2) 100%);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.18),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.4),
+        inset 0 0 0 2px #5a4820,
+        0 0 28px -4px var(--gold-glow);
 }
 
 .control-btn:active {
-    transform: translateY(1px);
-    box-shadow: 0 2px 8px rgba(201, 168, 76, 0.3);
+    background: linear-gradient(180deg, var(--gold-3) 0%, var(--gold-1) 100%);
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.7);
 }
 
 #player-controls,
@@ -572,42 +657,44 @@ main::-webkit-scrollbar {
 }
 
 /* ============================================
-   Progress Bar - Medieval Scroll Style
+   Progress Bar
    ============================================ */
 
 #progress-container {
     margin-bottom: 1.5rem;
     padding: 1rem;
-    background: var(--bg-dark);
-    border-radius: 8px;
-    border: 1px solid var(--border-stone);
+    background: var(--ink-0);
+    border-radius: 6px;
+    border: 1px solid var(--ink-3);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .time-display {
     display: flex;
     justify-content: space-between;
-    font-size: 0.85rem;
-    font-family: 'Lato', sans-serif;
-    color: var(--text-muted);
+    font-size: 0.78rem;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    color: var(--bone-dim);
     margin-bottom: 8px;
+    letter-spacing: .04em;
 }
 
 .progress-bar {
-    height: 10px;
-    background: linear-gradient(180deg, #0d0d0d 0%, #1a1a1a 100%);
-    border-radius: 5px;
+    height: 8px;
+    background: linear-gradient(180deg, var(--ink-dark) 0%, var(--ink-dark) 100%);
+    border-radius: 2px;
     overflow: hidden;
-    border: 1px solid var(--border-stone);
-    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--ink-3);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
     cursor: pointer;
 }
 
 .progress-fill {
     height: 100%;
-    background: linear-gradient(90deg, var(--gold-secondary) 0%, var(--gold-primary) 50%, #f5d773 100%);
+    background: linear-gradient(90deg, var(--gold-1) 0%, var(--gold-3) 50%, var(--gold-4) 100%);
     width: 0%;
     transition: width 0.3s linear;
-    box-shadow: 0 0 10px var(--gold-glow);
+    box-shadow: 0 0 8px var(--gold-glow);
     position: relative;
 }
 
@@ -617,9 +704,9 @@ main::-webkit-scrollbar {
     right: 0;
     top: 0;
     bottom: 0;
-    width: 3px;
-    background: #fff;
-    box-shadow: 0 0 8px var(--gold-primary);
+    width: 2px;
+    background: var(--gold-4);
+    box-shadow: 0 0 6px var(--gold-3);
 }
 
 /* ============================================
@@ -634,33 +721,40 @@ main::-webkit-scrollbar {
 }
 
 .mode-btn {
-    background: var(--bg-dark);
-    border: 1px solid var(--border-stone);
-    color: var(--text-muted);
-    padding: 8px 18px;
-    border-radius: 4px;
+    background: var(--ink-0);
+    border: 1px solid var(--ink-3);
+    color: var(--bone-dim);
+    padding: 7px 16px;
+    border-radius: 2px;
     cursor: pointer;
-    font-size: 0.75rem;
+    font-size: 0.7rem;
     font-family: 'Cinzel', serif;
     font-weight: 600;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: .18em;
     transition: all 0.2s ease;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.03),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.5);
 }
 
 .mode-btn:hover {
-    border-color: var(--gold-glow);
-    color: var(--text-light);
+    border-color: var(--gold-2);
+    color: var(--bone);
 }
 
 .mode-btn.active {
-    background: linear-gradient(135deg, var(--gold-primary) 0%, #a07830 100%);
-    border-color: var(--gold-primary);
-    color: var(--bg-dark);
+    background: linear-gradient(180deg, var(--gold-3) 0%, var(--gold-1) 100%);
+    border-color: var(--gold-3);
+    color: var(--ink-0);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.12),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.4),
+        0 0 12px -4px var(--gold-glow);
 }
 
 /* ============================================
-   Volume Control - Vertical Slider
+   Volume Control
    ============================================ */
 
 #volume-control {
@@ -668,20 +762,21 @@ main::-webkit-scrollbar {
     flex-direction: row;
     align-items: center;
     gap: 1rem;
-    background: var(--bg-dark);
+    background: var(--ink-0);
     padding: 0.75rem 1rem;
-    border-radius: 8px;
-    border: 1px solid var(--border-stone);
+    border-radius: 6px;
+    border: 1px solid var(--ink-3);
     margin-bottom: 1.5rem;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 #volume-control label {
     font-family: 'Cinzel', serif;
-    font-size: 0.8rem;
+    font-size: 0.72rem;
     font-weight: 600;
-    color: var(--gold-primary);
+    color: var(--gold-3);
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: .22em;
     white-space: nowrap;
 }
 
@@ -689,46 +784,45 @@ main::-webkit-scrollbar {
     flex: 1;
     -webkit-appearance: none;
     appearance: none;
-    height: 6px;
-    background: linear-gradient(90deg, var(--gold-primary) 0%, var(--bg-stone) 100%);
-    border-radius: 3px;
-    border: 1px solid var(--border-stone);
+    height: 4px;
+    background: linear-gradient(90deg, var(--gold-3) 0%, var(--ink-3) 100%);
+    border-radius: 2px;
+    border: none;
     cursor: pointer;
 }
 
 #volume::-webkit-slider-thumb {
     -webkit-appearance: none;
     appearance: none;
-    width: 18px;
-    height: 18px;
-    background: linear-gradient(135deg, var(--gold-secondary) 0%, var(--gold-primary) 100%);
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(135deg, var(--gold-4) 0%, var(--gold-3) 100%);
     border-radius: 50%;
-    border: 2px solid var(--gold-primary);
+    border: 1px solid var(--gold-2);
     cursor: pointer;
     box-shadow: 0 0 8px var(--gold-glow);
 }
 
 #volume::-moz-range-thumb {
-    width: 18px;
-    height: 18px;
-    background: linear-gradient(135deg, var(--gold-secondary) 0%, var(--gold-primary) 100%);
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(135deg, var(--gold-4) 0%, var(--gold-3) 100%);
     border-radius: 50%;
-    border: 2px solid var(--gold-primary);
+    border: 1px solid var(--gold-2);
     cursor: pointer;
     box-shadow: 0 0 8px var(--gold-glow);
 }
 
 #volume-value {
-    font-family: 'Cinzel', serif;
-    font-size: 0.85rem;
-    color: var(--gold-primary);
-    font-weight: 600;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.82rem;
+    color: var(--gold-3);
     min-width: 38px;
     text-align: right;
 }
 
 /* ============================================
-   Playlist Tracks - Scroll List Style
+   Playlist Tracks
    ============================================ */
 
 #playlist-tracks-container h3 {
@@ -736,8 +830,8 @@ main::-webkit-scrollbar {
     font-weight: 400;
     text-align: left;
     margin-bottom: 1rem;
-    color: var(--gold-primary);
-    font-size: 1.2rem;
+    color: var(--gold-3);
+    font-size: 1.15rem;
 }
 
 #playlist-tracks {
@@ -747,56 +841,61 @@ main::-webkit-scrollbar {
 }
 
 #playlist-tracks::-webkit-scrollbar {
-    width: 6px;
+    width: 4px;
 }
 
 #playlist-tracks::-webkit-scrollbar-track {
-    background: var(--bg-dark);
-    border-radius: 3px;
+    background: var(--ink-0);
+    border-radius: 2px;
 }
 
 #playlist-tracks::-webkit-scrollbar-thumb {
-    background: var(--gold-secondary);
-    border-radius: 3px;
+    background: var(--gold-2);
+    border-radius: 2px;
 }
 
 .playlist-track {
     display: flex;
     align-items: center;
-    padding: 12px;
-    background: var(--bg-dark);
-    margin-bottom: 6px;
-    border-radius: 6px;
+    padding: 11px 12px;
+    background: var(--ink-0);
+    margin-bottom: 4px;
+    border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s ease;
     border: 1px solid transparent;
+    box-shadow: inset 0 1px 0 rgba(255, 220, 170, 0.02);
 }
 
 .playlist-track:hover {
-    background: var(--bg-leather);
-    border-color: var(--border-stone);
+    background: var(--ink-1);
+    border-color: var(--ink-3);
 }
 
 .playlist-track.active {
-    border-left: 4px solid var(--gold-primary);
-    background: linear-gradient(90deg, rgba(201, 168, 76, 0.12) 0%, var(--bg-dark) 100%);
-    border-color: var(--gold-glow);
+    border-left: 3px solid var(--gold-3);
+    background: linear-gradient(90deg, rgba(214, 174, 84, 0.10) 0%, var(--ink-0) 100%);
+    border-color: var(--gold-2);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.04),
+        inset 2px 0 0 var(--gold-3);
 }
 
 .playlist-track-number {
     width: 30px;
-    font-family: 'Cinzel', serif;
-    color: var(--gold-primary);
-    font-weight: 600;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.75rem;
+    color: var(--gold-2);
 }
 
 .playlist-track-title {
     flex: 1;
-    font-family: 'Lato', sans-serif;
+    font-family: 'IM Fell English', serif;
+    font-size: 0.95rem;
 }
 
 /* ============================================
-   Library View - D&D Tome Style
+   Library View
    ============================================ */
 
 .library-header {
@@ -805,72 +904,87 @@ main::-webkit-scrollbar {
     align-items: center;
     margin-bottom: 1.5rem;
     padding-bottom: 1rem;
-    border-bottom: 1px solid var(--border-stone);
+    border-bottom: 1px solid var(--ink-3);
 }
 
 .library-header h3 {
     font-family: 'IM Fell English', serif;
     font-size: 1.4rem;
     font-weight: 400;
-    color: var(--gold-primary);
+    color: var(--gold-3);
 }
 
 .primary-btn {
-    background: linear-gradient(180deg, var(--gold-primary) 0%, #a07830 100%);
-    border: 1px solid #8a6420;
-    color: var(--bg-dark);
-    padding: 12px 24px;
-    border-radius: 6px;
+    background: linear-gradient(180deg, var(--gold-4) 0%, var(--gold-3) 55%, var(--gold-1) 100%);
+    border: 1px solid var(--gold-2);
+    color: var(--ink-0);
+    padding: 11px 22px;
+    border-radius: 4px;
     font-family: 'Cinzel', serif;
-    font-size: 0.8rem;
+    font-size: 0.72rem;
     font-weight: 600;
     cursor: pointer;
     transition: all 0.2s ease;
     text-transform: uppercase;
-    letter-spacing: 1px;
+    letter-spacing: .18em;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.12),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.4),
+        0 0 14px -4px var(--gold-glow);
 }
 
 .primary-btn:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 20px rgba(201, 168, 76, 0.4);
-    background: linear-gradient(180deg, var(--gold-secondary) 0%, var(--gold-primary) 100%);
+    background: linear-gradient(180deg, #fff8e0 0%, var(--gold-4) 55%, var(--gold-2) 100%);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.18),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.3),
+        0 0 20px -4px var(--gold-glow);
 }
 
 .secondary-btn {
-    background: var(--bg-leather);
-    border: 1px solid var(--border-stone);
-    color: var(--text-light);
+    background: linear-gradient(180deg, var(--ink-2) 0%, var(--ink-1) 100%);
+    border: 1px solid var(--ink-3);
+    color: var(--bone-dim);
     padding: 10px 18px;
-    border-radius: 6px;
+    border-radius: 4px;
     cursor: pointer;
-    font-family: 'Lato', sans-serif;
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
     transition: all 0.2s ease;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.04),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.5);
 }
 
 .secondary-btn:hover {
-    background: #3d2a2a;
-    border-color: var(--gold-glow);
+    border-color: var(--gold-2);
+    color: var(--bone);
 }
 
 .danger-btn {
-    background: rgba(139, 0, 0, 0.3);
-    border: 1px solid var(--red-blood);
-    color: #ff6b6b;
+    background: rgba(107, 20, 20, 0.25);
+    border: 1px solid #6b1414;
+    color: #c87070;
     padding: 8px 14px;
     border-radius: 4px;
     cursor: pointer;
     transition: all 0.2s ease;
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    letter-spacing: .1em;
 }
 
 .danger-btn:hover {
-    background: rgba(139, 0, 0, 0.5);
-    box-shadow: 0 0 10px rgba(139, 0, 0, 0.4);
+    background: rgba(107, 20, 20, 0.45);
+    box-shadow: 0 0 10px rgba(107, 20, 20, 0.4);
 }
 
 .danger-btn-small {
     background: none;
     border: none;
-    color: #ff6b6b;
+    color: #c87070;
     font-size: 1.2rem;
     cursor: pointer;
     padding: 0 5px;
@@ -878,7 +992,7 @@ main::-webkit-scrollbar {
 }
 
 .danger-btn-small:hover {
-    color: #ff4444;
+    color: #e09090;
     transform: scale(1.1);
 }
 
@@ -886,30 +1000,35 @@ main::-webkit-scrollbar {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: var(--bg-dark);
+    background: var(--ink-0);
     padding: 1rem;
-    border-radius: 6px;
-    margin-bottom: 0.6rem;
-    border: 1px solid var(--border-stone);
-    border-left: 3px solid var(--border-stone);
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--ink-3);
+    border-left: 2px solid var(--ink-3);
     transition: border-left-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: inset 0 1px 0 rgba(255, 220, 170, 0.02);
 }
 
 .library-track:hover {
-    border-left-color: var(--gold-primary);
-    background: var(--bg-leather);
-    box-shadow: inset 0 0 20px rgba(0, 0, 0, 0.2);
+    border-left-color: var(--gold-3);
+    background: var(--ink-1);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.04),
+        inset 2px 0 0 var(--gold-3);
 }
 
 .track-details {
     display: block;
-    font-size: 0.8rem;
-    color: var(--text-muted);
+    font-size: 0.78rem;
+    color: var(--bone-faint);
     margin-top: 4px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    letter-spacing: .04em;
 }
 
 /* ============================================
-   Modals - Ancient Scroll Style
+   Modals
    ============================================ */
 
 .modal {
@@ -918,12 +1037,12 @@ main::-webkit-scrollbar {
     left: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.9);
+    background: rgba(0, 0, 0, 0.85);
     display: flex;
     align-items: center;
     justify-content: center;
     z-index: 1000;
-    backdrop-filter: blur(8px);
+    backdrop-filter: blur(6px);
 }
 
 .modal.hidden {
@@ -931,17 +1050,19 @@ main::-webkit-scrollbar {
 }
 
 .modal-content {
-    background: linear-gradient(180deg, var(--bg-leather) 0%, var(--bg-stone) 100%);
-    border: 2px solid var(--border-stone);
-    border-radius: 12px;
+    background: linear-gradient(180deg, var(--ink-2) 0%, var(--ink-1) 100%);
+    border: 1px solid var(--ink-3);
+    border-radius: 8px;
     width: 90%;
     max-width: 600px;
     max-height: 90vh;
     display: flex;
     flex-direction: column;
     box-shadow:
-        0 20px 60px rgba(0, 0, 0, 0.8),
-        inset 0 1px 0 rgba(255, 255, 255, 0.05);
+        0 18px 40px -12px #000,
+        0 0 24px -8px var(--gold-glow),
+        inset 0 1px 0 rgba(255, 220, 170, 0.06),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.5);
 }
 
 .modal-content.modal-small {
@@ -950,24 +1071,26 @@ main::-webkit-scrollbar {
 
 .modal-header {
     padding: 1.5rem;
-    border-bottom: 2px solid var(--border-stone);
+    border-bottom: 1px solid var(--ink-3);
     display: flex;
     justify-content: space-between;
     align-items: center;
-    background: linear-gradient(180deg, rgba(45, 31, 31, 0.8) 0%, transparent 100%);
+    background: linear-gradient(180deg, rgba(42, 36, 31, 0.6) 0%, transparent 100%);
 }
 
 .modal-header h2 {
     font-family: 'Cinzel', serif;
-    font-size: 1.4rem;
-    color: var(--gold-primary);
-    letter-spacing: 1px;
+    font-size: 1.2rem;
+    color: var(--gold-3);
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    font-weight: 600;
 }
 
 .close-modal-btn {
     background: none;
     border: none;
-    color: var(--text-muted);
+    color: var(--bone-dim);
     font-size: 1.8rem;
     cursor: pointer;
     transition: all 0.2s ease;
@@ -975,28 +1098,28 @@ main::-webkit-scrollbar {
 }
 
 .close-modal-btn:hover {
-    color: var(--gold-primary);
+    color: var(--gold-3);
     transform: scale(1.1);
 }
 
 .modal-body {
     padding: 1.5rem;
     overflow-y: auto;
-    scrollbar-width: none; /* Firefox */
+    scrollbar-width: none;
 }
 
 .modal-body::-webkit-scrollbar {
-    display: none; /* Chromium / Electron */
+    display: none;
 }
 
 .modal-footer {
     padding: 1rem 1.5rem;
-    border-top: 2px solid var(--border-stone);
+    border-top: 1px solid var(--ink-3);
     display: flex;
     justify-content: flex-end;
     gap: 1rem;
-    background: var(--bg-dark);
-    border-radius: 0 0 10px 10px;
+    background: var(--ink-0);
+    border-radius: 0 0 7px 7px;
 }
 
 /* Form Groups */
@@ -1009,39 +1132,45 @@ main::-webkit-scrollbar {
     margin-bottom: 0.5rem;
     font-family: 'Cinzel', serif;
     font-weight: 600;
-    color: var(--gold-primary);
-    font-size: 0.9rem;
-    letter-spacing: 0.5px;
+    color: var(--gold-3);
+    font-size: 0.78rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
 }
 
 .form-group input[type="text"] {
     width: 100%;
     padding: 12px 14px;
-    border-radius: 6px;
-    border: 1px solid var(--border-stone);
-    background: var(--bg-dark);
-    color: var(--text-light);
-    font-family: 'Lato', sans-serif;
+    border-radius: 4px;
+    border: 1px solid var(--ink-3);
+    background: var(--ink-0);
+    color: var(--bone);
+    font-family: 'IM Fell English', serif;
     font-size: 1rem;
     transition: all 0.2s ease;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .form-group input:focus {
-    border-color: var(--gold-primary);
+    border-color: var(--gold-2);
     outline: none;
-    box-shadow: 0 0 10px var(--gold-glow);
+    box-shadow:
+        inset 0 1px 2px rgba(0, 0, 0, 0.8),
+        0 0 0 1px var(--gold-2),
+        0 0 10px var(--gold-glow);
 }
 
 /* Version Inputs */
 .version-input {
     display: flex;
     gap: 10px;
-    margin-bottom: 10px;
+    margin-bottom: 8px;
     align-items: center;
-    background: var(--bg-dark);
+    background: var(--ink-0);
     padding: 10px;
-    border-radius: 6px;
-    border: 1px solid var(--border-stone);
+    border-radius: 4px;
+    border: 1px solid var(--ink-3);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 .version-input .version-name {
@@ -1053,37 +1182,40 @@ main::-webkit-scrollbar {
 
 .version-input .file-path {
     flex: 1;
-    font-size: 0.8rem;
-    color: var(--text-muted);
+    font-size: 0.78rem;
+    color: var(--bone-dim);
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
 
 .version-input .file-path.file-loaded {
-    color: #7cfc00;
-    font-weight: 600;
+    color: var(--gold-3);
+    font-weight: 500;
 }
 
 .version-input.has-file {
-    border-color: rgba(34, 139, 34, 0.5);
-    background: linear-gradient(90deg, rgba(34, 139, 34, 0.1) 0%, var(--bg-dark) 100%);
+    border-color: var(--gold-2);
+    background: linear-gradient(90deg, rgba(214, 174, 84, 0.06) 0%, var(--ink-0) 100%);
 }
 
 .select-file-btn {
-    background: var(--bg-leather);
-    border: 1px solid var(--border-stone);
-    color: var(--gold-primary);
+    background: linear-gradient(180deg, var(--ink-2) 0%, var(--ink-1) 100%);
+    border: 1px solid var(--ink-3);
+    color: var(--gold-3);
     padding: 6px 12px;
     border-radius: 4px;
     cursor: pointer;
-    font-size: 0.85rem;
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: .1em;
     transition: all 0.2s ease;
 }
 
 .select-file-btn:hover {
-    background: #3d2a2a;
-    border-color: var(--gold-glow);
+    border-color: var(--gold-2);
+    box-shadow: 0 0 8px var(--gold-glow);
 }
 
 /* Playlist Checkboxes */
@@ -1094,15 +1226,16 @@ main::-webkit-scrollbar {
     max-height: 150px;
     overflow-y: auto;
     margin-bottom: 10px;
-    background: var(--bg-dark);
+    background: var(--ink-0);
     padding: 12px;
-    border-radius: 6px;
-    border: 1px solid var(--border-stone);
-    scrollbar-width: none; /* Firefox */
+    border-radius: 4px;
+    border: 1px solid var(--ink-3);
+    scrollbar-width: none;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8);
 }
 
 #playlist-checkboxes::-webkit-scrollbar {
-    display: none; /* Chromium / Electron */
+    display: none;
 }
 
 .checkbox-label {
@@ -1111,11 +1244,12 @@ main::-webkit-scrollbar {
     gap: 8px;
     cursor: pointer;
     font-size: 0.9rem;
-    color: var(--text-light);
+    color: var(--bone);
+    font-family: 'IM Fell English', serif;
 }
 
 .checkbox-label input[type="checkbox"] {
-    accent-color: var(--gold-primary);
+    accent-color: var(--gold-3);
     width: 16px;
     height: 16px;
 }
@@ -1143,112 +1277,105 @@ main::-webkit-scrollbar {
     flex: 1;
     -webkit-appearance: none;
     appearance: none;
-    height: 8px;
-    background: var(--bg-dark);
-    border-radius: 4px;
-    border: 1px solid var(--border-stone);
+    height: 4px;
+    background: var(--ink-3);
+    border-radius: 2px;
+    border: none;
     cursor: pointer;
 }
 
 .volume-slider-group input[type="range"]::-webkit-slider-thumb {
     -webkit-appearance: none;
-    width: 18px;
-    height: 18px;
-    background: var(--gold-primary);
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(135deg, var(--gold-4) 0%, var(--gold-3) 100%);
     border-radius: 50%;
     cursor: pointer;
+    border: 1px solid var(--gold-2);
     box-shadow: 0 0 8px var(--gold-glow);
 }
 
 .volume-slider-group span {
-    color: var(--gold-primary);
-    font-family: 'Cinzel', serif;
-    font-weight: 600;
+    color: var(--gold-3);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.82rem;
     min-width: 45px;
 }
 
 /* ============================================
-   Animations - D&D Ambiance Effects
+   Animations
    ============================================ */
 
-/* Base pulse */
 @keyframes pulse-glow {
-
-    0%,
-    100% {
-        opacity: 1;
-    }
-
-    50% {
-        opacity: 0.7;
-    }
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.65; }
 }
 
-/* Calm - Slow, peaceful breathing */
 @keyframes calm-pulse {
-
-    0%,
-    100% {
+    0%, 100% {
         box-shadow:
-            0 0 20px rgba(74, 144, 217, 0.6),
-            inset 0 0 15px rgba(255, 255, 255, 0.1);
+            inset 0 1px 0 rgba(100, 180, 240, 0.08),
+            inset 0 0 0 1px rgba(0, 0, 0, 0.7),
+            inset 0 0 0 2px #162840,
+            0 0 18px -4px rgba(40, 100, 180, 0.5);
     }
-
     50% {
         box-shadow:
-            0 0 30px rgba(74, 144, 217, 0.8),
-            inset 0 0 20px rgba(135, 206, 235, 0.15);
+            inset 0 1px 0 rgba(100, 180, 240, 0.10),
+            inset 0 0 0 1px rgba(0, 0, 0, 0.7),
+            inset 0 0 0 2px #162840,
+            0 0 28px -4px rgba(40, 100, 180, 0.75);
     }
 }
 
-/* Tension - Medium pulsing, uneasy feeling */
 @keyframes tension-pulse {
-
-    0%,
-    100% {
+    0%, 100% {
         box-shadow:
-            0 0 20px rgba(224, 112, 0, 0.6),
-            inset 0 0 15px rgba(255, 255, 255, 0.1);
+            inset 0 1px 0 rgba(240, 180, 80, 0.08),
+            inset 0 0 0 1px rgba(0, 0, 0, 0.7),
+            inset 0 0 0 2px #3a2000,
+            0 0 18px -4px rgba(140, 90, 0, 0.5);
     }
-
     50% {
         box-shadow:
-            0 0 32px rgba(224, 112, 0, 0.85),
-            inset 0 0 18px rgba(255, 179, 71, 0.15);
+            inset 0 1px 0 rgba(240, 180, 80, 0.10),
+            inset 0 0 0 1px rgba(0, 0, 0, 0.7),
+            inset 0 0 0 2px #3a2000,
+            0 0 28px -4px rgba(140, 90, 0, 0.75);
     }
 }
 
-/* Combat - Aggressive pulsing, sans scale pour éviter le tremblement visuel */
 @keyframes combat-pulse {
-
-    0%,
-    100% {
+    0%, 100% {
         box-shadow:
-            0 0 25px rgba(178, 34, 34, 0.7),
-            inset 0 0 15px rgba(255, 100, 100, 0.2);
+            inset 0 1px 0 rgba(240, 120, 120, 0.08),
+            inset 0 0 0 1px rgba(0, 0, 0, 0.7),
+            inset 0 0 0 2px #5a1212,
+            0 0 18px -4px rgba(160, 40, 40, 0.55);
     }
-
     50% {
         box-shadow:
-            0 0 40px rgba(220, 20, 20, 0.9),
-            inset 0 0 22px rgba(255, 100, 100, 0.25);
+            inset 0 1px 0 rgba(240, 120, 120, 0.10),
+            inset 0 0 0 1px rgba(0, 0, 0, 0.7),
+            inset 0 0 0 2px #5a1212,
+            0 0 30px -4px rgba(180, 40, 40, 0.80);
     }
 }
 
-/* Empty message styling */
+/* Empty state */
 .empty-message {
     font-family: 'IM Fell English', serif;
     font-style: italic;
-    color: var(--text-muted);
+    color: var(--bone-faint);
     text-align: center;
     padding: 2rem 1rem;
-    border-top: 1px solid var(--border-stone);
-    border-bottom: 1px solid var(--border-stone);
+    border-top: 1px solid var(--ink-3);
+    border-bottom: 1px solid var(--ink-3);
     margin: 0.5rem 0;
 }
 
 /* ============================================
-   Footer - Tavern Sign
+   Footer
    ============================================ */
 
 footer {
@@ -1256,15 +1383,16 @@ footer {
     padding: 1.5rem;
     text-align: center;
     font-family: 'Cinzel', serif;
-    font-size: 0.85rem;
-    color: var(--text-muted);
-    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.4) 100%);
-    border-top: 1px solid var(--border-stone);
-    letter-spacing: 1px;
+    font-size: 0.72rem;
+    color: var(--bone-faint);
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.5) 100%);
+    border-top: 1px solid var(--ink-3);
+    letter-spacing: .18em;
+    text-transform: uppercase;
 }
 
 /* ============================================
-   Responsive Adjustments
+   Responsive
    ============================================ */
 
 @media (max-width: 768px) {
@@ -1275,4 +1403,714 @@ footer {
     .version-btn {
         width: 100%;
     }
+}
+
+/* ============================================
+   REDESIGN v2 — Lecture UI
+   ============================================ */
+
+/* ── Header: subtitle above h1 + ornament ── */
+header {
+    padding: 1.2rem 1.5rem 1rem;
+}
+
+.header-ornament {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin: 0.6rem auto 0;
+    width: 280px;
+}
+
+.ornament-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--gold-2) 50%, transparent 100%);
+    opacity: 0.55;
+}
+
+.ornament-gem {
+    color: var(--gold-3);
+    font-size: 0.6rem;
+    opacity: 0.75;
+}
+
+/* ── Hidden select (kept for JS) ── */
+.hidden-select {
+    display: none !important;
+}
+
+/* ── Container: remove min-height constraint for 2-col layout ── */
+.container {
+    min-height: unset;
+}
+
+/* ── Playlist header bar ── */
+.playlist-header {
+    margin-bottom: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.breadcrumb-btn {
+    background: none;
+    border: none;
+    color: var(--bone-faint);
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-align: left;
+    padding: 0;
+    transition: color 0.2s;
+}
+
+.breadcrumb-btn:hover {
+    color: var(--bone-dim);
+}
+
+.playlist-info-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--ink-0);
+    padding: 0.55rem 1rem;
+    border-radius: 4px;
+    border: 1px solid var(--ink-3);
+    box-shadow: inset 0 1px 0 rgba(255, 220, 170, 0.03);
+}
+
+.playlist-meta-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.playlist-meta {
+    font-family: 'Cinzel', serif;
+    font-size: 0.58rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--bone-faint);
+}
+
+.playlist-name-display {
+    font-family: 'IM Fell English', serif;
+    font-size: 1rem;
+    font-style: italic;
+    color: var(--bone);
+}
+
+.playlist-actions {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+/* ── 2-column lecture layout ── */
+.lecture-layout {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 1rem;
+    align-items: start;
+}
+
+/* ── Player Card ── */
+.player-card {
+    background: linear-gradient(180deg, var(--ink-1) 0%, var(--ink-0) 100%);
+    border: 1px solid var(--gold-1);
+    border-radius: 2px;
+    padding: 1.25rem;
+    position: relative;
+}
+
+.player-card::after {
+    content: '';
+    position: absolute;
+    inset: 5px;
+    border: 1px solid rgba(214, 174, 84, 0.09);
+    border-radius: 1px;
+    pointer-events: none;
+}
+
+/* ── Player card header row ── */
+.player-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.6rem;
+}
+
+.incantation-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.55rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--bone-faint);
+}
+
+.version-badge {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--gold-3);
+}
+
+/* ── Track Indicator inside card ── */
+.player-card #current-track-indicator {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0 0 0.85rem;
+    text-align: left;
+}
+
+.player-card #current-track-indicator::before,
+.player-card #current-track-indicator::after {
+    display: none;
+}
+
+.player-card .track-title {
+    font-size: 1.65rem;
+    display: block;
+    margin-bottom: 0.15rem;
+    font-style: italic;
+}
+
+.player-card .track-number {
+    font-size: 0.7rem;
+    color: var(--bone-dim);
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    letter-spacing: .04em;
+    text-transform: none;
+    font-weight: 400;
+    color: var(--bone-faint);
+    margin-bottom: 0;
+}
+
+/* ── Version Switcher inside card ── */
+.player-card #version-switcher {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin-bottom: 1.1rem;
+    text-align: left;
+}
+
+/* ── Version Buttons — compact pills ── */
+.player-card .version-buttons {
+    gap: 0.35rem;
+    justify-content: flex-start;
+}
+
+.player-card .version-btn {
+    padding: 4px 11px 4px 8px;
+    min-width: unset;
+    font-size: 0.58rem;
+    letter-spacing: .14em;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: none;
+}
+
+.player-card .version-btn::before {
+    content: '●';
+    font-size: 0.42rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+/* Per-version dot color (calm) */
+.player-card .version-btn[data-version="calm"] {
+    background: rgba(22, 40, 64, 0.7);
+    border-color: #1e3a5a;
+    color: #7aaac8;
+}
+.player-card .version-btn[data-version="calm"]::before { color: #7aaac8; }
+.player-card .version-btn[data-version="calm"].active {
+    background: rgba(30, 74, 122, 0.75);
+    border-color: #2a6090;
+    color: #b0d4ea;
+    animation: none;
+}
+
+/* combat */
+.player-card .version-btn[data-version="combat"] {
+    background: rgba(42, 10, 10, 0.7);
+    border-color: #4a1212;
+    color: #c07070;
+}
+.player-card .version-btn[data-version="combat"]::before { color: #c07070; }
+.player-card .version-btn[data-version="combat"].active {
+    background: rgba(140, 34, 34, 0.75);
+    border-color: #aa3030;
+    color: #f0a0a0;
+    animation: none;
+}
+
+/* tension */
+.player-card .version-btn[data-version="tension"] {
+    background: rgba(58, 36, 0, 0.7);
+    border-color: #5a3800;
+    color: #c89050;
+}
+.player-card .version-btn[data-version="tension"]::before { color: #c89050; }
+.player-card .version-btn[data-version="tension"].active {
+    background: rgba(107, 60, 0, 0.75);
+    border-color: #9a5800;
+    color: #f0c070;
+    animation: none;
+}
+
+/* Other versions: gold dot */
+.player-card .version-btn:not([data-version="calm"]):not([data-version="tension"]):not([data-version="combat"]) {
+    background: rgba(42, 36, 31, 0.7);
+    border-color: var(--ink-3);
+    color: var(--bone-dim);
+}
+.player-card .version-btn:not([data-version="calm"]):not([data-version="tension"]):not([data-version="combat"])::before {
+    color: var(--gold-2);
+}
+.player-card .version-btn:not([data-version="calm"]):not([data-version="tension"]):not([data-version="combat"]).active {
+    background: rgba(214, 174, 84, 0.14);
+    border-color: var(--gold-2);
+    color: var(--gold-3);
+    box-shadow: none;
+    animation: none;
+}
+.player-card .version-btn:not([data-version="calm"]):not([data-version="tension"]):not([data-version="combat"]).active::before {
+    color: var(--gold-3);
+}
+
+/* ── Progress Container inside card ── */
+.player-card #progress-container {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin-bottom: 1.1rem;
+    cursor: pointer;
+}
+
+.player-card .progress-bar {
+    height: 5px;
+    margin-bottom: 5px;
+}
+
+.player-card .time-display {
+    font-size: 0.68rem;
+    margin-bottom: 0;
+}
+
+/* ── Transport Controls ── */
+.player-card #player-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1.1rem;
+}
+
+.ctrl-btn {
+    background: transparent;
+    border: 1px solid var(--ink-3);
+    color: var(--bone-dim);
+    font-size: 0.95rem;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.ctrl-btn:hover {
+    color: var(--bone);
+    border-color: var(--gold-2);
+    box-shadow: 0 0 8px -2px var(--gold-glow);
+}
+
+.ctrl-play {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(180deg, var(--gold-4) 0%, var(--gold-3) 55%, var(--gold-1) 100%);
+    border: 1px solid var(--gold-2);
+    color: var(--ink-0);
+    font-size: 1.05rem;
+    box-shadow: 0 0 16px -4px var(--gold-glow);
+}
+
+.ctrl-play:hover {
+    background: linear-gradient(180deg, #fff8e0 0%, var(--gold-4) 55%, var(--gold-2) 100%);
+    box-shadow: 0 0 24px -4px var(--gold-glow);
+    color: var(--ink-0);
+    border-color: var(--gold-3);
+}
+
+/* ── Player footer: volume + mode ── */
+.player-footer-controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.player-footer-controls #volume-control {
+    flex: 1;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin-bottom: 0;
+    gap: 0.5rem;
+}
+
+.player-footer-controls #volume-control label {
+    font-size: 0.58rem;
+    white-space: nowrap;
+    min-width: auto;
+}
+
+.player-footer-controls #play-mode-selector {
+    margin-bottom: 0;
+    flex-shrink: 0;
+}
+
+.player-footer-controls .mode-buttons {
+    display: flex;
+    gap: 0.2rem;
+}
+
+.player-footer-controls .mode-btn {
+    padding: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    letter-spacing: 0;
+    border-radius: 50%;
+}
+
+/* ── Tracklist Panel ── */
+.tracklist-panel {
+    background: var(--ink-0);
+    border: 1px solid var(--ink-3);
+    border-radius: 2px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 260px;
+}
+
+.tracklist-header {
+    font-family: 'Cinzel', serif;
+    font-size: 0.6rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--bone-faint);
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--ink-3);
+    background: linear-gradient(180deg, var(--ink-2) 0%, var(--ink-0) 100%);
+    flex-shrink: 0;
+}
+
+.tracklist-panel #playlist-tracks {
+    flex: 1;
+    overflow-y: auto;
+    max-height: none;
+    padding-right: 0;
+    scrollbar-width: thin;
+    scrollbar-color: var(--gold-1) var(--ink-0);
+}
+
+.tracklist-panel #playlist-tracks::-webkit-scrollbar {
+    width: 3px;
+}
+
+.tracklist-panel #playlist-tracks::-webkit-scrollbar-thumb {
+    background: var(--gold-1);
+    border-radius: 2px;
+}
+
+/* ── Track rows with version tag ── */
+.tracklist-panel .playlist-track {
+    display: grid;
+    grid-template-columns: 26px 1fr auto auto;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 9px 12px;
+    border-radius: 0;
+    margin-bottom: 0;
+    border: none;
+    border-bottom: 1px solid rgba(58, 47, 32, 0.35);
+    background: transparent;
+    box-shadow: none;
+}
+
+.tracklist-panel .playlist-track:hover {
+    background: var(--ink-1);
+    border-color: rgba(58, 47, 32, 0.35);
+    border-left: none;
+}
+
+.tracklist-panel .playlist-track.active {
+    background: linear-gradient(90deg, rgba(214, 174, 84, 0.10) 0%, transparent 100%);
+    border-left: 2px solid var(--gold-3);
+    border-bottom-color: rgba(58, 47, 32, 0.35);
+    box-shadow: none;
+}
+
+.tracklist-panel .playlist-track-number {
+    width: auto;
+    font-size: 0.68rem;
+    color: var(--bone-faint);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+.tracklist-panel .playlist-track.active .playlist-track-number {
+    color: var(--gold-2);
+}
+
+.tracklist-panel .playlist-track-title {
+    font-size: 0.88rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.playlist-track-version {
+    font-family: 'Cinzel', serif;
+    font-size: 0.52rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--bone-faint);
+    white-space: nowrap;
+}
+
+.playlist-track.active .playlist-track-version {
+    color: var(--gold-2);
+}
+
+.playlist-track-duration {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.65rem;
+    color: var(--bone-faint);
+    min-width: 30px;
+    text-align: right;
+}
+
+/* ── Stub views (Effets / Réglages) ── */
+.stub-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+    gap: 0.75rem;
+}
+
+.stub-icon {
+    font-size: 2rem;
+    opacity: 0.3;
+}
+
+.stub-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--gold-2);
+    opacity: 0.5;
+}
+
+.stub-desc {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 0.9rem;
+    color: var(--bone-faint);
+}
+
+/* ── Footer ── */
+footer {
+    padding: 0.75rem 1.5rem;
+    letter-spacing: .2em;
+}
+
+/* ============================================
+   THÈMES
+   ============================================ */
+
+/* Grimoire — palette chaude actuelle */
+[data-theme="grimoire"] {
+    --ink-0:   #14110f;
+    --ink-1:   #1c1814;
+    --ink-2:   #2a241f;
+    --ink-3:   #3a2f20;
+    --ink-4:   #4a3f2c;
+    --ink-dark:  #0a0807;
+    --ink-warm:  #1a1612;
+    --ink-mid:   #221d18;
+    --ink-top:   #2a2017;
+    --gold-1:  #8a6622;
+    --gold-2:  #b9892f;
+    --gold-3:  #d6ae54;
+    --gold-4:  #f0d27a;
+    --gold-glow: rgba(214, 174, 84, 0.15);
+    --bone:       #f3e6c4;
+    --bone-dim:   rgba(243, 230, 196, 0.50);
+    --bone-faint: rgba(243, 230, 196, 0.12);
+}
+
+/* Taverne — bois chaud, ambre */
+[data-theme="taverne"] {
+    --ink-0:   #120d08;
+    --ink-1:   #1c1408;
+    --ink-2:   #281a08;
+    --ink-3:   #3c2510;
+    --ink-4:   #503220;
+    --ink-dark:  #0a0704;
+    --ink-warm:  #181006;
+    --ink-mid:   #201508;
+    --ink-top:   #281a08;
+    --gold-1:  #8a4c10;
+    --gold-2:  #b86a20;
+    --gold-3:  #d4892a;
+    --gold-4:  #f0aa50;
+    --gold-glow: rgba(212, 137, 42, 0.20);
+    --bone:       #f5e4c0;
+    --bone-dim:   rgba(245, 228, 192, 0.50);
+    --bone-faint: rgba(245, 228, 192, 0.12);
+}
+
+/* Arcane — mystique, violet */
+[data-theme="arcane"] {
+    --ink-0:   #0c0c14;
+    --ink-1:   #121220;
+    --ink-2:   #1a1830;
+    --ink-3:   #282440;
+    --ink-4:   #383058;
+    --ink-dark:  #08080e;
+    --ink-warm:  #0f0f1c;
+    --ink-mid:   #151524;
+    --ink-top:   #1c1a2c;
+    --gold-1:  #5a4a8a;
+    --gold-2:  #7a62b4;
+    --gold-3:  #9a82d4;
+    --gold-4:  #c0aef0;
+    --gold-glow: rgba(154, 130, 212, 0.18);
+    --bone:       #e8e0f5;
+    --bone-dim:   rgba(232, 224, 245, 0.50);
+    --bone-faint: rgba(232, 224, 245, 0.12);
+}
+
+/* ============================================
+   RÉGLAGES — Sélecteur de thème
+   ============================================ */
+
+.settings-section {
+    padding: 1.5rem;
+}
+
+.settings-title {
+    font-family: 'Cinzel', serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--gold-3);
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid var(--ink-3);
+}
+
+.settings-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--bone-faint);
+    margin-bottom: 1rem;
+}
+
+.theme-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+}
+
+.theme-card {
+    background: var(--ink-1);
+    border: 1px solid var(--ink-3);
+    border-radius: 6px;
+    padding: 1rem 0.75rem;
+    cursor: pointer;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.7rem;
+    transition: all 0.2s ease;
+    font-family: 'Cinzel', serif;
+    font-size: 0.65rem;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    color: var(--bone-dim);
+}
+
+.theme-card:hover {
+    border-color: var(--gold-2);
+    color: var(--bone);
+    box-shadow: 0 0 10px -4px var(--gold-glow);
+}
+
+.theme-card.active {
+    border-color: var(--gold-3);
+    color: var(--gold-3);
+    box-shadow: 0 0 14px -4px var(--gold-glow);
+}
+
+.theme-swatch {
+    width: 100%;
+    height: 44px;
+    border-radius: 4px;
+    overflow: hidden;
+    position: relative;
+    background: var(--sw-bg, #0a0908);
+}
+
+.theme-swatch::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    height: 52%;
+    background: var(--sw-card, #1e1c18);
+    border-top: 1px solid var(--sw-gold, #c9a84c);
+    opacity: 0.9;
+}
+
+.theme-swatch::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--sw-gold, #c9a84c);
+    opacity: 0.75;
 }

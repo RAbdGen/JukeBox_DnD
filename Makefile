@@ -1,4 +1,4 @@
-.PHONY: help install dev start build build-app clean lint test audit update setup
+.PHONY: help install dev start build build-app clean lint test test-watch audit update setup
 .DEFAULT_GOAL := help
 
 # Couleurs pour l'affichage
@@ -74,7 +74,22 @@ build-win: ## Créer un exécutable portable pour Windows
 	npm run build:win
 	@echo "$(GREEN)✅ Exécutable Windows créé dans dist/ !$(NC)"
 
+##@ Tests
+
+test: ## Lancer la suite de tests (FileManager, DatabaseManager, AudioManager)
+	@echo "$(BLUE)🧪 Lancement des tests...$(NC)"
+	npm test
+	@echo "$(GREEN)✅ Tests terminés !$(NC)"
+
+test-watch: ## Lancer les tests en mode watch (relance à chaque modification)
+	@echo "$(BLUE)👁️  Mode watch activé...$(NC)"
+	npm run test:watch
+
 ##@ Qualité de code
+
+lint: ## Vérifier la qualité du code avec ESLint
+	@echo "$(BLUE)🔍 Vérification ESLint...$(NC)"
+	npm run lint
 
 audit: ## Vérifier les vulnérabilités de sécurité
 	@echo "$(BLUE)🔒 Audit de sécurité...$(NC)"

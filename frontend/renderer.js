@@ -8,6 +8,14 @@ const audioManager = new AudioManager();
 let currentPlaylistId = 'default';
 let updateInterval = null;
 
+function applyTheme(theme) {
+    const t = theme || 'nuit';
+    document.documentElement.dataset.theme = t === 'nuit' ? '' : t;
+    document.querySelectorAll('.theme-card').forEach(card => {
+        card.classList.toggle('active', card.dataset.theme === t);
+    });
+}
+
 async function init() {
     try {
         // Charger settings et playlists en parallèle
@@ -31,6 +39,9 @@ async function init() {
             }
             if (settings.lastPlaylistId) {
                 currentPlaylistId = settings.lastPlaylistId;
+            }
+            if (settings.theme) {
+                applyTheme(settings.theme);
             }
         }
 
@@ -82,6 +93,16 @@ function populatePlaylists(playlists) {
             currentPlaylistId = playlists[0].id;
         }
     }
+
+    // Mettre à jour l'affichage visible
+    const selectedId = select.value;
+    const selectedPlaylist = playlists.find(p => p.id === selectedId);
+    if (selectedPlaylist) {
+        const nameDisplay = document.getElementById('playlist-name-display');
+        const trackCount = document.getElementById('track-count');
+        if (nameDisplay) nameDisplay.textContent = selectedPlaylist.name;
+        if (trackCount) trackCount.textContent = selectedPlaylist.trackIds.length;
+    }
 }
 
 async function loadPlaylists() {
@@ -106,6 +127,12 @@ async function loadPlaylist(id) {
 
         audioManager.loadPlaylist(tracksConfig);
         currentPlaylistId = id;
+
+        // Mettre à jour l'affichage de la playlist
+        const nameDisplay = document.getElementById('playlist-name-display');
+        const trackCount = document.getElementById('track-count');
+        if (nameDisplay) nameDisplay.textContent = playlistData.name;
+        if (trackCount) trackCount.textContent = playlistData.tracks.length;
 
         updateUI();
         console.log(`✅ Playlist "${playlistData.name}" chargée`);
@@ -176,6 +203,19 @@ function updateStatus(status) {
 function updateVersionDisplay(version) {
     const el = document.getElementById('current-version');
     if (el) el.textContent = version === 'calm' ? 'Calme' : (version === 'combat' ? 'Combat' : version);
+}
+
+function updateVersionBadge(version) {
+    const badge = document.getElementById('version-badge');
+    if (badge && version) {
+        const label = version.charAt(0).toUpperCase() + version.slice(1);
+        badge.textContent = `● ${label}`;
+    }
+}
+
+function updatePlayBtn() {
+    const btn = document.getElementById('play-btn');
+    if (btn) btn.textContent = audioManager.isPlaying() ? '⏸' : '▶';
 }
 
 function updateVersionButtons(currentTrack, currentVersion) {
@@ -291,23 +331,41 @@ function renderPlaylistUI() {
     const state = audioManager.getPlaylistState();
 
     if (state.playlist.length === 0) {
-        container.innerHTML = '<p class="empty-message">Aucune piste dans cette playlist.</p>';
+        container.replaceChildren();
+        const empty = document.createElement('p');
+        empty.className = 'empty-message';
+        empty.textContent = 'Aucune piste dans cette playlist.';
+        container.appendChild(empty);
         return;
     }
 
-    container.innerHTML = '';
+    container.replaceChildren();
 
     state.playlist.forEach((track, index) => {
         const div = document.createElement('div');
         div.className = `playlist-track ${index === state.currentTrackIndex ? 'active' : ''}`;
 
-        const isPlaying = index === state.currentTrackIndex && audioManager.isPlaying();
+        const versionLabel = track.defaultVersion
+            ? track.defaultVersion.charAt(0).toUpperCase() + track.defaultVersion.slice(1)
+            : '';
 
-        div.innerHTML = `
-            <span class="playlist-track-number">${index + 1}</span>
-            <span class="playlist-track-title">${track.title}</span>
-            <span class="playlist-track-icon">${isPlaying ? '▶️' : ''}</span>
-        `;
+        const numSpan = document.createElement('span');
+        numSpan.className = 'playlist-track-number';
+        numSpan.textContent = String(index + 1).padStart(2, '0');
+
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'playlist-track-title';
+        titleSpan.textContent = track.title;
+
+        const versionSpan = document.createElement('span');
+        versionSpan.className = 'playlist-track-version';
+        versionSpan.textContent = versionLabel;
+
+        const durationSpan = document.createElement('span');
+        durationSpan.className = 'playlist-track-duration';
+        durationSpan.textContent = '-:--';
+
+        div.append(numSpan, titleSpan, versionSpan, durationSpan);
 
         div.addEventListener('click', () => {
             audioManager.playTrackAtIndex(index);
@@ -330,6 +388,8 @@ function updateUI() {
     // Versions
     updateVersionButtons(state.currentTrack, state.currentVersion);
     updateVersionDisplay(state.currentVersion);
+    updateVersionBadge(state.currentVersion);
+    updatePlayBtn();
 
     // Playlist
     renderPlaylistUI();
@@ -352,14 +412,32 @@ document.addEventListener('DOMContentLoaded', () => {
     init();
 
     // --- Tab Switching ---
-    document.querySelectorAll('.tab-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-            document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+    function switchView(viewName) {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+        const tab = document.querySelector(`.tab-btn[data-view="${viewName}"]`);
+        if (tab) tab.classList.add('active');
+        const view = document.getElementById(`${viewName}-view`);
+        if (view) view.classList.remove('hidden');
+    }
 
-            btn.classList.add('active');
-            const viewId = btn.dataset.view + '-view';
-            document.getElementById(viewId).classList.remove('hidden');
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.addEventListener('click', () => switchView(btn.dataset.view));
+    });
+
+    // --- Breadcrumb ---
+    const breadcrumbBtn = document.querySelector('.breadcrumb-btn');
+    if (breadcrumbBtn) {
+        breadcrumbBtn.addEventListener('click', () => {
+            switchView(breadcrumbBtn.dataset.targetView);
+        });
+    }
+
+    // --- Theme Selector ---
+    document.querySelectorAll('.theme-card').forEach(card => {
+        card.addEventListener('click', () => {
+            applyTheme(card.dataset.theme);
+            window.electronAPI.saveSettings({ theme: card.dataset.theme });
         });
     });
 
@@ -374,22 +452,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Player Controls ---
     document.getElementById('play-btn').addEventListener('click', () => {
-        if (!audioManager.currentTrack) audioManager.playTrackAtIndex(0);
-        else if (!audioManager.isPlaying()) audioManager.resume();
-        updateUI();
-        startProgressUpdate();
-    });
-
-    document.getElementById('pause-btn').addEventListener('click', () => {
-        if (audioManager.isPlaying()) {
+        if (!audioManager.currentTrack) {
+            audioManager.playTrackAtIndex(0);
+            startProgressUpdate();
+        } else if (audioManager.isPlaying()) {
             audioManager.pause();
             stopProgressUpdate();
-            updateUI();
         } else {
             audioManager.resume();
             startProgressUpdate();
-            updateUI();
         }
+        updateUI();
     });
 
     document.getElementById('stop-btn').addEventListener('click', () => {

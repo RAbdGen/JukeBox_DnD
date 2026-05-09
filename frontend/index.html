@@ -11,41 +11,32 @@
 <body>
     <div id="app">
         <header>
-            <h1>JukeBox DnD</h1>
-            <p class="subtitle">Ambiance musicale dynamique pour vos parties</p>
+            <p class="subtitle">Maître · du · Jeu</p>
+            <h1>JukeBox &amp; DnD</h1>
+            <div class="header-ornament">
+                <span class="ornament-line"></span>
+                <span class="ornament-gem">◆</span>
+                <span class="ornament-line"></span>
+            </div>
         </header>
 
         <main>
             <div class="container">
                 <!-- Onglets -->
                 <div id="view-tabs">
-                    <button class="tab-btn active" data-view="player">Lecteur</button>
-                    <button class="tab-btn" data-view="library">Bibliothèque</button>
+                    <button class="tab-btn active" data-view="player">Lecture</button>
+                    <button class="tab-btn" data-view="library">Grimoire</button>
+                    <button class="tab-btn" data-view="effets">Effets</button>
+                    <button class="tab-btn" data-view="reglages">Réglages</button>
                 </div>
 
                 <!-- ======================== -->
-                <!-- VUE LECTEUR              -->
+                <!-- VUE LECTURE              -->
                 <!-- ======================== -->
                 <div id="player-view" class="view">
-                    <!-- Sélecteur de playlist -->
-                    <div id="playlist-selector">
-                        <label>Playlist :</label>
-                        <select id="playlist-select">
-                            <option value="">-- Choisir une playlist --</option>
-                        </select>
-                        <button id="create-playlist-btn" class="icon-btn" title="Créer une playlist">+</button>
-                        <button id="delete-playlist-btn" class="icon-btn danger-icon"
-                            title="Supprimer la playlist">×</button>
-                    </div>
-
-                    <!-- Indicateur piste actuelle -->
-                    <div id="current-track-indicator">
-                        <span class="track-number">Piste 0/0</span>
-                        <span class="track-title">Aucune piste</span>
-                    </div>
-
-                    <!-- Informations de la piste -->
-                    <div id="track-info">
+                    <!-- Éléments cachés conservés pour la compatibilité JS -->
+                    <select id="playlist-select" class="hidden-select"></select>
+                    <div id="track-info" style="display:none">
                         <div class="track-name">
                             <span class="label">Version :</span>
                             <span id="current-version">-</span>
@@ -53,78 +44,140 @@
                         <div id="track-status" class="status arrêté">Arrêté</div>
                     </div>
 
-                    <!-- Sélecteur de version -->
-                    <div id="version-switcher">
-                        <h3>Ambiance</h3>
-                        <div id="version-buttons" class="version-buttons">
-                            <!-- Généré dynamiquement selon les versions de la piste -->
+                    <!-- Barre playlist -->
+                    <div class="playlist-header">
+                        <button class="breadcrumb-btn" data-target-view="library">← Grimoire Sonore</button>
+                        <div class="playlist-info-bar">
+                            <div class="playlist-meta-group">
+                                <span class="playlist-meta">Liste de lecture · <span id="track-count">0</span> pistes</span>
+                                <span id="playlist-name-display" class="playlist-name-display">—</span>
+                            </div>
+                            <div class="playlist-actions">
+                                <button id="create-playlist-btn" class="icon-btn" title="Créer une playlist">＋</button>
+                                <button id="delete-playlist-btn" class="icon-btn danger-icon" title="Supprimer la playlist">🗑</button>
+                            </div>
                         </div>
                     </div>
 
-                    <!-- Navigation playlist -->
-                    <div id="navigation-controls">
-                        <button id="prev-btn" class="nav-btn">Précédent</button>
-                        <button id="next-btn" class="nav-btn">Suivant</button>
-                    </div>
+                    <!-- Layout 2 colonnes -->
+                    <div class="lecture-layout">
 
-                    <!-- Contrôles de lecture -->
-                    <div id="player-controls">
-                        <button id="play-btn" class="control-btn">Play</button>
-                        <button id="pause-btn" class="control-btn">Pause</button>
-                        <button id="stop-btn" class="control-btn">Stop</button>
-                    </div>
+                        <!-- ── Carte lecteur ── -->
+                        <div class="player-card">
+                            <div class="player-card-header">
+                                <span class="incantation-label">En cours d'incantation</span>
+                                <span id="version-badge" class="version-badge">● —</span>
+                            </div>
 
-                    <!-- Mode de lecture -->
-                    <div id="play-mode-selector">
-                        <div class="mode-buttons">
-                            <button class="mode-btn active" data-mode="noLoop">Normal</button>
-                            <button class="mode-btn" data-mode="loopOne">Boucle</button>
-                            <button class="mode-btn" data-mode="loopAll">Tout répéter</button>
+                            <div id="current-track-indicator">
+                                <span class="track-title">Aucune piste</span>
+                                <span class="track-number">Piste 0/0</span>
+                            </div>
+
+                            <div id="version-switcher">
+                                <div id="version-buttons" class="version-buttons"></div>
+                            </div>
+
+                            <div id="progress-container">
+                                <div class="progress-bar">
+                                    <div id="progress-fill" class="progress-fill"></div>
+                                </div>
+                                <div class="time-display">
+                                    <span id="current-time">0:00</span>
+                                    <span id="duration">0:00</span>
+                                </div>
+                            </div>
+
+                            <div id="player-controls">
+                                <button id="prev-btn" class="ctrl-btn" title="Piste précédente">⏮</button>
+                                <button id="stop-btn" class="ctrl-btn" title="Arrêter">■</button>
+                                <button id="play-btn" class="ctrl-btn ctrl-play" title="Lecture / Pause">▶</button>
+                                <button id="next-btn" class="ctrl-btn" title="Piste suivante">⏭</button>
+                            </div>
+
+                            <div class="player-footer-controls">
+                                <div id="volume-control">
+                                    <label for="volume">Vol</label>
+                                    <input type="range" id="volume" min="0" max="100" value="50" />
+                                    <span id="volume-value">50%</span>
+                                </div>
+                                <div id="play-mode-selector">
+                                    <div class="mode-buttons">
+                                        <button class="mode-btn active" data-mode="noLoop" title="Normal">↩</button>
+                                        <button class="mode-btn" data-mode="loopOne" title="Boucle une piste">↻</button>
+                                        <button class="mode-btn" data-mode="loopAll" title="Tout répéter">⟳</button>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
-                    </div>
 
-                    <!-- Barre de progression -->
-                    <div id="progress-container">
-                        <div class="time-display">
-                            <span id="current-time">0:00</span>
-                            <span id="duration">0:00</span>
+                        <!-- ── Panneau liste de pistes ── -->
+                        <div class="tracklist-panel">
+                            <div class="tracklist-header">Pistes du Grimoire</div>
+                            <div id="playlist-tracks">
+                                <p class="empty-message">Aucune piste. Chargez une playlist.</p>
+                            </div>
                         </div>
-                        <div class="progress-bar">
-                            <div id="progress-fill" class="progress-fill"></div>
-                        </div>
-                    </div>
 
-                    <!-- Volume -->
-                    <div id="volume-control">
-                        <label for="volume">Volume</label>
-                        <input type="range" id="volume" min="0" max="100" value="50" />
-                        <span id="volume-value">50%</span>
-                    </div>
-
-                    <!-- Liste pistes de la playlist -->
-                    <div id="playlist-tracks-container">
-                        <h3>Pistes</h3>
-                        <div id="playlist-tracks">
-                            <p class="empty-message">Aucune piste. Ajoutez des musiques depuis la bibliothèque.</p>
-                        </div>
                     </div>
                 </div>
 
                 <!-- ======================== -->
-                <!-- VUE BIBLIOTHÈQUE         -->
+                <!-- VUE GRIMOIRE             -->
                 <!-- ======================== -->
                 <div id="library-view" class="view hidden">
                     <div class="library-header">
-                        <h3>Ma Bibliothèque</h3>
-                        <button id="add-track-btn" class="primary-btn">Ajouter une musique</button>
+                        <h3>Grimoire Sonore</h3>
+                        <button id="add-track-btn" class="primary-btn">＋ Ajouter une piste</button>
                     </div>
-
                     <div id="library-tracks">
-                        <p class="empty-message">Bibliothèque vide. Cliquez sur "Ajouter une musique" pour commencer.
-                        </p>
+                        <p class="empty-message">Bibliothèque vide. Cliquez sur "Ajouter une piste" pour commencer.</p>
                     </div>
                 </div>
+
+                <!-- ======================== -->
+                <!-- VUE EFFETS               -->
+                <!-- ======================== -->
+                <div id="effets-view" class="view hidden">
+                    <div class="stub-view">
+                        <span class="stub-icon">⚡</span>
+                        <p class="stub-title">Effets Sonores</p>
+                        <p class="stub-desc">Fonctionnalité à venir...</p>
+                    </div>
+                </div>
+
+                <!-- ======================== -->
+                <!-- VUE RÉGLAGES             -->
+                <!-- ======================== -->
+                <div id="reglages-view" class="view hidden">
+                    <div class="settings-section">
+                        <h3 class="settings-title">Apparence</h3>
+                        <p class="settings-label">Thème de l'interface</p>
+                        <div class="theme-grid" id="theme-grid">
+                            <button class="theme-card active" data-theme="nuit">
+                                <div class="theme-swatch" style="--sw-bg:#0a0908; --sw-card:#1e1c18; --sw-gold:#c9a84c;"></div>
+                                <span>Nuit</span>
+                            </button>
+                            <button class="theme-card" data-theme="grimoire">
+                                <div class="theme-swatch" style="--sw-bg:#14110f; --sw-card:#2a241f; --sw-gold:#d6ae54;"></div>
+                                <span>Grimoire</span>
+                            </button>
+                            <button class="theme-card" data-theme="taverne">
+                                <div class="theme-swatch" style="--sw-bg:#120d08; --sw-card:#281a08; --sw-gold:#d4892a;"></div>
+                                <span>Taverne</span>
+                            </button>
+                            <button class="theme-card" data-theme="arcane">
+                                <div class="theme-swatch" style="--sw-bg:#0c0c14; --sw-card:#1a1830; --sw-gold:#9a82d4;"></div>
+                                <span>Arcane</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
         </main>
+
+        <footer>V 2.0 · JukeBox DnD · Par votre Maître du Jeu</footer>
     </div>
 
     <!-- ======================== -->
@@ -138,13 +191,11 @@
             </div>
 
             <div class="modal-body">
-                <!-- Titre -->
                 <div class="form-group">
                     <label>Titre de la piste *</label>
                     <input type="text" id="new-track-title" placeholder="Ex: Taverne Médiévale" required />
                 </div>
 
-                <!-- Versions -->
                 <div class="form-group">
                     <label>Versions audio</label>
                     <div id="version-inputs">
@@ -155,11 +206,9 @@
                             <input type="hidden" class="file-path-value" />
                         </div>
                     </div>
-                    <button type="button" id="add-version-input-btn" class="secondary-btn">+ Ajouter une
-                        version</button>
+                    <button type="button" id="add-version-input-btn" class="secondary-btn">+ Ajouter une version</button>
                 </div>
 
-                <!-- Volume par défaut -->
                 <div class="form-group">
                     <label>Volume par défaut</label>
                     <div class="volume-slider-group">
@@ -168,12 +217,9 @@
                     </div>
                 </div>
 
-                <!-- Playlists -->
                 <div class="form-group">
                     <label>Ajouter aux playlists</label>
-                    <div id="playlist-checkboxes">
-                        <!-- Généré dynamiquement -->
-                    </div>
+                    <div id="playlist-checkboxes"></div>
                     <div class="inline-create">
                         <input type="text" id="new-playlist-name" placeholder="Nouvelle playlist..." />
                         <button type="button" id="create-playlist-inline-btn" class="secondary-btn">Créer</button>
@@ -232,9 +278,7 @@
 
                 <div class="form-group">
                     <label>Versions</label>
-                    <div id="edit-version-list">
-                        <!-- Généré dynamiquement -->
-                    </div>
+                    <div id="edit-version-list"></div>
                     <button type="button" id="add-edit-version-btn" class="secondary-btn">+ Ajouter une version</button>
                 </div>
 

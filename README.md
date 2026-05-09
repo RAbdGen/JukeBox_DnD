@@ -1,215 +1,130 @@
 # 🎵 JukeBox DnD 🎲
 
-Application de jukebox pour vos parties de Donjons & Dragons, construite avec **Electron.js** et **Howler.js**.
+Application desktop de gestion de musique d'ambiance pour les sessions de jeu de rôle. Chargez vos pistes, organisez-les en playlists et passez entre différentes *versions* d'une même musique (ex : `calm`, `combat`, `tension`) avec des transitions crossfade fluides.
 
-![Electron](https://img.shields.io/badge/Electron-37.2.5-47848F?style=flat&logo=electron)
+![Electron](https://img.shields.io/badge/Electron-37+-47848F?style=flat&logo=electron)
 ![Node.js](https://img.shields.io/badge/Node.js-20+-339933?style=flat&logo=node.js)
 ![Howler.js](https://img.shields.io/badge/Howler.js-2.2.4-E85D75?style=flat)
-
-## 📋 Table des matières
-
-- [Fonctionnalités](#-fonctionnalités)
-- [Installation rapide](#-installation-rapide)
-- [Utilisation](#-utilisation)
-- [Commandes Makefile](#-commandes-makefile)
-- [Structure du projet](#-structure-du-projet)
-- [Technologies](#-technologies)
-- [Développement](#-développement)
+![Vitest](https://img.shields.io/badge/Vitest-4+-6E9F18?style=flat)
 
 ## ✨ Fonctionnalités
 
-- 🎵 **Lecture audio** avec Howler.js (MP3, OGG, WAV, etc.)
-- ⚡ **Interface moderne** avec effets glassmorphisme
-- 🎮 **Contrôles complets** : Play, Pause, Stop, Volume
-- 📊 **Statut en temps réel** avec indicateurs colorés
-- 🖥️ **Application desktop** multiplateforme (Windows, macOS, Linux)
-- 🔄 **Hot-reload** en mode développement
+- 🎵 **Multi-versions** — une piste peut avoir plusieurs ambiances (`calm`, `combat`, `tension`…) avec crossfade
+- 📂 **Bibliothèque persistante** — les pistes et playlists sont sauvegardées entre les sessions
+- 🔄 **Modes de lecture** — Normal, Boucle sur une piste, Tout répéter
+- 🎚️ **Volume global + par piste** — contrôle fin de l'audio via Howler.js
+- 💾 **Restauration automatique** — reprend la dernière playlist et la dernière position au démarrage
+- 🖥️ **Desktop multiplateforme** — Linux (AppImage) et Windows (portable .exe)
+- 🧪 **Tests unitaires** — couverture backend avec Vitest (76 tests)
 
-## 🚀 Installation rapide
+## 🚀 Installation
 
 ```bash
-# Cloner le projet
-git clone <votre-repo>
+git clone https://github.com/RAbdGen/JukeBox_DnD.git
 cd JukeBox_DnD
-
-# Installer les dépendances
 make install
-
-# Lancer en mode développement
-make dev
 ```
 
 ## 💻 Utilisation
 
-### Démarrage rapide
-
 ```bash
-# Mode développement (avec hot-reload)
-make dev
-
-# Mode production
-make start
-
-# Compiler l'application
-make build
+make dev          # Mode développement (Vite :3000 + Electron)
+make start        # Lance l'application en production
+make build        # Compile Vite + package Electron
+make test         # Lance la suite de tests
 ```
 
-### Ajouter vos propres musiques
+> Sur Linux si l'app refuse de démarrer (sandbox) : `make dev-nosandbox`
 
-1. Créer un dossier pour vos fichiers audio :
-   ```bash
-   mkdir -p public/audio
-   ```
+## 🛠️ Toutes les commandes
 
-2. Copier vos fichiers MP3/OGG dans `public/audio/`
-
-3. Modifier `src/renderer.js` pour charger vos fichiers :
-   ```javascript
-   sound = new Howl({
-     src: ['/audio/votre-fichier.mp3'],
-     loop: true,
-     volume: 0.5,
-   });
-   ```
-
-## 🛠️ Commandes Makefile
-
-Pour voir toutes les commandes disponibles :
 ```bash
 make help
 ```
 
-### Commandes principales
-
 | Commande | Description |
-|----------|-------------|
-| `make help` | Affiche l'aide complète avec toutes les commandes |
-| `make install` | Installe toutes les dépendances |
-| `make dev` | Lance en mode développement (Vite + Electron) |
-| `make start` | Lance l'application Electron |
-| `make build` | Compile le frontend et build l'app Electron |
-| `make lint` | Vérifie la qualité du code |
-| `make clean` | Nettoie le projet (node_modules, dist, build) |
-| `make info` | Affiche les informations du projet |
-| `make status` | Vérifie le statut du projet |
-
-### Commandes de développement
-
-```bash
-make lint          # Vérifier le code
-make lint-fix      # Corriger automatiquement les erreurs
-make audit         # Audit de sécurité
-make audit-fix     # Corriger les vulnérabilités
-make update        # Mettre à jour les dépendances
-```
-
-### Commandes de nettoyage
-
-```bash
-make clean-cache   # Nettoyer uniquement le cache
-make clean         # Nettoyage complet
-make reset         # Reset : nettoyer + réinstaller
-```
+|---|---|
+| `make install` | Installe les dépendances |
+| `make dev` | Mode développement |
+| `make dev-nosandbox` | Mode dev (fix sandbox Linux) |
+| `make start` | Lance en production |
+| `make build` | Build complet (Vite + Electron) |
+| `make build-linux` | AppImage Linux |
+| `make build-win` | Portable Windows |
+| `make test` | Suite de tests Vitest |
+| `make test-watch` | Tests en mode watch |
+| `make lint` | Vérification ESLint |
+| `make audit` | Audit de sécurité npm |
+| `make clean` | Supprime node_modules, dist, build |
+| `make reset` | clean + install |
+| `make status` | État du projet |
+| `make info` | Versions Node/Electron/npm |
 
 ## 📁 Structure du projet
 
 ```
 JukeBox_DnD/
-├── electron/              # Processus Electron
-│   ├── main.js           # Main process
-│   └── preload.js        # Preload script
-├── frontend/             # Code source de l'interface
-│   ├── index.html        # HTML principal
-│   ├── renderer.js       # Renderer process (Howler.js)
-│   ├── styles.css        # Styles CSS
-│   └── assets/           # Ressources (images, audio)
-│       └── audio/        # Vos fichiers audio
-├── backend/              # (Optionnel) Backend Express
-│   └── server.cjs        # Serveur API
-├── dist/                 # Build de production (généré)
-├── package.json          # Configuration npm
-├── Makefile             # Commandes simplifiées
-├── vite.config.js       # Configuration Vite
-└── README.md            # Ce fichier
+├── electron/
+│   ├── main.cjs          # Processus principal (IPC handlers, BrowserWindow)
+│   └── preload.cjs       # contextBridge → window.electronAPI
+├── backend/              # Modules ESM (Node.js)
+│   ├── AudioManager.js   # Orchestration audio, playlist, crossfade
+│   ├── Track.js          # Piste individuelle avec versions Howl
+│   ├── DatabaseManager.js# Persistance lowdb (data.json)
+│   └── FileManager.js    # Copie/suppression des fichiers audio
+├── frontend/
+│   ├── index.html        # Interface principale
+│   ├── renderer.js       # Logique UI + appels IPC
+│   └── styles.css        # Thème "Grimoire sonore" (dark, doré, IM Fell English)
+├── tests/
+│   ├── AudioManager.test.js
+│   ├── DatabaseManager.test.js
+│   └── FileManager.test.js
+├── scripts/
+│   └── dev-electron.cjs  # Script de lancement dev (contournement sandbox)
+├── vitest.config.js
+├── vite.config.js
+├── Makefile
+└── package.json
 ```
 
-## 🔧 Technologies
+Les données utilisateur (pistes, playlists, `data.json`) sont stockées dans `app.getPath('userData')`.
 
-- **[Electron.js](https://www.electronjs.org/)** - Framework pour applications desktop
-- **[Howler.js](https://howlerjs.com/)** - Bibliothèque audio JavaScript
-- **[Vite](https://vitejs.dev/)** - Build tool et dev server
-- **[React](https://react.dev/)** - UI framework (optionnel)
-- **[Tailwind CSS](https://tailwindcss.com/)** - Framework CSS (optionnel)
+## 🔧 Stack technique
 
-## 👨‍💻 Développement
+| Rôle | Outil |
+|---|---|
+| Framework desktop | Electron |
+| Audio | Howler.js (sprites, crossfade, html5 mode) |
+| Persistance | lowdb 7 (JSON file) |
+| Build frontend | Vite (ESM, target es2020) |
+| Tests | Vitest |
+| Module system | ESM (`"type": "module"`) — sauf les `.cjs` Electron |
 
-### Prérequis
-
-- **Node.js** 20+ 
-- **npm** 9+
-- **Make** (généralement préinstallé sur Linux/macOS)
-
-### Mode développement
+## 🧪 Tests
 
 ```bash
-# Démarrer le serveur de développement
-make dev
+make test          # Lancement unique
+make test-watch    # Relance à chaque modification
 ```
 
-Cela lance :
-1. **Vite** sur `http://localhost:3000` avec hot-reload
-2. **Electron** qui se connecte automatiquement à Vite
+76 tests couvrant :
+- **FileManager** — génération d'IDs, formatage de taille, copie/suppression de fichiers
+- **DatabaseManager** — CRUD bibliothèque et playlists, settings, export/import JSON
+- **AudioManager** — clamping de volume, modes de lecture, navigation playlist, callbacks
 
-### Mode production
+## 🏗️ Distribution
+
+Les builds sont manuels depuis le dual-boot (pas de cross-compilation) :
 
 ```bash
-# Compiler et lancer
-make build
-make start
+# Depuis Linux
+make build-linux   # → dist/*.AppImage
+
+# Depuis Windows
+make build-win     # → dist/*.exe (portable)
 ```
-
-### Structure des commandes npm
-
-Si vous préférez utiliser npm directement :
-
-```bash
-npm start              # Lance Electron
-npm run dev            # Mode développement
-npm run dev:vite       # Vite uniquement
-npm run dev:electron   # Electron uniquement
-npm run build          # Build complet
-npm run lint           # Vérification ESLint
-```
-
-## 📝 Scripts disponibles
-
-Voir `package.json` pour tous les scripts npm, ou utilisez simplement le Makefile pour une expérience simplifiée !
-
-## 🎨 Personnalisation
-
-### Modifier l'apparence
-
-Éditez `src/styles.css` pour personnaliser :
-- Couleurs et gradients
-- Effets glassmorphisme
-- Animations
-- Layout responsive
-
-### Ajouter des fonctionnalités
-
-- **Playlist** : Gérer plusieurs fichiers audio
-- **Visualiseur** : Ajouter un visualiseur audio
-- **Raccourcis** : Implémenter des raccourcis clavier
-- **Thèmes** : Créer plusieurs thèmes visuels
 
 ## 📄 Licence
 
-Projet personnel - Libre d'utilisation
-
-## 🤝 Contribution
-
-Les contributions sont les bienvenues ! N'hésitez pas à ouvrir une issue ou une pull request.
-
----
-
-**Fait avec ❤️ pour les maîtres du jeu** 🎲
+Projet personnel — usage libre.
