@@ -103,6 +103,24 @@ function populatePlaylists(playlists) {
         if (nameDisplay) nameDisplay.textContent = selectedPlaylist.name;
         if (trackCount) trackCount.textContent = selectedPlaylist.trackIds.length;
     }
+
+    // Peupler le dropdown de sélection
+    const dropdown = document.getElementById('playlist-dropdown');
+    if (dropdown) {
+        dropdown.replaceChildren();
+        playlists.forEach(p => {
+            const btn = document.createElement('button');
+            btn.className = `playlist-dropdown-item${p.id === selectedId ? ' active' : ''}`;
+            btn.textContent = p.name;
+            btn.addEventListener('click', () => {
+                dropdown.classList.add('hidden');
+                document.getElementById('playlist-select').value = p.id;
+                loadPlaylist(p.id);
+                window.electronAPI.saveSettings({ lastPlaylistId: p.id });
+            });
+            dropdown.appendChild(btn);
+        });
+    }
 }
 
 async function loadPlaylists() {
@@ -133,6 +151,11 @@ async function loadPlaylist(id) {
         const trackCount = document.getElementById('track-count');
         if (nameDisplay) nameDisplay.textContent = playlistData.name;
         if (trackCount) trackCount.textContent = playlistData.tracks.length;
+
+        // Mettre à jour l'item actif dans le dropdown
+        document.querySelectorAll('.playlist-dropdown-item').forEach(item => {
+            item.classList.toggle('active', item.textContent === playlistData.name);
+        });
 
         updateUI();
         console.log(`✅ Playlist "${playlistData.name}" chargée`);
@@ -432,6 +455,17 @@ document.addEventListener('DOMContentLoaded', () => {
             switchView(breadcrumbBtn.dataset.targetView);
         });
     }
+
+    // --- Playlist dropdown toggle ---
+    document.getElementById('playlist-name-display').addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dropdown = document.getElementById('playlist-dropdown');
+        dropdown.classList.toggle('hidden');
+    });
+
+    document.addEventListener('click', () => {
+        document.getElementById('playlist-dropdown')?.classList.add('hidden');
+    });
 
     // --- Theme Selector ---
     document.querySelectorAll('.theme-card').forEach(card => {

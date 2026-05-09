@@ -47,15 +47,16 @@
                     <!-- Barre playlist -->
                     <div class="playlist-header">
                         <button class="breadcrumb-btn" data-target-view="library">← Grimoire Sonore</button>
-                        <div class="playlist-info-bar">
+                        <div class="playlist-info-bar" style="position:relative">
                             <div class="playlist-meta-group">
                                 <span class="playlist-meta">Liste de lecture · <span id="track-count">0</span> pistes</span>
-                                <span id="playlist-name-display" class="playlist-name-display">—</span>
+                                <button id="playlist-name-display" class="playlist-name-display" title="Changer de playlist">—</button>
                             </div>
                             <div class="playlist-actions">
                                 <button id="create-playlist-btn" class="icon-btn" title="Créer une playlist">＋</button>
                                 <button id="delete-playlist-btn" class="icon-btn danger-icon" title="Supprimer la playlist">🗑</button>
                             </div>
+                            <div id="playlist-dropdown" class="playlist-dropdown hidden"></div>
                         </div>
                     </div>
 
