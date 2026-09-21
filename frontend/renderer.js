@@ -7,6 +7,7 @@ import { AudioManager } from '../backend/AudioManager.js';
 const audioManager = new AudioManager();
 let currentPlaylistId = 'default';
 let updateInterval = null;
+let volumeBeforeMute = null; // volume mémorisé pour le mute rapide (raccourci clavier) ; null = pas muté
 
 // ========================================
 // Toast — Undo suppression
@@ -492,6 +493,37 @@ function updateUI() {
 }
 
 // ========================================
+// Raccourcis clavier globaux
+// ========================================
+
+/**
+ * Coupe/rétablit le volume. Mémorise le volume courant avant de couper,
+ * le restaure au prochain appel (toggle).
+ */
+function toggleMute() {
+    const slider = document.getElementById('volume');
+    const volumeValue = document.getElementById('volume-value');
+
+    if (volumeBeforeMute !== null) {
+        // Rétablir le volume précédent
+        const restored = volumeBeforeMute;
+        volumeBeforeMute = null;
+        audioManager.setVolume(restored);
+        slider.value = restored * 100;
+        volumeValue.textContent = `${Math.round(restored * 100)}%`;
+        window.electronAPI.saveSettings({ volume: restored });
+    } else {
+        // Couper le son (si déjà à 0, on restaurera à 50% au prochain toggle)
+        const current = slider.value / 100;
+        volumeBeforeMute = current > 0 ? current : 0.5;
+        audioManager.setVolume(0);
+        slider.value = 0;
+        volumeValue.textContent = '0%';
+        window.electronAPI.saveSettings({ volume: 0 });
+    }
+}
+
+// ========================================
 // DOM Ready
 // ========================================
 
@@ -617,6 +649,25 @@ document.addEventListener('DOMContentLoaded', () => {
         audioManager.setVolume(val);
         document.getElementById('volume-value').textContent = `${e.target.value}%`;
         window.electronAPI.saveSettings({ volume: val });
+        volumeBeforeMute = null; // un ajustement manuel du volume annule l'état "muté"
+    });
+
+    // --- Raccourcis clavier globaux (voir electron/main.cjs) ---
+    window.electronAPI.onShortcut((action) => {
+        switch (action) {
+            case 'play-pause':
+                document.getElementById('play-btn').click();
+                break;
+            case 'next':
+                document.getElementById('next-btn').click();
+                break;
+            case 'previous':
+                document.getElementById('prev-btn').click();
+                break;
+            case 'mute':
+                toggleMute();
+                break;
+        }
     });
 
     // ========================================

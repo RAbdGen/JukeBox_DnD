@@ -110,7 +110,6 @@ Permettre de prendre un fichier audio unique et de le découper en segments temp
 ### À venir (backlog, pas de spec complète)
 
 **Priorité moyenne**
-- Raccourcis clavier globaux (play/pause/next/mute) fonctionnant même sans le focus sur la fenêtre — utile quand une autre fenêtre (notes, Roll20…) est au premier plan
 - Mute rapide / fade-out d'urgence (touche unique) pour couper vite sans arrêt brutal
 - Normalisation de volume entre pistes — certains fichiers sont probablement plus forts que d'autres, gênant en transition
 - Tags/recherche dans la bibliothèque au-delà des playlists (ex : filtrer par ambiance "forêt", "taverne", "combat")

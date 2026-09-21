@@ -53,6 +53,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     saveSettings: (settings) => ipcRenderer.invoke('settings:save', settings),
     getSettings: () => ipcRenderer.invoke('settings:get'),
+
+    // ========================================
+    // RACCOURCIS CLAVIER GLOBAUX
+    // ========================================
+
+    /**
+     * S'abonne aux raccourcis clavier globaux déclenchés côté main process.
+     * @param {(action: 'play-pause'|'next'|'previous'|'mute') => void} callback
+     */
+    onShortcut: (callback) => ipcRenderer.on('shortcut:trigger', (event, action) => callback(action)),
 });
 
 console.log('✅ Preload script chargé - electronAPI v2.0 exposée');

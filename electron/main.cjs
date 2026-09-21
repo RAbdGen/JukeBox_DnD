@@ -1,4 +1,4 @@
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, globalShortcut } = require('electron');
 const path = require('path');
 const fs = require('fs').promises;
 const { pathToFileURL } = require('url');
@@ -72,6 +72,31 @@ function createWindow() {
     mainWindow.on('closed', () => {
         mainWindow = null;
     });
+}
+
+// ========================================
+// Raccourcis clavier globaux (fonctionnent même sans focus sur la fenêtre)
+// ========================================
+
+function registerGlobalShortcuts() {
+    const send = (action) => {
+        if (mainWindow) mainWindow.webContents.send('shortcut:trigger', action);
+    };
+
+    // Pas de touche média standard pour "mute" → combinaison custom
+    const shortcuts = {
+        'MediaPlayPause': () => send('play-pause'),
+        'MediaNextTrack': () => send('next'),
+        'MediaPreviousTrack': () => send('previous'),
+        'CommandOrControl+Alt+M': () => send('mute'),
+    };
+
+    for (const [accelerator, handler] of Object.entries(shortcuts)) {
+        const registered = globalShortcut.register(accelerator, handler);
+        if (!registered) {
+            console.warn(`⚠️ Impossible d'enregistrer le raccourci "${accelerator}" (déjà pris par une autre application ?)`);
+        }
+    }
 }
 
 // ========================================
@@ -330,6 +355,11 @@ app.whenReady().then(() => {
     // attendent managersReadyPromise avant d'exécuter.
     createWindow();
     initManagers();
+    registerGlobalShortcuts();
+});
+
+app.on('will-quit', () => {
+    globalShortcut.unregisterAll();
 });
 
 app.on('window-all-closed', () => {
