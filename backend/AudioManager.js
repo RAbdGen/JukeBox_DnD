@@ -174,6 +174,51 @@ export class AudioManager {
     }
 
     /**
+     * Fondu du volume global sur une courte durée (ex: mute/unmute rapide,
+     * pour éviter une coupure brutale). Réutilise setVolume() à chaque
+     * frame pour rester cohérent avec le volume Howler (master) et celui
+     * du Howl actif.
+     * @param {number} targetVolume - Volume cible (0–1)
+     * @param {number} duration - Durée du fondu en ms (défaut: 300)
+     * @returns {Promise<void>} résout une fois le fondu terminé
+     */
+    fadeVolume(targetVolume, duration = 300) {
+        // Un nouveau fondu invalide le précédent (ex: double appui rapide sur le raccourci)
+        this._fadeToken = (this._fadeToken || 0) + 1;
+        const token = this._fadeToken;
+
+        const startVolume = this.globalVolume;
+        const target = Math.max(0, Math.min(1, targetVolume));
+
+        if (duration <= 0) {
+            this.setVolume(target);
+            return Promise.resolve();
+        }
+
+        const startTime = performance.now();
+
+        return new Promise((resolve) => {
+            const step = (now) => {
+                if (token !== this._fadeToken) {
+                    resolve(); // un fondu plus récent a pris le relais
+                    return;
+                }
+
+                const t = Math.min((now - startTime) / duration, 1);
+                this.setVolume(startVolume + (target - startVolume) * t);
+
+                if (t < 1) {
+                    requestAnimationFrame(step);
+                } else {
+                    resolve();
+                }
+            };
+
+            requestAnimationFrame(step);
+        });
+    }
+
+    /**
      * Obtenir la position actuelle de lecture
      * @returns {number} Position en secondes
      */

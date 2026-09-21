@@ -497,29 +497,31 @@ function updateUI() {
 // ========================================
 
 /**
- * Coupe/rétablit le volume. Mémorise le volume courant avant de couper,
- * le restaure au prochain appel (toggle).
+ * Coupe/rétablit le volume en fondu court (pas de coupure brutale).
+ * Mémorise le volume courant avant de couper, le restaure au prochain
+ * appel (toggle).
  */
-function toggleMute() {
+async function toggleMute() {
     const slider = document.getElementById('volume');
     const volumeValue = document.getElementById('volume-value');
+    const FADE_MS = 300;
 
     if (volumeBeforeMute !== null) {
         // Rétablir le volume précédent
         const restored = volumeBeforeMute;
         volumeBeforeMute = null;
-        audioManager.setVolume(restored);
         slider.value = restored * 100;
         volumeValue.textContent = `${Math.round(restored * 100)}%`;
         window.electronAPI.saveSettings({ volume: restored });
+        await audioManager.fadeVolume(restored, FADE_MS);
     } else {
         // Couper le son (si déjà à 0, on restaurera à 50% au prochain toggle)
         const current = slider.value / 100;
         volumeBeforeMute = current > 0 ? current : 0.5;
-        audioManager.setVolume(0);
         slider.value = 0;
         volumeValue.textContent = '0%';
         window.electronAPI.saveSettings({ volume: 0 });
+        await audioManager.fadeVolume(0, FADE_MS);
     }
 }
 
