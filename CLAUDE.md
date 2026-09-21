@@ -130,6 +130,13 @@ Permettre de prendre un fichier audio unique et de le découper en segments temp
 - **Tâches simples / bugs isolés / optimisations** → Claude Code travaille en autonomie, commit direct
 - **Refactorings larges / nouvelles features / migration Tauri éventuelle** → itératif : plan d'abord, validation avant exécution, commits intermédiaires
 
+### Synchronisation du repo après chaque changement
+Après tout changement (bugfix, feature, correctif de review), maintenir le repo à jour, pas seulement le code :
+- **Issues GitHub** — fermer/commenter les issues concernées par le changement (`gh issue close`, `gh issue comment`), en créer une nouvelle si un bug ou une piste d'amélioration est découvert en cours de route
+- **Backlog CLAUDE.md** — retirer ou déplacer les items traités, ajouter les nouvelles pistes identifiées
+- **Project GitHub** (backlog) — refléter les mêmes mouvements côté Project (statut/priorité des items correspondants) via `gh project item-edit`
+- Ces mises à jour font partie de la tâche, pas une étape séparée à demander explicitement
+
 ### Conventions de code
 - ESM partout sauf les fichiers `.cjs` d'Electron (ne pas toucher au module system sans raison)
 - Pas de framework JS côté frontend (Vanilla JS, pas de React/Vue) sauf décision explicite
