@@ -8,6 +8,54 @@ const audioManager = new AudioManager();
 let currentPlaylistId = 'default';
 let updateInterval = null;
 
+// ========================================
+// Toast — Undo suppression
+// ========================================
+
+/**
+ * Affiche un toast avec bouton "Annuler". Si le délai expire sans clic sur
+ * Annuler, onExpire() est appelé (la suppression réelle a lieu là). Si
+ * Annuler est cliqué avant, onUndo() est appelé à la place et onExpire()
+ * n'a jamais lieu.
+ */
+function showUndoToast(message, { duration = 7000, onExpire, onUndo } = {}) {
+    const container = document.getElementById('toast-container');
+    if (!container) return;
+
+    const toast = document.createElement('div');
+    toast.className = 'toast';
+    toast.innerHTML = `
+        <span class="toast-message"></span>
+        <button type="button" class="toast-undo-btn">Annuler</button>
+        <div class="toast-progress" style="animation-duration: ${duration}ms"></div>
+    `;
+    toast.querySelector('.toast-message').textContent = message; // évite l'injection HTML via un titre de piste/playlist
+
+    let settled = false;
+
+    const remove = () => {
+        toast.classList.add('toast-leaving');
+        toast.addEventListener('animationend', () => toast.remove(), { once: true });
+    };
+
+    const timer = setTimeout(() => {
+        if (settled) return;
+        settled = true;
+        remove();
+        if (onExpire) onExpire();
+    }, duration);
+
+    toast.querySelector('.toast-undo-btn').addEventListener('click', () => {
+        if (settled) return;
+        settled = true;
+        clearTimeout(timer);
+        remove();
+        if (onUndo) onUndo();
+    });
+
+    container.appendChild(toast);
+}
+
 function applyTheme(theme) {
     const t = theme || 'nuit';
     document.documentElement.dataset.theme = t === 'nuit' ? '' : t;
@@ -79,6 +127,7 @@ function populatePlaylists(playlists) {
         const option = document.createElement('option');
         option.value = p.id;
         option.textContent = `${p.name} (${p.trackIds.length} pistes)`;
+        option.dataset.name = p.name; // nom pur, sans le compteur de pistes (utilisé par ex. dans le toast d'undo)
         select.appendChild(option);
     });
 
@@ -197,14 +246,29 @@ async function loadLibrary() {
             </div>
         `;
 
-        // Event delete
-        div.querySelector('.delete-track-btn').addEventListener('click', async (e) => {
+        // Event delete — suppression optimiste avec possibilité d'annuler (toast)
+        div.querySelector('.delete-track-btn').addEventListener('click', (e) => {
             e.stopPropagation();
-            if (confirm(`Supprimer "${track.title}" définitivement ?`)) {
-                await window.electronAPI.deleteTrack(track.id);
-                await loadLibrary(); // Recharger bibliothèque
-                if (currentPlaylistId) await loadPlaylist(currentPlaylistId); // Recharger playlist active
+
+            // Si c'est la piste en cours de lecture, on stoppe tout de suite
+            if (audioManager.currentTrack && audioManager.currentTrack.id === track.id) {
+                audioManager.stop();
+                updateUI();
             }
+            div.remove();
+
+            showUndoToast(`Piste "${track.title}" supprimée.`, {
+                onExpire: async () => {
+                    await window.electronAPI.deleteTrack(track.id);
+                    await loadLibrary(); // Recharger bibliothèque
+                    if (currentPlaylistId) await loadPlaylist(currentPlaylistId); // Recharger playlist active
+                },
+                onUndo: async () => {
+                    // Rien n'a été supprimé côté DB/fichiers : un simple rechargement restaure tout
+                    await loadLibrary();
+                    if (currentPlaylistId) await loadPlaylist(currentPlaylistId);
+                },
+            });
         });
 
         container.appendChild(div);
@@ -755,22 +819,42 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-    // Delete Playlist
-    document.getElementById('delete-playlist-btn').addEventListener('click', async () => {
-        const playlistId = document.getElementById('playlist-select').value;
+    // Delete Playlist — suppression optimiste avec possibilité d'annuler (toast)
+    document.getElementById('delete-playlist-btn').addEventListener('click', () => {
+        const select = document.getElementById('playlist-select');
+        const playlistId = select.value;
         if (!playlistId) return;
 
-        if (confirm('Voulez-vous vraiment supprimer cette playlist ?')) {
-            await window.electronAPI.deletePlaylist(playlistId);
-            currentPlaylistId = null;
-            await loadPlaylists();
+        const playlistName = select.selectedOptions[0]?.dataset.name || 'la playlist';
+        const wasCurrent = currentPlaylistId === playlistId;
 
-            // Si plus de playlist, vider l'UI
-            if (document.getElementById('playlist-select').options.length <= 1) { // Juste l'option par défaut
-                document.getElementById('playlist-tracks').innerHTML = '<p class="empty-message">Aucune playlist.</p>';
-                audioManager.stop();
-                updateUI();
-            }
+        // Retirer l'option de la liste tout de suite (rien n'est encore supprimé côté DB)
+        const option = Array.from(select.options).find(opt => opt.value === playlistId);
+        if (option) option.remove();
+        select.value = '';
+        currentPlaylistId = null;
+
+        // Si plus de playlist, vider l'UI
+        if (select.options.length <= 1) { // Juste l'option par défaut
+            document.getElementById('playlist-tracks').innerHTML = '<p class="empty-message">Aucune playlist.</p>';
+            audioManager.stop();
+            updateUI();
         }
+
+        showUndoToast(`Playlist "${playlistName}" supprimée.`, {
+            onExpire: async () => {
+                await window.electronAPI.deletePlaylist(playlistId);
+                await loadPlaylists();
+            },
+            onUndo: async () => {
+                // Rien n'a été supprimé côté DB : un rechargement restaure tout
+                await loadPlaylists();
+                select.value = playlistId;
+                if (wasCurrent) {
+                    currentPlaylistId = playlistId;
+                    await loadPlaylist(playlistId);
+                }
+            },
+        });
     });
 });

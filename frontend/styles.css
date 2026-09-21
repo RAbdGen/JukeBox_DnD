@@ -2171,3 +2171,98 @@ footer {
     background: var(--sw-gold, #c9a84c);
     opacity: 0.75;
 }
+
+/* ============================================
+   Toast — Undo suppression
+   ============================================ */
+
+#toast-container {
+    position: fixed;
+    bottom: 24px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    flex-direction: column-reverse;
+    gap: 10px;
+    z-index: 1000;
+    pointer-events: none;
+}
+
+.toast {
+    pointer-events: auto;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    min-width: 320px;
+    max-width: 480px;
+    padding: 14px 16px;
+    background: linear-gradient(180deg, var(--ink-2) 0%, var(--ink-1) 100%);
+    border: 1px solid var(--ink-4);
+    border-radius: 6px;
+    box-shadow:
+        0 8px 24px rgba(0, 0, 0, 0.5),
+        inset 0 1px 0 rgba(255, 220, 170, 0.05);
+    position: relative;
+    overflow: hidden;
+    animation: toast-in 0.25s ease-out;
+}
+
+.toast.toast-leaving {
+    animation: toast-out 0.2s ease-in forwards;
+}
+
+.toast-message {
+    flex: 1;
+    color: var(--bone);
+    font-family: 'IM Fell English', serif;
+    font-size: 0.95rem;
+}
+
+.toast-undo-btn {
+    background: none;
+    border: 1px solid var(--gold-2);
+    color: var(--gold-3);
+    padding: 6px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+    white-space: nowrap;
+}
+
+.toast-undo-btn:hover {
+    background: var(--gold-glow);
+    border-color: var(--gold-3);
+    color: var(--gold-4);
+}
+
+.toast-progress {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 2px;
+    width: 100%;
+    background: var(--gold-2);
+    transform-origin: left;
+    animation-name: toast-progress;
+    animation-timing-function: linear;
+    animation-fill-mode: forwards;
+}
+
+@keyframes toast-in {
+    from { opacity: 0; transform: translateY(12px); }
+    to   { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes toast-out {
+    from { opacity: 1; transform: translateY(0); }
+    to   { opacity: 0; transform: translateY(-8px); }
+}
+
+@keyframes toast-progress {
+    from { transform: scaleX(1); }
+    to   { transform: scaleX(0); }
+}

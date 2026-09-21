@@ -109,9 +109,6 @@ Permettre de prendre un fichier audio unique et de le découper en segments temp
 
 ### À venir (backlog, pas de spec complète)
 
-**Priorité haute**
-- Undo suppression piste/playlist — filet de sécurité en live, surtout pendant une session
-
 **Priorité moyenne**
 - Raccourcis clavier globaux (play/pause/next/mute) fonctionnant même sans le focus sur la fenêtre — utile quand une autre fenêtre (notes, Roll20…) est au premier plan
 - Mute rapide / fade-out d'urgence (touche unique) pour couper vite sans arrêt brutal
