@@ -172,10 +172,11 @@ npm run build      # Vite d'abord, puis electron-builder
 npm run tauri build   # Vite + cargo build --release
 ```
 
-**Distribution manuelle (pas de CI) :**
-- Linux : build depuis le système Linux du dual-boot → AppImage
-- Windows : build depuis le système Windows du dual-boot → NSIS installer ou portable .exe
-- Si migration Tauri : cross-compilation Linux→Windows non supportée, toujours builder sur l'OS cible
+**Distribution automatisée via GitHub Actions :**
+- `.github/workflows/release.yml` — sur un tag `v*`, build Linux (AppImage) + Windows (portable .exe) sur des runners GitHub natifs (pas besoin du dual-boot), publie une GitHub Release avec les deux artefacts
+- Déclenchement manuel possible (`workflow_dispatch`) pour tester le build sans créer de release
+- Le dual-boot reste utile pour tester l'app en conditions réelles (surtout Windows), mais n'est plus nécessaire pour produire les installeurs
+- Si migration Tauri : ce workflow est à réécrire, la cross-compilation Linux→Windows n'est pas supportée par Tauri (contrairement à electron-builder sur GitHub Actions) — il faudra alors repasser par un build par OS cible
 
 ---
 
