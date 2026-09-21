@@ -36,6 +36,7 @@
     "appId": "com.jukebox.dnd",
     "productName": "JukeBox DnD",
     "icon": "build/icon.png",
+    "publish": null,
     "files": [
       "dist/**/*",
       "electron/**/*",
