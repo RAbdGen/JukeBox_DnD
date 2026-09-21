@@ -101,26 +101,35 @@ export class Track {
      * Effectuer un crossfade entre deux versions
      * @param {string} toVersion - Version cible
      * @param {number} durationPercent - Durée du crossfade en fraction de la piste (0.0–1.0, défaut: 0.1 = 10%)
+     * @param {(success: boolean) => void} [onComplete] - Appelé une fois le crossfade terminé (ou avorté)
      */
-    crossfade(toVersion, durationPercent = 0.1) {
+    crossfade(toVersion, durationPercent = 0.1, onComplete) {
+        const complete = (success) => {
+            if (onComplete) onComplete(success);
+        };
+
         if (!this.currentVersion) {
             console.warn('⚠️ Aucune version en cours, démarrage direct');
             this.play(toVersion);
+            complete(true);
             return;
         }
 
         if (this.currentVersion === toVersion) {
             console.log('ℹ️ Déjà sur cette version');
+            complete(true);
             return;
         }
 
         if (!this.versions[toVersion]) {
             console.error(`❌ Version "${toVersion}" introuvable`);
+            complete(false);
             return;
         }
 
         if (this.isCrossfading) {
             console.warn('⚠️ Crossfade déjà en cours, annulation');
+            complete(false);
             return;
         }
 
@@ -143,49 +152,72 @@ export class Track {
         const fromVolume = this.defaultVolume;
         const toVolume = this.defaultVolume;
 
-        // Ensure fromVersion has the correct volume before fading out
-        fromVersion.volume(fromVolume);
+        // Prépare et lance la nouvelle version une fois qu'elle est chargée : même garde-fou
+        // que Track.play() (avec preload:false + html5, le Howl peut ne pas être chargé au
+        // moment du crossfade). Le fade-out de fromVersion est déclenché ici aussi, pour que
+        // les deux fades démarrent bien ensemble plutôt que fromVersion ne parte seule dans
+        // le silence pendant qu'on attend le chargement de toVersion.
+        const startToVersion = () => {
+            // Ensure fromVersion has the correct volume before fading out
+            fromVersion.volume(fromVolume);
+            console.log(`📊 État avant crossfade - From: ${fromVolume.toFixed(2)}, To: 0`);
 
-        console.log(`📊 État avant crossfade - From: ${fromVolume.toFixed(2)}, To: 0`);
+            // 3. Démarrer le fade-out
+            console.log(`🔉 Fade-out: ${fromVolume.toFixed(2)} → 0 (${duration}ms)`);
+            fromVersion.fade(fromVolume, 0, duration);
 
-        // 3. Démarrer le fade-out
-        console.log(`🔉 Fade-out: ${fromVolume.toFixed(2)} → 0 (${duration}ms)`);
-        fromVersion.fade(fromVolume, 0, duration);
+            // 4. Configurer la nouvelle version
+            toVersionHowl.stop(); // Arrêter complètement si elle jouait
+            toVersionHowl.volume(0); // Force le volume à 0
+            toVersionHowl.seek(currentSeek);
 
-        // 4. Configurer la nouvelle version
-        toVersionHowl.stop(); // Arrêter complètement si elle jouait
-        toVersionHowl.volume(0); // Force le volume à 0
-        toVersionHowl.seek(currentSeek);
+            // 5. Lancer la nouvelle version
+            const playId = toVersionHowl.play();
+            console.log(`▶️ Piste "${toVersion}" lancée (ID: ${playId})`);
 
-        // 5. Lancer la nouvelle version
-        const playId = toVersionHowl.play();
-        console.log(`▶️ Piste "${toVersion}" lancée (ID: ${playId})`);
+            // 6. Attendre 50ms puis démarrer le fade-in
+            setTimeout(() => {
+                // Vérifier que la version joue bien
+                if (!toVersionHowl.playing(playId)) {
+                    console.error(`❌ Erreur: la nouvelle version ne joue pas, annulation du crossfade`);
 
-        // 6. Attendre 50ms puis démarrer le fade-in
-        setTimeout(() => {
-            // Vérifier que la version joue bien
-            if (!toVersionHowl.playing(playId)) {
-                console.error(`❌ Erreur: la nouvelle version ne joue pas`);
-                this.isCrossfading = false;
-                return;
+                    // Restaurer l'ancienne version pour éviter un silence total
+                    fromVersion.volume(fromVolume);
+                    if (!fromVersion.playing()) {
+                        fromVersion.play();
+                    }
+
+                    this.isCrossfading = false;
+                    complete(false);
+                    return;
+                }
+
+                // Démarrer le fade-in
+                console.log(`🔊 Fade-in: 0 → ${toVolume.toFixed(2)} (${duration}ms)`);
+                toVersionHowl.fade(0, toVolume, duration, playId);
+
+                // 7. Finaliser une fois le fade-in lancé avec succès
+                setTimeout(() => {
+                    fromVersion.stop();
+                    fromVersion.volume(this.defaultVolume); // Réinitialiser le volume
+
+                    this.currentVersion = toVersion;
+                    this.isCrossfading = false;
+
+                    console.log(`✅ Crossfade terminé, maintenant sur "${toVersion}"`);
+                    complete(true);
+                }, duration);
+            }, 50);
+        };
+
+        if (toVersionHowl.state() === 'loaded') {
+            startToVersion();
+        } else {
+            toVersionHowl.once('load', startToVersion);
+            if (toVersionHowl.state() === 'unloaded') {
+                toVersionHowl.load(); // Déclenche le chargement (preload: false)
             }
-
-            // Démarrer le fade-in
-            console.log(`🔊 Fade-in: 0 → ${toVolume.toFixed(2)} (${duration}ms)`);
-            toVersionHowl.fade(0, toVolume, duration, playId);
-
-        }, 50);
-
-        // 7. Arrêter l'ancienne version après le fade complet
-        setTimeout(() => {
-            fromVersion.stop();
-            fromVersion.volume(this.defaultVolume); // Réinitialiser le volume
-
-            this.currentVersion = toVersion;
-            this.isCrossfading = false;
-
-            console.log(`✅ Crossfade terminé, maintenant sur "${toVersion}"`);
-        }, duration + 100);
+        }
     }
 
     /**

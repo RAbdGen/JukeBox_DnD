@@ -81,6 +81,7 @@ export class AudioManager {
         // Jouer la nouvelle piste
         track.play(version);
         this.currentTrack = track;
+        this.currentVersion = track.currentVersion; // Rester synchronisé avec la version réellement appliquée
 
         // Callback
         if (this.callbacks.onTrackChange) {
@@ -101,14 +102,15 @@ export class AudioManager {
             return;
         }
 
-        this.currentTrack.crossfade(toVersion, durationPercent);
+        this.currentTrack.crossfade(toVersion, durationPercent, (success) => {
+            if (success) {
+                this.currentVersion = this.currentTrack.currentVersion; // Rester synchronisé une fois le crossfade réellement terminé
+            }
 
-        // Callback
-        if (this.callbacks.onVersionChange) {
-            setTimeout(() => {
+            if (this.callbacks.onVersionChange) {
                 this.callbacks.onVersionChange(this.currentTrack.getState());
-            }, duration);
-        }
+            }
+        });
     }
 
     /**
