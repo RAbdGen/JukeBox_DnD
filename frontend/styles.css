@@ -1006,6 +1006,16 @@ main::-webkit-scrollbar {
     color: var(--bone);
 }
 
+.secondary-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.secondary-btn:disabled:hover {
+    border-color: var(--ink-3);
+    color: var(--bone-dim);
+}
+
 .danger-btn {
     background: rgba(107, 20, 20, 0.25);
     border: 1px solid #6b1414;

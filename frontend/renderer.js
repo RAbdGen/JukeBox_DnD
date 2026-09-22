@@ -1,3 +1,4 @@
+import { Howl } from 'howler';
 import { AudioManager } from '../backend/AudioManager.js';
 
 // ========================================
@@ -9,6 +10,8 @@ let currentPlaylistId = 'default';
 let updateInterval = null;
 let volumeBeforeMute = null; // volume mémorisé pour le mute rapide (raccourci clavier) ; null = pas muté
 let libraryCache = []; // dernière bibliothèque chargée, pour filtrer la recherche sans re-fetch IPC
+let previewHowl = null; // Howl dédié au preview au survol (séparé de audioManager, n'interfère pas avec la lecture en cours)
+let previewTimer = null;
 
 // ========================================
 // Toast — Undo suppression
@@ -247,6 +250,49 @@ function openEditTrackModal(track) {
 }
 
 /**
+ * Stoppe le preview en cours (s'il y en a un). N'affecte jamais la
+ * lecture principale (audioManager) — Howl totalement séparé.
+ */
+function stopPreviewHowl() {
+    if (previewHowl) {
+        previewHowl.unload();
+        previewHowl = null;
+    }
+}
+
+/**
+ * Démarre le preview d'une piste (version par défaut) dans un Howl
+ * dédié. Même garde-fou que Track.play() : attend le chargement avant
+ * de jouer (preload:false).
+ */
+function startPreview(track) {
+    stopPreviewHowl();
+
+    const versionName = track.defaultVersion || Object.keys(track.localPaths || {})[0];
+    let src = versionName && track.localPaths ? track.localPaths[versionName] : null;
+    if (!src) return;
+
+    if (!src.startsWith('http') && !src.startsWith('file://')) {
+        src = `file://${src}`;
+    }
+
+    previewHowl = new Howl({
+        src: [src],
+        html5: true,
+        volume: audioManager.getVolume(),
+        preload: false,
+    });
+
+    const doPlay = () => previewHowl && previewHowl.play();
+    if (previewHowl.state() === 'loaded') {
+        doPlay();
+    } else {
+        previewHowl.once('load', doPlay);
+        previewHowl.load();
+    }
+}
+
+/**
  * Rendu de la liste de pistes de la bibliothèque (sous-ensemble de
  * libraryCache, potentiellement filtré par la recherche).
  */
@@ -276,6 +322,7 @@ function renderLibraryList(tracks) {
                 <span class="track-details">${versionsCount} version(s) • ${playlistsCount} playlist(s)</span>
             </div>
             <div class="track-actions">
+                <button class="add-to-playlist-btn secondary-btn" data-id="${track.id}" title="Ajouter à la playlist active" ${currentPlaylistId ? '' : 'disabled'}>➕</button>
                 <button class="edit-track-btn secondary-btn" data-id="${track.id}" title="Modifier le volume">✏️</button>
                 <button class="delete-track-btn danger-btn" data-id="${track.id}">🗑️</button>
             </div>
@@ -295,6 +342,28 @@ function renderLibraryList(tracks) {
             div.querySelector('.track-info-main').appendChild(tagsContainer);
         }
 
+        // Preview au survol : léger délai pour ignorer les survols rapides,
+        // un seul preview actif à la fois, stoppé immédiatement au mouseleave
+        div.addEventListener('mouseenter', () => {
+            clearTimeout(previewTimer);
+            previewTimer = setTimeout(() => startPreview(track), 300);
+        });
+        div.addEventListener('mouseleave', () => {
+            clearTimeout(previewTimer);
+            previewTimer = null;
+            stopPreviewHowl();
+        });
+
+        // Event ajout à la playlist active
+        div.querySelector('.add-to-playlist-btn').addEventListener('click', async (e) => {
+            e.stopPropagation();
+            if (!currentPlaylistId) return;
+            await window.electronAPI.addTrackToPlaylist(currentPlaylistId, track.id);
+            await loadPlaylist(currentPlaylistId);
+            await loadPlaylists();
+            await loadLibrary(); // rafraîchit le compteur "X playlist(s)" de la piste
+        });
+
         // Event edit (volume par défaut + tags de la piste)
         div.querySelector('.edit-track-btn').addEventListener('click', (e) => {
             e.stopPropagation();
@@ -304,6 +373,10 @@ function renderLibraryList(tracks) {
         // Event delete — suppression optimiste avec possibilité d'annuler (toast)
         div.querySelector('.delete-track-btn').addEventListener('click', (e) => {
             e.stopPropagation();
+
+            // div.remove() ne déclenche pas mouseleave : couper le preview explicitement
+            clearTimeout(previewTimer);
+            stopPreviewHowl();
 
             // Si c'est la piste en cours de lecture, on stoppe tout de suite
             if (audioManager.currentTrack && audioManager.currentTrack.id === track.id) {
