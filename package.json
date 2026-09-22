@@ -15,7 +15,7 @@
     "build:app": "electron-builder",
     "lint": "eslint .",
     "preview": "vite preview",
-    "test": "vitest run",
+    "test": "vitest run --root .",
     "test:watch": "vitest"
   },
   "dependencies": {

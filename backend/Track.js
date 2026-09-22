@@ -253,17 +253,6 @@ export class Track {
     }
 
     /**
-     * Définir le volume global
-     * @param {number} volume - Volume entre 0 et 1
-     */
-    setVolume(volume) {
-        this.defaultVolume = volume;
-        if (this.currentVersion && this.versions[this.currentVersion]) {
-            this.versions[this.currentVersion].volume(volume);
-        }
-    }
-
-    /**
      * Activer/désactiver le loop sur la version actuelle
      * @param {boolean} loop - true pour boucler, false sinon
      */

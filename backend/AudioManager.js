@@ -131,8 +131,9 @@ export class AudioManager {
             const currentVersion = this.currentTrack.currentVersion;
             if (currentVersion && this.currentTrack.versions[currentVersion]) {
                 const howl = this.currentTrack.versions[currentVersion];
-                // Restore volume before playing
-                howl.volume(this.currentTrack.defaultVolume || this.globalVolume);
+                // Le volume par piste reste indépendant du volume maître Howler.
+                // `??` conserve volontairement une normalisation à 0.
+                howl.volume(this.currentTrack.defaultVolume ?? this.globalVolume);
                 howl.play();
                 this.currentTrack.isPlaying = true;
                 console.log('▶️ Reprise de la lecture');
@@ -153,14 +154,16 @@ export class AudioManager {
     /**
      * Définir le volume global
      * @param {number} volume - Volume entre 0 et 1
+     * @param {{ cancelFade?: boolean }} options - Annule le fondu actif sauf pour ses propres pas
      */
-    setVolume(volume) {
+    setVolume(volume, { cancelFade = true } = {}) {
+        if (cancelFade) {
+            // Un réglage manuel ne doit jamais être écrasé par un fondu lancé avant lui.
+            this._fadeToken = (this._fadeToken || 0) + 1;
+        }
+
         this.globalVolume = Math.max(0, Math.min(1, volume));
         Howler.volume(this.globalVolume);
-
-        if (this.currentTrack) {
-            this.currentTrack.setVolume(this.globalVolume);
-        }
 
         console.log(`🔊 Volume global: ${Math.round(this.globalVolume * 100)}%`);
     }
@@ -176,8 +179,8 @@ export class AudioManager {
     /**
      * Fondu du volume global sur une courte durée (ex: mute/unmute rapide,
      * pour éviter une coupure brutale). Réutilise setVolume() à chaque pas
-     * pour rester cohérent avec le volume Howler (master) et celui du Howl
-     * actif.
+     * pour rester cohérent avec le volume maître Howler. Les pas internes ne
+     * doivent pas annuler leur propre fondu.
      *
      * Utilise setTimeout plutôt que requestAnimationFrame : le raccourci
      * clavier global (voir electron/main.cjs) doit fonctionner même quand
@@ -199,7 +202,7 @@ export class AudioManager {
         const target = Math.max(0, Math.min(1, targetVolume));
 
         if (duration <= 0) {
-            this.setVolume(target);
+            this.setVolume(target, { cancelFade: false });
             return Promise.resolve();
         }
 
@@ -214,7 +217,7 @@ export class AudioManager {
                 }
 
                 const t = Math.min((performance.now() - startTime) / duration, 1);
-                this.setVolume(startVolume + (target - startVolume) * t);
+                this.setVolume(startVolume + (target - startVolume) * t, { cancelFade: false });
 
                 if (t < 1) {
                     setTimeout(step, STEP_MS);
@@ -508,4 +511,3 @@ export class AudioManager {
         };
     }
 }
-
