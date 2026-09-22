@@ -1049,6 +1049,13 @@ main::-webkit-scrollbar {
     display: none;
 }
 
+/* .hidden n'a pas de règle générique dans ce projet : chaque type d'élément
+   a sa propre paire (voir .view.hidden, .playlist-dropdown.hidden plus bas) */
+.form-group.hidden,
+.danger-btn.hidden {
+    display: none;
+}
+
 .modal-content {
     background: linear-gradient(180deg, var(--ink-2) 0%, var(--ink-1) 100%);
     border: 1px solid var(--ink-3);

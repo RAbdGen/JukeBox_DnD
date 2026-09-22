@@ -219,6 +219,31 @@ async function loadPlaylist(id) {
 // Gestion de la Bibliothèque
 // ========================================
 
+/**
+ * Ouvre la modale d'édition de piste, limitée au volume par défaut
+ * (normalisation manuelle entre pistes). Le titre est affiché pour le
+ * contexte mais en lecture seule, et la section Versions / le bouton
+ * Supprimer sont masqués : hors scope, la modale gère plus de champs
+ * dans le HTML que ce qui est branché ici.
+ */
+function openEditTrackModal(track) {
+    const modal = document.getElementById('edit-track-modal');
+    const volumePercent = Math.round((track.defaultVolume ?? 0.5) * 100);
+
+    document.getElementById('edit-track-id').value = track.id;
+    document.getElementById('edit-track-title').value = track.title;
+    document.getElementById('edit-track-title').readOnly = true;
+    document.getElementById('edit-track-volume').value = volumePercent;
+    document.getElementById('edit-track-volume-value').textContent = `${volumePercent}%`;
+
+    // Hors scope pour l'instant (voir commentaire ci-dessus)
+    document.getElementById('edit-versions-group').classList.add('hidden');
+    document.getElementById('delete-track-btn').classList.add('hidden');
+
+    document.body.style.overflow = 'hidden';
+    modal.classList.remove('hidden');
+}
+
 async function loadLibrary() {
     const library = await window.electronAPI.getLibrary();
     const container = document.getElementById('library-tracks');
@@ -243,9 +268,16 @@ async function loadLibrary() {
                 <span class="track-details">${versionsCount} version(s) • ${playlistsCount} playlist(s)</span>
             </div>
             <div class="track-actions">
+                <button class="edit-track-btn secondary-btn" data-id="${track.id}" title="Modifier le volume">✏️</button>
                 <button class="delete-track-btn danger-btn" data-id="${track.id}">🗑️</button>
             </div>
         `;
+
+        // Event edit (volume par défaut de la piste)
+        div.querySelector('.edit-track-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            openEditTrackModal(track);
+        });
 
         // Event delete — suppression optimiste avec possibilité d'annuler (toast)
         div.querySelector('.delete-track-btn').addEventListener('click', (e) => {
@@ -827,6 +859,28 @@ document.addEventListener('DOMContentLoaded', () => {
             alert("Erreur lors de l'ajout");
             document.getElementById('confirm-add-track').textContent = 'Ajouter la piste';
         }
+    });
+
+    // ========================================
+    // MODAL: MODIFIER PISTE (volume uniquement — voir openEditTrackModal)
+    // ========================================
+
+    document.getElementById('edit-track-volume').addEventListener('input', (e) => {
+        document.getElementById('edit-track-volume-value').textContent = `${e.target.value}%`;
+    });
+
+    document.getElementById('save-track-edits').addEventListener('click', async () => {
+        const trackId = document.getElementById('edit-track-id').value;
+        const volume = document.getElementById('edit-track-volume').value / 100;
+
+        await window.electronAPI.updateTrack(trackId, { defaultVolume: volume });
+
+        document.body.style.overflow = '';
+        document.getElementById('edit-track-modal').classList.add('hidden');
+
+        // Recharger pour que les Track en mémoire reprennent le nouveau defaultVolume
+        await loadLibrary();
+        if (currentPlaylistId) await loadPlaylist(currentPlaylistId);
     });
 
     // ========================================
