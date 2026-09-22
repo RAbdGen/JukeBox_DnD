@@ -215,13 +215,26 @@ export class FileManager {
         const localPaths = {};
 
         for (const [versionName, filename] of Object.entries(relativePaths)) {
-            const sourcePath = path.join(importMusicDir, filename);
-            const destPath = path.join(this.musicDir, filename);
+            // filename vient de jukebox-export.json, un fichier pensé pour être
+            // partagé (dual-boot, ami joueur) — donc potentiellement non fiable.
+            // On rejette tout ce qui n'est pas un simple nom de fichier (pas de
+            // ../ ni de séparateur) pour éviter d'écrire/lire hors de musicDir.
+            // Vérif indépendante de l'OS (path.basename seul ne coupe pas les
+            // "\" sous Linux, et l'export peut venir de l'autre OS du dual-boot)
+            const safeName = path.basename(filename);
+            const hasPathChars = /[\\/]/.test(filename);
+            if (hasPathChars || safeName !== filename || safeName === '..' || safeName === '.') {
+                console.warn(`⚠️ Nom de fichier suspect ignoré à l'import: ${filename}`);
+                continue;
+            }
+
+            const sourcePath = path.join(importMusicDir, safeName);
+            const destPath = path.join(this.musicDir, safeName);
             try {
                 await fs.copyFile(sourcePath, destPath);
                 localPaths[versionName] = destPath;
             } catch (error) {
-                console.warn(`⚠️ Impossible d'importer ${filename}:`, error.message);
+                console.warn(`⚠️ Impossible d'importer ${safeName}:`, error.message);
             }
         }
 
