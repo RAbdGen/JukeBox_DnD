@@ -8,6 +8,7 @@ const audioManager = new AudioManager();
 let currentPlaylistId = 'default';
 let updateInterval = null;
 let volumeBeforeMute = null; // volume mémorisé pour le mute rapide (raccourci clavier) ; null = pas muté
+let libraryCache = []; // dernière bibliothèque chargée, pour filtrer la recherche sans re-fetch IPC
 
 // ========================================
 // Toast — Undo suppression
@@ -220,11 +221,11 @@ async function loadPlaylist(id) {
 // ========================================
 
 /**
- * Ouvre la modale d'édition de piste, limitée au volume par défaut
- * (normalisation manuelle entre pistes). Le titre est affiché pour le
- * contexte mais en lecture seule, et la section Versions / le bouton
- * Supprimer sont masqués : hors scope, la modale gère plus de champs
- * dans le HTML que ce qui est branché ici.
+ * Ouvre la modale d'édition de piste, limitée au volume par défaut et
+ * aux tags (normalisation manuelle + organisation de la bibliothèque).
+ * Le titre est affiché pour le contexte mais en lecture seule, et la
+ * section Versions / le bouton Supprimer sont masqués : hors scope, la
+ * modale gère plus de champs dans le HTML que ce qui est branché ici.
  */
 function openEditTrackModal(track) {
     const modal = document.getElementById('edit-track-modal');
@@ -235,6 +236,7 @@ function openEditTrackModal(track) {
     document.getElementById('edit-track-title').readOnly = true;
     document.getElementById('edit-track-volume').value = volumePercent;
     document.getElementById('edit-track-volume-value').textContent = `${volumePercent}%`;
+    document.getElementById('edit-track-tags').value = (track.tags || []).join(', ');
 
     // Hors scope pour l'instant (voir commentaire ci-dessus)
     document.getElementById('edit-versions-group').classList.add('hidden');
@@ -244,28 +246,38 @@ function openEditTrackModal(track) {
     modal.classList.remove('hidden');
 }
 
-async function loadLibrary() {
-    const library = await window.electronAPI.getLibrary();
+/**
+ * Rendu de la liste de pistes de la bibliothèque (sous-ensemble de
+ * libraryCache, potentiellement filtré par la recherche).
+ */
+function renderLibraryList(tracks) {
     const container = document.getElementById('library-tracks');
 
-    if (library.length === 0) {
-        container.innerHTML = '<p class="empty-message">Bibliothèque vide. Cliquez sur "Ajouter une musique" pour commencer.</p>';
+    if (tracks.length === 0) {
+        container.innerHTML = libraryCache.length === 0
+            ? '<p class="empty-message">Bibliothèque vide. Cliquez sur "Ajouter une piste" pour commencer.</p>'
+            : '<p class="empty-message">Aucune piste ne correspond à la recherche.</p>';
         return;
     }
 
     container.innerHTML = '';
 
-    library.forEach(track => {
+    tracks.forEach(track => {
         const div = document.createElement('div');
         div.className = 'library-track';
 
         const versionsCount = Object.keys(track.localPaths || track.originalPaths || {}).length;
         const playlistsCount = track.inPlaylists ? track.inPlaylists.length : 0;
+        const tags = track.tags || [];
+        const tagsHtml = tags.length > 0
+            ? `<div class="track-tags">${tags.map(t => `<span class="tag-pill">${t}</span>`).join('')}</div>`
+            : '';
 
         div.innerHTML = `
             <div class="track-info-main">
                 <span class="track-title">${track.title}</span>
                 <span class="track-details">${versionsCount} version(s) • ${playlistsCount} playlist(s)</span>
+                ${tagsHtml}
             </div>
             <div class="track-actions">
                 <button class="edit-track-btn secondary-btn" data-id="${track.id}" title="Modifier le volume">✏️</button>
@@ -273,7 +285,7 @@ async function loadLibrary() {
             </div>
         `;
 
-        // Event edit (volume par défaut de la piste)
+        // Event edit (volume par défaut + tags de la piste)
         div.querySelector('.edit-track-btn').addEventListener('click', (e) => {
             e.stopPropagation();
             openEditTrackModal(track);
@@ -306,6 +318,28 @@ async function loadLibrary() {
 
         container.appendChild(div);
     });
+}
+
+/**
+ * Filtre libraryCache par titre ou tag (substring, insensible à la casse).
+ */
+function filterLibrary(query) {
+    const q = query.trim().toLowerCase();
+    if (!q) return libraryCache;
+
+    return libraryCache.filter(track => {
+        if (track.title.toLowerCase().includes(q)) return true;
+        return (track.tags || []).some(tag => tag.toLowerCase().includes(q));
+    });
+}
+
+async function loadLibrary() {
+    libraryCache = await window.electronAPI.getLibrary();
+
+    const searchInput = document.getElementById('library-search');
+    const query = searchInput ? searchInput.value : '';
+
+    renderLibraryList(filterLibrary(query));
 }
 
 // ========================================
@@ -704,6 +738,11 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    // --- Recherche bibliothèque (titre ou tags) ---
+    document.getElementById('library-search').addEventListener('input', (e) => {
+        renderLibraryList(filterLibrary(e.target.value));
+    });
+
     // ========================================
     // MODAL: AJOUTER PISTE
     // ========================================
@@ -862,7 +901,7 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // ========================================
-    // MODAL: MODIFIER PISTE (volume uniquement — voir openEditTrackModal)
+    // MODAL: MODIFIER PISTE (volume + tags — voir openEditTrackModal)
     // ========================================
 
     document.getElementById('edit-track-volume').addEventListener('input', (e) => {
@@ -872,8 +911,12 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('save-track-edits').addEventListener('click', async () => {
         const trackId = document.getElementById('edit-track-id').value;
         const volume = document.getElementById('edit-track-volume').value / 100;
+        const tags = document.getElementById('edit-track-tags').value
+            .split(',')
+            .map(t => t.trim().toLowerCase())
+            .filter(Boolean);
 
-        await window.electronAPI.updateTrack(trackId, { defaultVolume: volume });
+        await window.electronAPI.updateTrack(trackId, { defaultVolume: volume, tags });
 
         document.body.style.overflow = '';
         document.getElementById('edit-track-modal').classList.add('hidden');

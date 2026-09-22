@@ -20,6 +20,7 @@ frontend/               → Vanilla JS ESM, bundlé par Vite → dist/
 - `"type": "module"` dans package.json → ESM par défaut, sauf les `.cjs` d'Electron
 - Données persistées dans `app.getPath('userData')` : `data.json` + dossier `music/`
 - DB schema v2.0 : `library[]` (pistes) + `playlists[]` (IDs de tracks)
+- Champs optionnels sur un track (ajout additif, pas de migration requise) : `tags: string[]` — toujours lire via `track.tags || []`
 - Un `Track` peut avoir plusieurs versions audio avec crossfade
 - `webSecurity: false` dans BrowserWindow pour les `file://` URLs
 - Dev : `make dev` ou `npm run dev` (Vite sur :3000 + electronmon)
@@ -110,7 +111,6 @@ Permettre de prendre un fichier audio unique et de le découper en segments temp
 ### À venir (backlog, pas de spec complète)
 
 **Priorité moyenne**
-- Tags/recherche dans la bibliothèque au-delà des playlists (ex : filtrer par ambiance "forêt", "taverne", "combat")
 - Preview audio au survol d'une piste avant de l'ajouter à une playlist
 - Export/import de la bibliothèque (backup JSON + fichiers) pour synchroniser entre le dual-boot Linux/Windows ou partager une config avec l'ami joueur
 
