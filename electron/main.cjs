@@ -303,16 +303,9 @@ ipcHandle('library:importLibrary', async () => {
         const raw = await fs.readFile(jsonPath, 'utf-8');
         const importPayload = JSON.parse(raw);
 
-        const tracksWithLocalPaths = [];
-        for (const track of importPayload.library || []) {
-            const localPaths = await fileManager.importTrackFiles(track.localPaths || {}, musicDir);
-            tracksWithLocalPaths.push({ ...track, localPaths });
-        }
-
-        const stats = await dbManager.mergeImportedLibrary({
-            library: tracksWithLocalPaths,
-            playlists: importPayload.playlists || [],
-        });
+        const importManagerPath = pathToFileURL(path.join(__dirname, '..', 'backend', 'ImportManager.js')).href;
+        const { importLibraryPayload } = await import(importManagerPath);
+        const stats = await importLibraryPayload(importPayload, musicDir, dbManager, fileManager);
 
         console.log(`✅ Import terminé depuis ${sourceDir}`);
         return stats;

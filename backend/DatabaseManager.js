@@ -410,9 +410,8 @@ export class DatabaseManager {
      * Fusionne une bibliothèque importée dans la DB locale : les pistes
      * et playlists déjà présentes (même id) sont ignorées, les nouvelles
      * sont ajoutées. Ne remplace jamais rien.
-     * @param {Object} imported - { library, playlists } avec des tracks
-     *   dont localPaths a déjà été réécrit vers des chemins absolus
-     *   locaux (par FileManager.importTrackFiles avant cet appel)
+     * @param {Object} imported - { library, playlists } avec des nouvelles
+     *   pistes dont localPaths a été réécrit vers des chemins absolus locaux
      * @returns {Promise<{tracksAdded: number, tracksSkipped: number, playlistsAdded: number, playlistsMerged: number}>}
      */
     async mergeImportedLibrary(imported) {
@@ -430,13 +429,15 @@ export class DatabaseManager {
         }
 
         for (const playlist of imported.playlists || []) {
+            const importedTrackIds = Array.isArray(playlist.trackIds) ? playlist.trackIds : [];
             const existing = this.db.data.playlists.find(p => p.id === playlist.id);
             if (existing) {
-                const merged = new Set([...existing.trackIds, ...playlist.trackIds]);
+                const existingTrackIds = Array.isArray(existing.trackIds) ? existing.trackIds : [];
+                const merged = new Set([...existingTrackIds, ...importedTrackIds]);
                 existing.trackIds = Array.from(merged);
                 stats.playlistsMerged++;
             } else {
-                this.db.data.playlists.push(playlist);
+                this.db.data.playlists.push({ ...playlist, trackIds: importedTrackIds });
                 stats.playlistsAdded++;
             }
         }
