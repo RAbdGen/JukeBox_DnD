@@ -1,5 +1,7 @@
 import { Howl } from 'howler';
 import { AudioManager } from '../backend/AudioManager.js';
+import { createPendingDeletionStore } from './pendingDeletions.js';
+import { createPreviewState } from './previewState.js';
 
 // ========================================
 // Initialisation
@@ -11,7 +13,7 @@ let updateInterval = null;
 let volumeBeforeMute = null; // volume mémorisé pour le mute rapide (raccourci clavier) ; null = pas muté
 let libraryCache = []; // dernière bibliothèque chargée, pour filtrer la recherche sans re-fetch IPC
 let previewHowl = null; // Howl dédié au preview au survol (séparé de audioManager, n'interfère pas avec la lecture en cours)
-let previewTimer = null;
+const pendingDeletions = createPendingDeletionStore();
 
 // ========================================
 // Toast — Undo suppression
@@ -178,7 +180,7 @@ function populatePlaylists(playlists) {
 }
 
 async function loadPlaylists() {
-    const playlists = await window.electronAPI.getAllPlaylists();
+    const playlists = pendingDeletions.filterPlaylists(await window.electronAPI.getAllPlaylists());
     populatePlaylists(playlists);
 }
 
@@ -261,6 +263,11 @@ function stopPreviewHowl() {
     }
 }
 
+const previewState = createPreviewState({
+    clearTimer: clearTimeout,
+    stopHowl: stopPreviewHowl,
+});
+
 /**
  * Démarre le preview d'une piste (version par défaut) dans un Howl
  * dédié. Même garde-fou que Track.play() : attend le chargement avant
@@ -299,6 +306,10 @@ function startPreview(track) {
  */
 function renderLibraryList(tracks) {
     const container = document.getElementById('library-tracks');
+
+    // Retirer les lignes ne déclenche pas mouseleave : annuler explicitement
+    // le timer et le Howl avant chaque re-rendu.
+    previewState.cancel();
 
     if (tracks.length === 0) {
         container.innerHTML = libraryCache.length === 0
@@ -346,13 +357,11 @@ function renderLibraryList(tracks) {
         // Preview au survol : léger délai pour ignorer les survols rapides,
         // un seul preview actif à la fois, stoppé immédiatement au mouseleave
         div.addEventListener('mouseenter', () => {
-            clearTimeout(previewTimer);
-            previewTimer = setTimeout(() => startPreview(track), 300);
+            previewState.clearTimer();
+            previewState.setTimer(setTimeout(() => startPreview(track), 300));
         });
         div.addEventListener('mouseleave', () => {
-            clearTimeout(previewTimer);
-            previewTimer = null;
-            stopPreviewHowl();
+            previewState.cancel();
         });
 
         // Event ajout à la playlist active
@@ -376,24 +385,29 @@ function renderLibraryList(tracks) {
             e.stopPropagation();
 
             // div.remove() ne déclenche pas mouseleave : couper le preview explicitement
-            clearTimeout(previewTimer);
-            stopPreviewHowl();
+            previewState.cancel();
 
             // Si c'est la piste en cours de lecture, on stoppe tout de suite
             if (audioManager.currentTrack && audioManager.currentTrack.id === track.id) {
                 audioManager.stop();
                 updateUI();
             }
+            pendingDeletions.markTrack(track.id);
             div.remove();
 
             showUndoToast(`Piste "${track.title}" supprimée.`, {
                 onExpire: async () => {
-                    await window.electronAPI.deleteTrack(track.id);
-                    await loadLibrary(); // Recharger bibliothèque
-                    if (currentPlaylistId) await loadPlaylist(currentPlaylistId); // Recharger playlist active
+                    try {
+                        await window.electronAPI.deleteTrack(track.id);
+                    } finally {
+                        pendingDeletions.completeTrack(track.id);
+                        await loadLibrary(); // Recharger bibliothèque
+                        if (currentPlaylistId) await loadPlaylist(currentPlaylistId); // Recharger playlist active
+                    }
                 },
                 onUndo: async () => {
                     // Rien n'a été supprimé côté DB/fichiers : un simple rechargement restaure tout
+                    pendingDeletions.undoTrack(track.id);
                     await loadLibrary();
                     if (currentPlaylistId) await loadPlaylist(currentPlaylistId);
                 },
@@ -418,7 +432,7 @@ function filterLibrary(query) {
 }
 
 async function loadLibrary() {
-    libraryCache = await window.electronAPI.getLibrary();
+    libraryCache = pendingDeletions.filterTracks(await window.electronAPI.getLibrary());
 
     const searchInput = document.getElementById('library-search');
     const query = searchInput ? searchInput.value : '';
@@ -1098,6 +1112,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const playlistName = select.selectedOptions[0]?.dataset.name || 'la playlist';
         const wasCurrent = currentPlaylistId === playlistId;
+        pendingDeletions.markPlaylist(playlistId);
 
         // Retirer l'option de la liste tout de suite (rien n'est encore supprimé côté DB)
         const option = Array.from(select.options).find(opt => opt.value === playlistId);
@@ -1114,11 +1129,16 @@ document.addEventListener('DOMContentLoaded', () => {
 
         showUndoToast(`Playlist "${playlistName}" supprimée.`, {
             onExpire: async () => {
-                await window.electronAPI.deletePlaylist(playlistId);
-                await loadPlaylists();
+                try {
+                    await window.electronAPI.deletePlaylist(playlistId);
+                } finally {
+                    pendingDeletions.completePlaylist(playlistId);
+                    await loadPlaylists();
+                }
             },
             onUndo: async () => {
                 // Rien n'a été supprimé côté DB : un rechargement restaure tout
+                pendingDeletions.undoPlaylist(playlistId);
                 await loadPlaylists();
                 select.value = playlistId;
                 if (wasCurrent) {
