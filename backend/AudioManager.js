@@ -175,9 +175,17 @@ export class AudioManager {
 
     /**
      * Fondu du volume global sur une courte durée (ex: mute/unmute rapide,
-     * pour éviter une coupure brutale). Réutilise setVolume() à chaque
-     * frame pour rester cohérent avec le volume Howler (master) et celui
-     * du Howl actif.
+     * pour éviter une coupure brutale). Réutilise setVolume() à chaque pas
+     * pour rester cohérent avec le volume Howler (master) et celui du Howl
+     * actif.
+     *
+     * Utilise setTimeout plutôt que requestAnimationFrame : le raccourci
+     * clavier global (voir electron/main.cjs) doit fonctionner même quand
+     * la fenêtre n'a pas le focus / est en arrière-plan, or Chrome/Electron
+     * suspend complètement rAF pour une page non visible (confirmé : avec
+     * rAF, le fondu ne se déclenchait jamais une fois la fenêtre en
+     * arrière-plan). setTimeout continue de s'exécuter dans ce cas.
+     *
      * @param {number} targetVolume - Volume cible (0–1)
      * @param {number} duration - Durée du fondu en ms (défaut: 300)
      * @returns {Promise<void>} résout une fois le fondu terminé
@@ -196,25 +204,26 @@ export class AudioManager {
         }
 
         const startTime = performance.now();
+        const STEP_MS = 20; // ~50 pas/s, largement suffisant pour un fondu de volume
 
         return new Promise((resolve) => {
-            const step = (now) => {
+            const step = () => {
                 if (token !== this._fadeToken) {
                     resolve(); // un fondu plus récent a pris le relais
                     return;
                 }
 
-                const t = Math.min((now - startTime) / duration, 1);
+                const t = Math.min((performance.now() - startTime) / duration, 1);
                 this.setVolume(startVolume + (target - startVolume) * t);
 
                 if (t < 1) {
-                    requestAnimationFrame(step);
+                    setTimeout(step, STEP_MS);
                 } else {
                     resolve();
                 }
             };
 
-            requestAnimationFrame(step);
+            step();
         });
     }
 
