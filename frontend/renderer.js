@@ -269,21 +269,31 @@ function renderLibraryList(tracks) {
         const versionsCount = Object.keys(track.localPaths || track.originalPaths || {}).length;
         const playlistsCount = track.inPlaylists ? track.inPlaylists.length : 0;
         const tags = track.tags || [];
-        const tagsHtml = tags.length > 0
-            ? `<div class="track-tags">${tags.map(t => `<span class="tag-pill">${t}</span>`).join('')}</div>`
-            : '';
 
         div.innerHTML = `
             <div class="track-info-main">
                 <span class="track-title">${track.title}</span>
                 <span class="track-details">${versionsCount} version(s) • ${playlistsCount} playlist(s)</span>
-                ${tagsHtml}
             </div>
             <div class="track-actions">
                 <button class="edit-track-btn secondary-btn" data-id="${track.id}" title="Modifier le volume">✏️</button>
                 <button class="delete-track-btn danger-btn" data-id="${track.id}">🗑️</button>
             </div>
         `;
+
+        // Pastilles de tags construites via le DOM (pas d'innerHTML) : un tag
+        // est du texte saisi par l'utilisateur, à ne jamais interpoler brut
+        if (tags.length > 0) {
+            const tagsContainer = document.createElement('div');
+            tagsContainer.className = 'track-tags';
+            tags.forEach(tag => {
+                const pill = document.createElement('span');
+                pill.className = 'tag-pill';
+                pill.textContent = tag;
+                tagsContainer.appendChild(pill);
+            });
+            div.querySelector('.track-info-main').appendChild(tagsContainer);
+        }
 
         // Event edit (volume par défaut + tags de la piste)
         div.querySelector('.edit-track-btn').addEventListener('click', (e) => {
