@@ -2,6 +2,7 @@ import { Howl } from 'howler';
 import { AudioManager } from '../backend/AudioManager.js';
 import { createPendingDeletionStore } from './pendingDeletions.js';
 import { createPreviewState } from './previewState.js';
+import { getPreviewVolume } from './trackVolume.js';
 
 // ========================================
 // Initialisation
@@ -287,7 +288,7 @@ function startPreview(track) {
     previewHowl = new Howl({
         src: [src],
         html5: true,
-        volume: audioManager.getVolume(),
+        volume: getPreviewVolume(track),
         preload: false,
     });
 

@@ -170,7 +170,7 @@ ipcHandle('library:addTrack', async (event, trackData, selectedPlaylists) => {
             originalPaths: trackData.versions,
             localPaths,
             defaultVersion: trackData.defaultVersion || 'calm',
-            defaultVolume: trackData.defaultVolume || 0.5,
+            defaultVolume: trackData.defaultVolume ?? 0.5,
             metadata: {
                 addedAt: new Date().toISOString(),
                 modifiedAt: new Date().toISOString()
