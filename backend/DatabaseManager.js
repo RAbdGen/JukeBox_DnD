@@ -398,4 +398,54 @@ export class DatabaseManager {
         await this.db.write();
         console.log('🔄 DB réinitialisée');
     }
+
+    // ============================================
+    // EXPORT / IMPORT (backup portable — voir FileManager pour la copie
+    // des fichiers audio ; distinct de exportData()/importData() ci-dessus
+    // qui dump/remplacent toute la DB avec des chemins absolus non
+    // portables entre machines)
+    // ============================================
+
+    /**
+     * Fusionne une bibliothèque importée dans la DB locale : les pistes
+     * et playlists déjà présentes (même id) sont ignorées, les nouvelles
+     * sont ajoutées. Ne remplace jamais rien.
+     * @param {Object} imported - { library, playlists } avec des tracks
+     *   dont localPaths a déjà été réécrit vers des chemins absolus
+     *   locaux (par FileManager.importTrackFiles avant cet appel)
+     * @returns {Promise<{tracksAdded: number, tracksSkipped: number, playlistsAdded: number, playlistsMerged: number}>}
+     */
+    async mergeImportedLibrary(imported) {
+        const stats = { tracksAdded: 0, tracksSkipped: 0, playlistsAdded: 0, playlistsMerged: 0 };
+        const existingTrackIds = new Set(this.db.data.library.map(t => t.id));
+
+        for (const track of imported.library || []) {
+            if (existingTrackIds.has(track.id)) {
+                stats.tracksSkipped++;
+                continue;
+            }
+            this.db.data.library.push(track);
+            existingTrackIds.add(track.id);
+            stats.tracksAdded++;
+        }
+
+        for (const playlist of imported.playlists || []) {
+            const existing = this.db.data.playlists.find(p => p.id === playlist.id);
+            if (existing) {
+                const merged = new Set([...existing.trackIds, ...playlist.trackIds]);
+                existing.trackIds = Array.from(merged);
+                stats.playlistsMerged++;
+            } else {
+                this.db.data.playlists.push(playlist);
+                stats.playlistsAdded++;
+            }
+        }
+
+        this.updateMetadata();
+        await this.db.write();
+
+        console.log(`✅ Import fusionné : ${stats.tracksAdded} piste(s) ajoutée(s), ${stats.tracksSkipped} déjà présente(s)`);
+
+        return stats;
+    }
 }

@@ -111,8 +111,7 @@ Permettre de prendre un fichier audio unique et de le découper en segments temp
 ### À venir (backlog, pas de spec complète)
 
 **Priorité moyenne**
-- Preview audio au survol d'une piste avant de l'ajouter à une playlist
-- Export/import de la bibliothèque (backup JSON + fichiers) pour synchroniser entre le dual-boot Linux/Windows ou partager une config avec l'ami joueur
+- Preview audio au survol d'une piste avant de l'ajouter à une playlist — design validé (bouton "+ ajouter à la playlist" + preview via Howl dédié), pas encore implémenté
 
 - Fonctionnalités supplémentaires à définir au fil des sessions de dev
 

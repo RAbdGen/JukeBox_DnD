@@ -32,6 +32,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
     addVersion: (trackId, versionName, filePath) =>
         ipcRenderer.invoke('library:addVersion', trackId, versionName, filePath),
 
+    /**
+     * Exporter la bibliothèque (JSON + copie des fichiers audio) vers un
+     * dossier choisi par l'utilisateur. Résout null si annulé.
+     */
+    exportLibrary: () => ipcRenderer.invoke('library:exportLibrary'),
+
+    /**
+     * Importer une bibliothèque exportée (fusion, ne remplace rien).
+     * Résout null si annulé.
+     */
+    importLibrary: () => ipcRenderer.invoke('library:importLibrary'),
+
     // ========================================
     // PLAYLISTS
     // ========================================

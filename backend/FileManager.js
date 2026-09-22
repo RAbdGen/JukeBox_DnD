@@ -175,4 +175,56 @@ export class FileManager {
         if (bytes < 1024 * 1024 * 1024) return `${(bytes / (1024 * 1024)).toFixed(2)} MB`;
         return `${(bytes / (1024 * 1024 * 1024)).toFixed(2)} GB`;
     }
+
+    /**
+     * Copie les fichiers audio d'une piste vers un dossier d'export.
+     * Les noms de fichiers (déjà uniques : trackId_version.ext) sont
+     * réutilisés tels quels, donc pas de collision entre pistes
+     * exportées dans le même dossier plat.
+     * @param {Object} track - Piste avec localPaths
+     * @param {string} exportMusicDir - Dossier music/ de destination
+     * @returns {Promise<Object>} { versionName: filename } (chemins relatifs)
+     */
+    async exportTrackFiles(track, exportMusicDir) {
+        const relativePaths = {};
+
+        if (track.localPaths) {
+            for (const [versionName, localPath] of Object.entries(track.localPaths)) {
+                const filename = path.basename(localPath);
+                const destPath = path.join(exportMusicDir, filename);
+                try {
+                    await fs.copyFile(localPath, destPath);
+                    relativePaths[versionName] = filename;
+                } catch (error) {
+                    console.warn(`⚠️ Impossible d'exporter ${localPath}:`, error.message);
+                }
+            }
+        }
+
+        return relativePaths;
+    }
+
+    /**
+     * Copie les fichiers audio d'une piste importée depuis le dossier
+     * music/ de l'export vers le dossier music/ local.
+     * @param {Object} relativePaths - { versionName: filename }
+     * @param {string} importMusicDir - Dossier music/ de la source importée
+     * @returns {Promise<Object>} { versionName: localPath } (chemins absolus locaux)
+     */
+    async importTrackFiles(relativePaths, importMusicDir) {
+        const localPaths = {};
+
+        for (const [versionName, filename] of Object.entries(relativePaths)) {
+            const sourcePath = path.join(importMusicDir, filename);
+            const destPath = path.join(this.musicDir, filename);
+            try {
+                await fs.copyFile(sourcePath, destPath);
+                localPaths[versionName] = destPath;
+            } catch (error) {
+                console.warn(`⚠️ Impossible d'importer ${filename}:`, error.message);
+            }
+        }
+
+        return localPaths;
+    }
 }

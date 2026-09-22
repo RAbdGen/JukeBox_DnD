@@ -649,6 +649,43 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
+    // --- Export / Import bibliothèque ---
+    document.getElementById('export-library-btn').addEventListener('click', async () => {
+        const statusEl = document.getElementById('export-import-status');
+        statusEl.textContent = 'Export en cours…';
+        try {
+            const result = await window.electronAPI.exportLibrary();
+            statusEl.textContent = result
+                ? `✅ ${result.trackCount} piste(s), ${result.playlistCount} playlist(s) exportées vers ${result.path}`
+                : '';
+        } catch (err) {
+            console.error(err);
+            statusEl.textContent = "❌ Erreur lors de l'export";
+        }
+    });
+
+    document.getElementById('import-library-btn').addEventListener('click', async () => {
+        const statusEl = document.getElementById('export-import-status');
+        statusEl.textContent = 'Import en cours…';
+        try {
+            const stats = await window.electronAPI.importLibrary();
+            if (!stats) {
+                statusEl.textContent = '';
+                return;
+            }
+            statusEl.textContent =
+                `✅ ${stats.tracksAdded} piste(s) ajoutée(s) (${stats.tracksSkipped} déjà présente(s)), ` +
+                `${stats.playlistsAdded} playlist(s) ajoutée(s), ${stats.playlistsMerged} fusionnée(s)`;
+
+            await loadLibrary();
+            await loadPlaylists();
+            if (currentPlaylistId) await loadPlaylist(currentPlaylistId);
+        } catch (err) {
+            console.error(err);
+            statusEl.textContent = "❌ Erreur lors de l'import";
+        }
+    });
+
     // --- Playlist Select ---
     document.getElementById('playlist-select').addEventListener('change', (e) => {
         const id = e.target.value;

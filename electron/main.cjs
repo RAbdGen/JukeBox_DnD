@@ -241,6 +241,87 @@ ipcHandle('library:addVersion', async (event, trackId, versionName, filePath) =>
     }
 });
 
+// Export : dossier destination → jukebox-export.json + music/ (copie des
+// fichiers avec des chemins relatifs, portables entre machines/OS)
+ipcHandle('library:exportLibrary', async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openDirectory', 'createDirectory'],
+        title: "Choisir le dossier de destination de l'export",
+    });
+
+    if (result.canceled || result.filePaths.length === 0) return null;
+
+    try {
+        const destDir = result.filePaths[0];
+        const musicDir = path.join(destDir, 'music');
+        await fs.mkdir(musicDir, { recursive: true });
+
+        const rawLibrary = await dbManager.getLibrary();
+        const exportTracks = [];
+        for (const track of rawLibrary) {
+            const relativePaths = await fileManager.exportTrackFiles(track, musicDir);
+            exportTracks.push({ ...track, localPaths: relativePaths });
+        }
+
+        const playlists = await dbManager.getPlaylists();
+        const exportPayload = {
+            version: '1.0',
+            exportedAt: new Date().toISOString(),
+            library: exportTracks,
+            playlists,
+        };
+
+        await fs.writeFile(
+            path.join(destDir, 'jukebox-export.json'),
+            JSON.stringify(exportPayload, null, 2),
+            'utf-8'
+        );
+
+        console.log(`✅ Export terminé : ${exportTracks.length} piste(s) → ${destDir}`);
+        return { path: destDir, trackCount: exportTracks.length, playlistCount: playlists.length };
+    } catch (error) {
+        console.error('❌ Erreur exportLibrary:', error);
+        throw error;
+    }
+});
+
+// Import : dossier exporté (jukebox-export.json + music/) → fusion dans
+// la DB locale, sans jamais rien remplacer (voir mergeImportedLibrary)
+ipcHandle('library:importLibrary', async () => {
+    const result = await dialog.showOpenDialog(mainWindow, {
+        properties: ['openDirectory'],
+        title: 'Choisir le dossier exporté à importer',
+    });
+
+    if (result.canceled || result.filePaths.length === 0) return null;
+
+    try {
+        const sourceDir = result.filePaths[0];
+        const jsonPath = path.join(sourceDir, 'jukebox-export.json');
+        const musicDir = path.join(sourceDir, 'music');
+
+        const raw = await fs.readFile(jsonPath, 'utf-8');
+        const importPayload = JSON.parse(raw);
+
+        const tracksWithLocalPaths = [];
+        for (const track of importPayload.library || []) {
+            const localPaths = await fileManager.importTrackFiles(track.localPaths || {}, musicDir);
+            tracksWithLocalPaths.push({ ...track, localPaths });
+        }
+
+        const stats = await dbManager.mergeImportedLibrary({
+            library: tracksWithLocalPaths,
+            playlists: importPayload.playlists || [],
+        });
+
+        console.log(`✅ Import terminé depuis ${sourceDir}`);
+        return stats;
+    } catch (error) {
+        console.error('❌ Erreur importLibrary:', error);
+        throw error;
+    }
+});
+
 // ========================================
 // IPC HANDLERS - Playlists
 // ========================================

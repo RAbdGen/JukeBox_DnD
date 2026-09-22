@@ -2158,6 +2158,29 @@ footer {
     gap: 1rem;
 }
 
+.settings-description {
+    font-family: 'IM Fell English', serif;
+    font-size: 0.9rem;
+    line-height: 1.5;
+    color: var(--bone-dim);
+    margin-bottom: 1.25rem;
+    max-width: 60ch;
+}
+
+.settings-actions {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+.settings-status {
+    margin-top: 1rem;
+    font-family: 'IM Fell English', serif;
+    font-size: 0.85rem;
+    color: var(--gold-3);
+    min-height: 1.2em;
+}
+
 .theme-card {
     background: var(--ink-1);
     border: 1px solid var(--ink-3);
