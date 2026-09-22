@@ -194,7 +194,8 @@ async function loadPlaylist(id) {
             id: t.id,
             title: t.title,
             versions: t.localPaths || t.originalPaths, // Utiliser local si dispo
-            defaultVersion: t.defaultVersion || 'calm'
+            defaultVersion: t.defaultVersion || 'calm',
+            defaultVolume: t.defaultVolume ?? 0.5
         }));
 
         audioManager.loadPlaylist(tracksConfig);

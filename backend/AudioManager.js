@@ -336,7 +336,7 @@ export class AudioManager {
         this.playlist = [];
 
         playlistConfig.forEach((trackConfig, index) => {
-            const { id, title, versions, defaultVersion } = trackConfig;
+            const { id, title, versions, defaultVersion, defaultVolume } = trackConfig;
 
             // Charger la piste
             this.loadTrack(id, title, versions);
@@ -348,6 +348,11 @@ export class AudioManager {
             const track = this.tracks.get(id);
             if (track) {
                 track.onEndCallback = () => this.onTrackEnd();
+                // Volume par défaut de la piste (normalisation) : n'était jusqu'ici
+                // jamais transmis depuis la config, donc jamais appliqué à la lecture
+                if (defaultVolume !== undefined && defaultVolume !== null) {
+                    track.defaultVolume = defaultVolume;
+                }
             }
         });
 
