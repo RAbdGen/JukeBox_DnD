@@ -8,6 +8,21 @@ function createDatabaseManager(data) {
 }
 
 describe('DatabaseManager.mergeImportedLibrary', () => {
+    it('normalises an invalid imported crossfade duration to the default', async () => {
+        const manager = createDatabaseManager({
+            library: [],
+            playlists: [],
+            metadata: {},
+        });
+
+        await manager.mergeImportedLibrary({
+            library: [{ id: 't1', title: 'Importée', crossfadeDurationPercent: 'invalid' }],
+            playlists: [],
+        });
+
+        expect(manager.db.data.library[0].crossfadeDurationPercent).toBe(0.1);
+    });
+
     it('merges a malformed existing playlist as an empty track list', async () => {
         const manager = createDatabaseManager({
             library: [],
@@ -37,6 +52,21 @@ describe('DatabaseManager.mergeImportedLibrary', () => {
         });
 
         expect(manager.db.data.playlists).toEqual([{ id: 'p2', name: 'Importée', trackIds: [] }]);
+    });
+});
+
+describe('DatabaseManager.updateTrack', () => {
+    it('normalises an invalid crossfade duration before persisting a track update', async () => {
+        const manager = createDatabaseManager({
+            library: [{ id: 't1', title: 'Piste', crossfadeDurationPercent: 0.2 }],
+            playlists: [],
+            metadata: {},
+        });
+
+        await manager.updateTrack('t1', { crossfadeDurationPercent: 1 });
+
+        expect(manager.db.data.library[0].crossfadeDurationPercent).toBe(0.1);
+        expect(manager.db.write).toHaveBeenCalledOnce();
     });
 });
 

@@ -205,7 +205,8 @@ async function loadPlaylist(id) {
             title: t.title,
             versions: t.localPaths || t.originalPaths, // Utiliser local si dispo
             defaultVersion: t.defaultVersion || 'calm',
-            defaultVolume: t.defaultVolume ?? 0.5
+            defaultVolume: t.defaultVolume ?? 0.5,
+            crossfadeDurationPercent: t.crossfadeDurationPercent ?? 0.1
         }));
 
         audioManager.loadPlaylist(tracksConfig);
@@ -243,12 +244,15 @@ async function loadPlaylist(id) {
 function openEditTrackModal(track) {
     const modal = document.getElementById('edit-track-modal');
     const volumePercent = Math.round((track.defaultVolume ?? 0.5) * 100);
+    const crossfadeDurationPercent = Math.round((track.crossfadeDurationPercent ?? 0.1) * 100);
 
     document.getElementById('edit-track-id').value = track.id;
     document.getElementById('edit-track-title').value = track.title;
     document.getElementById('edit-track-title').readOnly = true;
     document.getElementById('edit-track-volume').value = volumePercent;
     document.getElementById('edit-track-volume-value').textContent = `${volumePercent}%`;
+    document.getElementById('edit-track-crossfade-duration').value = crossfadeDurationPercent;
+    document.getElementById('edit-track-crossfade-duration-value').textContent = `${crossfadeDurationPercent}%`;
     document.getElementById('edit-track-tags').value = (track.tags || []).join(', ');
 
     const versionNames = Object.keys(track.localPaths || track.originalPaths || {});
@@ -634,7 +638,7 @@ function handleVersionChange(targetVersion) {
 
     const state = audioManager.getState();
     if (state.currentTrack && state.currentTrack.currentVersion !== targetVersion) {
-        audioManager.crossfade(targetVersion, 0.1); // 10% de la durée de la piste
+        audioManager.crossfade(targetVersion);
         audioManager.currentVersion = targetVersion;
 
         // UI updates will happen via confirmation, but let's force visual feedback
@@ -1216,6 +1220,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('edit-track-volume-value').textContent = `${e.target.value}%`;
     });
 
+    document.getElementById('edit-track-crossfade-duration').addEventListener('input', (e) => {
+        document.getElementById('edit-track-crossfade-duration-value').textContent = `${e.target.value}%`;
+    });
+
     document.getElementById('add-edit-version-btn').addEventListener('click', () => {
         showAddVersionRow();
     });
@@ -1223,6 +1231,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('save-track-edits').addEventListener('click', async () => {
         const trackId = document.getElementById('edit-track-id').value;
         const volume = document.getElementById('edit-track-volume').value / 100;
+        const crossfadeDurationPercent = document.getElementById('edit-track-crossfade-duration').value / 100;
         const tags = document.getElementById('edit-track-tags').value
             .split(',')
             .map(t => t.trim().toLowerCase())
@@ -1248,7 +1257,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await window.electronAPI.reorderVersions(trackId, finalNames);
             }
 
-            const updates = { defaultVolume: volume, tags };
+            const updates = { defaultVolume: volume, crossfadeDurationPercent, tags };
             if (originalTrack?.defaultVersion && removedNames.includes(originalTrack.defaultVersion)) {
                 updates.defaultVersion = finalNames[0];
             }

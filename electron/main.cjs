@@ -171,6 +171,7 @@ ipcHandle('library:addTrack', async (event, trackData, selectedPlaylists) => {
             localPaths,
             defaultVersion: trackData.defaultVersion || 'calm',
             defaultVolume: trackData.defaultVolume ?? 0.5,
+            crossfadeDurationPercent: trackData.crossfadeDurationPercent ?? 0.1,
             metadata: {
                 addedAt: new Date().toISOString(),
                 modifiedAt: new Date().toISOString()

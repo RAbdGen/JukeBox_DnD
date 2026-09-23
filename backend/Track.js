@@ -1,4 +1,8 @@
 import { Howl } from 'howler';
+import {
+    DEFAULT_CROSSFADE_DURATION_PERCENT,
+    normalizeCrossfadeOverridePercent,
+} from './crossfadeDuration.js';
 
 /**
  * Classe représentant une piste musicale avec plusieurs versions
@@ -19,6 +23,7 @@ export class Track {
         this.isPlaying = false;
         this.isCrossfading = false;
         this.defaultVolume = 0.5;
+        this.crossfadeDurationPercent = DEFAULT_CROSSFADE_DURATION_PERCENT;
         this.onEndCallback = null; // Callback pour fin de piste (playlist)
     }
 
@@ -134,10 +139,11 @@ export class Track {
         }
 
         // Calcul de la durée réelle : % de la longueur de la piste, encadrée entre 500 ms et 5000 ms
+        const normalizedDurationPercent = normalizeCrossfadeOverridePercent(durationPercent);
         const trackDurationMs = (this.versions[this.currentVersion].duration() || 30) * 1000;
-        const duration = Math.min(Math.max(Math.floor(trackDurationMs * durationPercent), 500), 5000);
+        const duration = Math.min(Math.max(Math.floor(trackDurationMs * normalizedDurationPercent), 500), 5000);
 
-        console.log(`🔀 Crossfade: ${this.currentVersion} → ${toVersion} (${duration}ms / ${Math.round(durationPercent * 100)}% de la piste)`);
+        console.log(`🔀 Crossfade: ${this.currentVersion} → ${toVersion} (${duration}ms / ${Math.round(normalizedDurationPercent * 100)}% de la piste)`);
 
         this.isCrossfading = true;
 

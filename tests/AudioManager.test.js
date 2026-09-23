@@ -72,6 +72,31 @@ describe('AudioManager volume handling', () => {
 });
 
 describe('AudioManager.loadPlaylist', () => {
+    it('applies a track-specific crossfade duration from the playlist configuration', () => {
+        const manager = new AudioManager();
+
+        manager.loadPlaylist([{
+            id: 't1',
+            title: 'Track 1',
+            versions: { calm: 'a.mp3' },
+            crossfadeDurationPercent: 0.25,
+        }]);
+
+        expect(manager.getTrack('t1').crossfadeDurationPercent).toBe(0.25);
+    });
+
+    it('defaults a track crossfade duration to 10 percent', () => {
+        const manager = new AudioManager();
+
+        manager.loadPlaylist([{
+            id: 't1',
+            title: 'Track 1',
+            versions: { calm: 'a.mp3' },
+        }]);
+
+        expect(manager.getTrack('t1').crossfadeDurationPercent).toBe(0.1);
+    });
+
     it('ne coupe pas la lecture en cours quand la piste jouée reste dans la nouvelle config (#13)', () => {
         const manager = new AudioManager();
         const initialConfig = [
@@ -112,5 +137,52 @@ describe('AudioManager.loadPlaylist', () => {
         expect(manager.currentTrack).toBeNull();
         expect(manager.currentTrackIndex).toBe(0);
         expect(manager.getTrack('t1')).toBeNull();
+    });
+});
+
+describe('AudioManager crossfade handling', () => {
+    it('uses the active track crossfade duration instead of a global default', () => {
+        const manager = new AudioManager();
+        const track = {
+            crossfadeDurationPercent: 0.25,
+            currentVersion: 'calm',
+            crossfade: vi.fn((toVersion, durationPercent, onComplete) => onComplete(true)),
+            getState: vi.fn(() => ({ currentVersion: 'combat' })),
+        };
+        manager.currentTrack = track;
+
+        manager.crossfade('combat');
+
+        expect(track.crossfade).toHaveBeenCalledWith('combat', 0.25, expect.any(Function));
+    });
+
+    it('keeps accepting an explicit crossfade duration for existing callers', () => {
+        const manager = new AudioManager();
+        const track = {
+            crossfadeDurationPercent: 0.25,
+            currentVersion: 'calm',
+            crossfade: vi.fn((toVersion, durationPercent, onComplete) => onComplete(true)),
+            getState: vi.fn(() => ({ currentVersion: 'combat' })),
+        };
+        manager.currentTrack = track;
+
+        manager.crossfade('combat', 0.05);
+
+        expect(track.crossfade).toHaveBeenCalledWith('combat', 0.05, expect.any(Function));
+    });
+
+    it('keeps accepting an explicit crossfade duration above the per-track UI range', () => {
+        const manager = new AudioManager();
+        const track = {
+            crossfadeDurationPercent: 0.25,
+            currentVersion: 'calm',
+            crossfade: vi.fn((toVersion, durationPercent, onComplete) => onComplete(true)),
+            getState: vi.fn(() => ({ currentVersion: 'combat' })),
+        };
+        manager.currentTrack = track;
+
+        manager.crossfade('combat', 0.5);
+
+        expect(track.crossfade).toHaveBeenCalledWith('combat', 0.5, expect.any(Function));
     });
 });

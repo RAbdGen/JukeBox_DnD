@@ -2,6 +2,7 @@ import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { normalizeCrossfadeDurationPercent } from './crossfadeDuration.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -131,6 +132,7 @@ export class DatabaseManager {
             };
         }
 
+        track.crossfadeDurationPercent = normalizeCrossfadeDurationPercent(track.crossfadeDurationPercent);
         this.db.data.library.push(track);
 
         this.updateMetadata();
@@ -149,7 +151,13 @@ export class DatabaseManager {
         }
 
         // Appliquer les mises à jour
-        Object.assign(track, updates);
+        const normalizedUpdates = { ...updates };
+        if (Object.hasOwn(normalizedUpdates, 'crossfadeDurationPercent')) {
+            normalizedUpdates.crossfadeDurationPercent = normalizeCrossfadeDurationPercent(
+                normalizedUpdates.crossfadeDurationPercent
+            );
+        }
+        Object.assign(track, normalizedUpdates);
 
         // Mettre à jour les métadonnées
         if (track.metadata) {
@@ -542,7 +550,10 @@ export class DatabaseManager {
                 stats.tracksSkipped++;
                 continue;
             }
-            this.db.data.library.push(track);
+            this.db.data.library.push({
+                ...track,
+                crossfadeDurationPercent: normalizeCrossfadeDurationPercent(track.crossfadeDurationPercent),
+            });
             existingTrackIds.add(track.id);
             stats.tracksAdded++;
         }

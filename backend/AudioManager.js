@@ -1,5 +1,10 @@
 import { Howler } from 'howler';
 import { Track } from './Track.js';
+import {
+    DEFAULT_CROSSFADE_DURATION_PERCENT,
+    normalizeCrossfadeDurationPercent,
+    normalizeCrossfadeOverridePercent,
+} from './crossfadeDuration.js';
 
 /**
  * Gestionnaire principal pour toutes les pistes audio
@@ -49,13 +54,16 @@ export class AudioManager {
      */
     loadTracks(config) {
         Object.keys(config).forEach(trackId => {
-            const { name, versions, defaultVersion } = config[trackId];
+            const { name, versions, defaultVersion, crossfadeDurationPercent } = config[trackId];
             this.loadTrack(trackId, name, versions);
 
             // Stocker la version par défaut
             const track = this.tracks.get(trackId);
             if (track && defaultVersion) {
                 track.defaultVersion = defaultVersion;
+            }
+            if (track && crossfadeDurationPercent !== undefined && crossfadeDurationPercent !== null) {
+                track.crossfadeDurationPercent = normalizeCrossfadeDurationPercent(crossfadeDurationPercent);
             }
         });
     }
@@ -94,15 +102,21 @@ export class AudioManager {
     /**
      * Effectuer un crossfade vers une autre version de la piste actuelle
      * @param {string} toVersion - Version cible
-     * @param {number} durationPercent - Durée en fraction de la piste (0.0–1.0, défaut: 0.1 = 10%)
+     * @param {number} [durationPercent] - Override historique en fraction de la piste (0.0–1.0)
      */
-    crossfade(toVersion, durationPercent = 0.1) {
+    crossfade(toVersion, durationPercent) {
         if (!this.currentTrack) {
             console.warn('⚠️ Aucune piste en cours de lecture');
             return;
         }
 
-        this.currentTrack.crossfade(toVersion, durationPercent, (success) => {
+        const configuredDurationPercent = durationPercent === undefined
+            ? this.currentTrack.crossfadeDurationPercent ?? DEFAULT_CROSSFADE_DURATION_PERCENT
+            : durationPercent;
+        const normalizedDurationPercent = durationPercent === undefined
+            ? normalizeCrossfadeDurationPercent(configuredDurationPercent)
+            : normalizeCrossfadeOverridePercent(configuredDurationPercent);
+        this.currentTrack.crossfade(toVersion, normalizedDurationPercent, (success) => {
             if (success) {
                 this.currentVersion = this.currentTrack.currentVersion; // Rester synchronisé une fois le crossfade réellement terminé
             }
@@ -358,7 +372,7 @@ export class AudioManager {
         this.playlist = [];
 
         playlistConfig.forEach((trackConfig) => {
-            const { id, title, versions, defaultVersion, defaultVolume } = trackConfig;
+            const { id, title, versions, defaultVersion, defaultVolume, crossfadeDurationPercent } = trackConfig;
 
             // Ne recharger (recréer les Howl) que si la piste n'est pas déjà chargée
             if (!this.tracks.has(id)) {
@@ -376,6 +390,9 @@ export class AudioManager {
                 // jamais transmis depuis la config, donc jamais appliqué à la lecture
                 if (defaultVolume !== undefined && defaultVolume !== null) {
                     track.defaultVolume = defaultVolume;
+                }
+                if (crossfadeDurationPercent !== undefined && crossfadeDurationPercent !== null) {
+                    track.crossfadeDurationPercent = normalizeCrossfadeDurationPercent(crossfadeDurationPercent);
                 }
             }
         });
