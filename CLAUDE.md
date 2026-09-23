@@ -132,9 +132,9 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#10 — État désynchronisé pendant la fenêtre d'annulation (toast undo)](https://github.com/RAbdGen/JukeBox_DnD/issues/10)
 - [#11 — Le timer de preview au survol survit à un re-rendu de la bibliothèque](https://github.com/RAbdGen/JukeBox_DnD/issues/11)
 - [#12 — fadeVolume() ignore un ajustement manuel du slider pendant le fondu](https://github.com/RAbdGen/JukeBox_DnD/issues/12)
+- [#20 — Temps de démarrage très long sur machine modeste (8Go RAM) + loading screen](https://github.com/RAbdGen/JukeBox_DnD/issues/20) — NSIS + écran de chargement, à reconfirmer sur la machine de l'ami au prochain build
 
 **À faire (`Todo`) :**
-- [#20 — Temps de démarrage très long sur machine modeste (8Go RAM) + loading screen](https://github.com/RAbdGen/JukeBox_DnD/issues/20) — priorité **critique** (label `priority: critical`, en plus de `priority: high` côté Project)
 - [#13 — Ajouter une piste à la playlist coupe la lecture en cours](https://github.com/RAbdGen/JukeBox_DnD/issues/13) — priorité haute
 - [#14 — Impossible de réordonner ou supprimer une piste dans une playlist existante](https://github.com/RAbdGen/JukeBox_DnD/issues/14) — priorité haute
 - [#19 — Contraste de texte insuffisant (tous thèmes)](https://github.com/RAbdGen/JukeBox_DnD/issues/19) — priorité haute
