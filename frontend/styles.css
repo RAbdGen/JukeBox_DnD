@@ -5,30 +5,34 @@
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
 
 :root {
-    /* ── Backgrounds — "Nuit" (default, matches screenshot) ── */
-    --ink-0:   #0a0908;
-    --ink-1:   #141210;
-    --ink-2:   #1e1c18;
-    --ink-3:   #2c2820;
-    --ink-4:   #3c3428;
+    /* ── Backgrounds — "Nuit" (default) ── */
+    --ink-0:   #0b0b09;
+    --ink-1:   #141310;
+    --ink-2:   #1f1d19;
+    --ink-3:   #2d2b24;
+    --ink-4:   #3e3a32;
 
     /* ── Ink gradient stops (replace hardcoded values) ── */
     --ink-dark:  #060504;
-    --ink-warm:  #111009;
-    --ink-mid:   #181512;
-    --ink-top:   #1c1a14;
+    --ink-warm:  #100f0c;
+    --ink-mid:   #171512;
+    --ink-top:   #1b1915;
 
     /* ── Or — 4 niveaux ── */
-    --gold-1:  #7a5c1e;
-    --gold-2:  #a07c28;
-    --gold-3:  #c9a84c;
-    --gold-4:  #e8c96a;
-    --gold-glow: rgba(201, 168, 76, 0.15);
+    --gold-1:  #645017;
+    --gold-2:  #a2822b;
+    --gold-3:  #cda842;
+    --gold-4:  #dfc272;
+    --gold-glow: rgba(205, 168, 66, 0.15);
 
-    /* ── Texte / Parchemin ── */
-    --bone:       #f0e6c8;
-    --bone-dim:   rgba(240, 230, 200, 0.50);
-    --bone-faint: rgba(240, 230, 200, 0.12);
+    /* ── Texte / Parchemin ──
+       bone-dim/bone-faint sont des couleurs pleines (pas de rgba semi-
+       transparent) : vérifiées >= 4.6:1 (WCAG AA) contre --ink-2, le fond
+       le plus clair sur lequel elles apparaissent (cartes, panneaux) — voir
+       #19. Toutes les palettes [data-theme] ci-dessous suivent la même règle. */
+    --bone:       #eeeadd;
+    --bone-dim:   #93855e;
+    --bone-faint: rgba(238, 234, 221, 0.12);
 
     /* ── Sémantique (boutons de version, statuts) ── */
     --red-blood:      #6b1414;
@@ -51,6 +55,11 @@
 
 html {
     scrollbar-gutter: stable;
+    color-scheme: dark;
+}
+
+[data-theme="parchemin"] {
+    color-scheme: light;
 }
 
 * {
@@ -2130,67 +2139,151 @@ footer {
    THÈMES
    ============================================ */
 
-/* Grimoire — palette chaude actuelle */
+/* Grimoire — palette chaude, brun profond */
 [data-theme="grimoire"] {
-    --ink-0:   #14110f;
-    --ink-1:   #1c1814;
-    --ink-2:   #2a241f;
-    --ink-3:   #3a2f20;
-    --ink-4:   #4a3f2c;
-    --ink-dark:  #0a0807;
-    --ink-warm:  #1a1612;
-    --ink-mid:   #221d18;
-    --ink-top:   #2a2017;
-    --gold-1:  #8a6622;
-    --gold-2:  #b9892f;
-    --gold-3:  #d6ae54;
-    --gold-4:  #f0d27a;
-    --gold-glow: rgba(214, 174, 84, 0.15);
-    --bone:       #f3e6c4;
-    --bone-dim:   rgba(243, 230, 196, 0.50);
-    --bone-faint: rgba(243, 230, 196, 0.12);
+    --ink-0:   #0c0b08;
+    --ink-1:   #15130e;
+    --ink-2:   #221d16;
+    --ink-3:   #302a21;
+    --ink-4:   #423a2f;
+    --ink-dark:  #060504;
+    --ink-warm:  #110f0b;
+    --ink-mid:   #181510;
+    --ink-top:   #1d1913;
+    --gold-1:  #6b4f15;
+    --gold-2:  #aa7f28;
+    --gold-3:  #d3a242;
+    --gold-4:  #e3be73;
+    --gold-glow: rgba(211, 162, 66, 0.15);
+    --bone:       #eeeadd;
+    --bone-dim:   #93855e;
+    --bone-faint: rgba(238, 234, 221, 0.12);
 }
 
-/* Taverne — bois chaud, ambre */
+/* Taverne — bois chaud, ambre/cuivre */
 [data-theme="taverne"] {
-    --ink-0:   #120d08;
-    --ink-1:   #1c1408;
-    --ink-2:   #281a08;
-    --ink-3:   #3c2510;
-    --ink-4:   #503220;
-    --ink-dark:  #0a0704;
-    --ink-warm:  #181006;
-    --ink-mid:   #201508;
-    --ink-top:   #281a08;
-    --gold-1:  #8a4c10;
-    --gold-2:  #b86a20;
-    --gold-3:  #d4892a;
-    --gold-4:  #f0aa50;
-    --gold-glow: rgba(212, 137, 42, 0.20);
-    --bone:       #f5e4c0;
-    --bone-dim:   rgba(245, 228, 192, 0.50);
-    --bone-faint: rgba(245, 228, 192, 0.12);
+    --ink-0:   #0e0a07;
+    --ink-1:   #18110c;
+    --ink-2:   #261b12;
+    --ink-3:   #36281c;
+    --ink-4:   #493727;
+    --ink-dark:  #070503;
+    --ink-warm:  #130e09;
+    --ink-mid:   #1c140d;
+    --ink-top:   #211810;
+    --gold-1:  #7c4b13;
+    --gold-2:  #bd7624;
+    --gold-3:  #dc9747;
+    --gold-4:  #eab67b;
+    --gold-glow: rgba(220, 151, 71, 0.15);
+    --bone:       #eeeadd;
+    --bone-dim:   #92855e;
+    --bone-faint: rgba(238, 234, 221, 0.12);
 }
 
-/* Arcane — mystique, violet */
+/* Arcane — mystique, encre violette */
 [data-theme="arcane"] {
-    --ink-0:   #0c0c14;
-    --ink-1:   #121220;
-    --ink-2:   #1a1830;
-    --ink-3:   #282440;
-    --ink-4:   #383058;
-    --ink-dark:  #08080e;
-    --ink-warm:  #0f0f1c;
-    --ink-mid:   #151524;
-    --ink-top:   #1c1a2c;
-    --gold-1:  #5a4a8a;
-    --gold-2:  #7a62b4;
-    --gold-3:  #9a82d4;
-    --gold-4:  #c0aef0;
-    --gold-glow: rgba(154, 130, 212, 0.18);
-    --bone:       #e8e0f5;
-    --bone-dim:   rgba(232, 224, 245, 0.50);
-    --bone-faint: rgba(232, 224, 245, 0.12);
+    --ink-0:   #09080d;
+    --ink-1:   #0f0e16;
+    --ink-2:   #181523;
+    --ink-3:   #232032;
+    --ink-4:   #302d44;
+    --ink-dark:  #040406;
+    --ink-warm:  #0c0b11;
+    --ink-mid:   #111019;
+    --ink-top:   #14121e;
+    --gold-1:  #6a35b5;
+    --gold-2:  #966dce;
+    --gold-3:  #ba9fdf;
+    --gold-4:  #ddcff1;
+    --gold-glow: rgba(186, 159, 223, 0.15);
+    --bone:       #eeeadd;
+    --bone-dim:   #8d805a;
+    --bone-faint: rgba(238, 234, 221, 0.12);
+}
+
+/* Forêt — druidique, encre émeraude */
+[data-theme="foret"] {
+    --ink-0:   #080c0a;
+    --ink-1:   #0e1611;
+    --ink-2:   #16221b;
+    --ink-3:   #213127;
+    --ink-4:   #2e4336;
+    --ink-dark:  #040605;
+    --ink-warm:  #0b110e;
+    --ink-mid:   #101914;
+    --ink-top:   #131e17;
+    --gold-1:  #175d3a;
+    --gold-2:  #2d9a63;
+    --gold-3:  #41c884;
+    --gold-4:  #70dba5;
+    --gold-glow: rgba(65, 200, 132, 0.15);
+    --bone:       #e6eedd;
+    --bone-dim:   #76905c;
+    --bone-faint: rgba(230, 238, 221, 0.12);
+}
+
+/* Sang — tome vampirique, encre couleur braise */
+[data-theme="sang"] {
+    --ink-0:   #0d0708;
+    --ink-1:   #170c0d;
+    --ink-2:   #241415;
+    --ink-3:   #341e20;
+    --ink-4:   #462a2c;
+    --ink-dark:  #070404;
+    --ink-warm:  #120a0b;
+    --ink-mid:   #1b0e0f;
+    --ink-top:   #1f1112;
+    --gold-1:  #a7361a;
+    --gold-2:  #d95939;
+    --gold-3:  #e48871;
+    --gold-4:  #f1b5a6;
+    --gold-glow: rgba(228, 136, 113, 0.15);
+    --bone:       #eeeadd;
+    --bone-dim:   #8e815b;
+    --bone-faint: rgba(238, 234, 221, 0.12);
+}
+
+/* Givre — glacial, encre bleu pâle */
+[data-theme="glace"] {
+    --ink-0:   #080b0c;
+    --ink-1:   #0e1215;
+    --ink-2:   #161d22;
+    --ink-3:   #212a30;
+    --ink-4:   #2f3a42;
+    --ink-dark:  #040506;
+    --ink-warm:  #0b0e11;
+    --ink-mid:   #101518;
+    --ink-top:   #13191d;
+    --gold-1:  #265e73;
+    --gold-2:  #418eaa;
+    --gold-3:  #68acc6;
+    --gold-4:  #94c8db;
+    --gold-glow: rgba(104, 172, 198, 0.15);
+    --bone:       #eeeadd;
+    --bone-dim:   #91845d;
+    --bone-faint: rgba(238, 234, 221, 0.12);
+}
+
+/* Parchemin — page de grimoire éclairée en plein jour, seul thème clair */
+[data-theme="parchemin"] {
+    --ink-0:   #efeae1;
+    --ink-1:   #e7e0d5;
+    --ink-2:   #dcd4c6;
+    --ink-3:   #cbc0af;
+    --ink-4:   #b4a893;
+    --ink-dark:  #e4dccd;
+    --ink-warm:  #f3efe8;
+    --ink-mid:   #e3dcce;
+    --ink-top:   #f5f2ed;
+    --gold-1:  #4e360e;
+    --gold-2:  #76561d;
+    --gold-3:  #795415;
+    --gold-4:  #ae8032;
+    --gold-glow: rgba(121, 84, 21, 0.15);
+    --bone:       #292114;
+    --bone-dim:   #69593f;
+    --bone-faint: rgba(41, 33, 20, 0.12);
 }
 
 /* ============================================
