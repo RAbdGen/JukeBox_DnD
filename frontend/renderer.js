@@ -113,6 +113,10 @@ async function init() {
         console.log('✅ JukeBox DnD initialisé');
     } catch (error) {
         console.error('❌ Erreur initialisation:', error);
+    } finally {
+        // Toujours révéler l'app, même en cas d'erreur d'init : rester bloqué
+        // sur l'écran de chargement serait pire qu'un état partiellement chargé.
+        document.getElementById('loading-screen')?.classList.add('hidden');
     }
 }
 

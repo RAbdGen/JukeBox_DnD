@@ -176,9 +176,10 @@ npm run build      # Vite d'abord, puis electron-builder
 ```
 
 **Distribution automatisée via GitHub Actions :**
-- `.github/workflows/release.yml` — sur un tag `v*`, build Linux (AppImage) + Windows (portable .exe) sur des runners GitHub natifs (pas besoin du dual-boot), publie une GitHub Release avec les deux artefacts
+- `.github/workflows/release.yml` — sur un tag `v*`, build Linux (AppImage) + Windows (installeur NSIS) sur des runners GitHub natifs (pas besoin du dual-boot), publie une GitHub Release avec les deux artefacts
 - Déclenchement manuel possible (`workflow_dispatch`) pour tester le build sans créer de release
 - Le dual-boot reste utile pour tester l'app en conditions réelles (surtout Windows), mais n'est plus nécessaire pour produire les installeurs
+- **Windows : NSIS plutôt que portable** (depuis #20) — le mode portable d'electron-builder auto-extrait toute l'app dans un dossier temp à *chaque* lancement, identifié comme cause probable des dizaines de secondes de démarrage remontées sur une machine modeste. NSIS installe une fois (`oneClick: true`, `perMachine: false` — pas de droits admin nécessaires) puis lance directement le binaire installé. `data.json`/`music/` restent dans `app.getPath('userData')` (`%APPDATA%\JukeBox DnD\` sous Windows), indépendant du mode d'installation : une désinstallation NSIS ne touche pas ce dossier par défaut (`deleteAppDataOnUninstall` volontairement non activé)
 
 ---
 

@@ -1,6 +1,6 @@
 name: Release
 
-# Sur un tag vX.Y.Z : build Linux (AppImage) + Windows (portable .exe) et publie
+# Sur un tag vX.Y.Z : build Linux (AppImage) + Windows (installeur NSIS) et publie
 # une GitHub Release avec les deux artefacts attachés.
 # Déclenchement manuel (workflow_dispatch) possible pour tester le build sans
 # créer de release (utile pour valider avant de tagger).
@@ -25,7 +25,7 @@ jobs:
             artifact-glob: dist/*.AppImage
           - os: windows-latest
             build-script: build:win
-            artifact-name: windows-portable
+            artifact-name: windows-installer
             artifact-glob: dist/*.exe
     runs-on: ${{ matrix.os }}
     steps:
