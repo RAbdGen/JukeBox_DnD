@@ -1,6 +1,7 @@
 import { Howl } from 'howler';
 import { AudioManager } from '../backend/AudioManager.js';
 import { createPendingDeletionStore } from './pendingDeletions.js';
+import { createPreviewController } from './previewController.js';
 import { createPreviewState } from './previewState.js';
 import { getPreviewVolume } from './trackVolume.js';
 
@@ -13,7 +14,6 @@ let currentPlaylistId = 'default';
 let updateInterval = null;
 let volumeBeforeMute = null; // volume mémorisé pour le mute rapide (raccourci clavier) ; null = pas muté
 let libraryCache = []; // dernière bibliothèque chargée, pour filtrer la recherche sans re-fetch IPC
-let previewHowl = null; // Howl dédié au preview au survol (séparé de audioManager, n'interfère pas avec la lecture en cours)
 const pendingDeletions = createPendingDeletionStore();
 // État de travail des versions dans la modal d'édition (#15) : { name, isNew, filePath? }[].
 // Rien n'est persisté tant que "Sauvegarder" n'est pas cliqué (même logique que volume/tags).
@@ -398,53 +398,28 @@ function showAddVersionRow() {
     nameInput.focus();
 }
 
-/**
- * Stoppe le preview en cours (s'il y en a un). N'affecte jamais la
- * lecture principale (audioManager) — Howl totalement séparé.
- */
-function stopPreviewHowl() {
-    if (previewHowl) {
-        previewHowl.unload();
-        previewHowl = null;
-    }
-}
-
-const previewState = createPreviewState({
-    clearTimer: clearTimeout,
-    stopHowl: stopPreviewHowl,
-});
-
-/**
- * Démarre le preview d'une piste (version par défaut) dans un Howl
- * dédié. Même garde-fou que Track.play() : attend le chargement avant
- * de jouer (preload:false).
- */
-function startPreview(track) {
-    stopPreviewHowl();
-
+function getPreviewSource(track) {
     const versionName = track.defaultVersion || Object.keys(track.localPaths || {})[0];
     let src = versionName && track.localPaths ? track.localPaths[versionName] : null;
-    if (!src) return;
+    if (!src) return null;
 
     if (!src.startsWith('http') && !src.startsWith('file://')) {
         src = `file://${src}`;
     }
 
-    previewHowl = new Howl({
-        src: [src],
-        html5: true,
-        volume: getPreviewVolume(track),
-        preload: false,
-    });
-
-    const doPlay = () => previewHowl && previewHowl.play();
-    if (previewHowl.state() === 'loaded') {
-        doPlay();
-    } else {
-        previewHowl.once('load', doPlay);
-        previewHowl.load();
-    }
+    return src;
 }
+
+const previewController = createPreviewController({
+    createHowl: options => new Howl(options),
+    getSource: getPreviewSource,
+    getVolume: getPreviewVolume,
+});
+
+const previewState = createPreviewState({
+    clearTimer: clearTimeout,
+    stopHowl: previewController.stop,
+});
 
 /**
  * Rendu de la liste de pistes de la bibliothèque (sous-ensemble de
@@ -453,8 +428,8 @@ function startPreview(track) {
 function renderLibraryList(tracks) {
     const container = document.getElementById('library-tracks');
 
-    // Retirer les lignes ne déclenche pas mouseleave : annuler explicitement
-    // le timer et le Howl avant chaque re-rendu.
+    // Un re-rendu retire les lignes : interrompre explicitement le preview
+    // afin qu'aucun son ne continue sans bouton visible pour le contrôler.
     previewState.cancel();
 
     if (tracks.length === 0) {
@@ -473,6 +448,7 @@ function renderLibraryList(tracks) {
         const versionsCount = Object.keys(track.localPaths || track.originalPaths || {}).length;
         const playlistsCount = track.inPlaylists ? track.inPlaylists.length : 0;
         const tags = track.tags || [];
+        const canPreview = Boolean(getPreviewSource(track));
 
         div.innerHTML = `
             <div class="track-info-main">
@@ -480,6 +456,7 @@ function renderLibraryList(tracks) {
                 <span class="track-details">${versionsCount} version(s) • ${playlistsCount} playlist(s)</span>
             </div>
             <div class="track-actions">
+                <button class="preview-track-btn secondary-btn" data-id="${track.id}" title="Préécouter" aria-label="Préécouter" ${canPreview ? '' : 'disabled'}>▶</button>
                 <button class="add-to-playlist-btn secondary-btn" data-id="${track.id}" title="Ajouter à la playlist active" ${currentPlaylistId ? '' : 'disabled'}>➕</button>
                 <button class="edit-track-btn secondary-btn" data-id="${track.id}" title="Modifier le volume">✏️</button>
                 <button class="delete-track-btn danger-btn" data-id="${track.id}">🗑️</button>
@@ -500,14 +477,9 @@ function renderLibraryList(tracks) {
             div.querySelector('.track-info-main').appendChild(tagsContainer);
         }
 
-        // Preview au survol : léger délai pour ignorer les survols rapides,
-        // un seul preview actif à la fois, stoppé immédiatement au mouseleave
-        div.addEventListener('mouseenter', () => {
-            previewState.clearTimer();
-            previewState.setTimer(setTimeout(() => startPreview(track), 300));
-        });
-        div.addEventListener('mouseleave', () => {
-            previewState.cancel();
+        div.querySelector('.preview-track-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            previewController.toggle(track, e.currentTarget);
         });
 
         // Event ajout à la playlist active
@@ -530,7 +502,7 @@ function renderLibraryList(tracks) {
         div.querySelector('.delete-track-btn').addEventListener('click', (e) => {
             e.stopPropagation();
 
-            // div.remove() ne déclenche pas mouseleave : couper le preview explicitement
+            // Une ligne retirée doit aussi interrompre son preview éventuel.
             previewState.cancel();
 
             // Si c'est la piste en cours de lecture, on stoppe tout de suite

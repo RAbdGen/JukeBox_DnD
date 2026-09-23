@@ -140,11 +140,11 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#20 — Temps de démarrage très long sur machine modeste (8Go RAM) + loading screen](https://github.com/RAbdGen/JukeBox_DnD/issues/20) — NSIS + écran de chargement, à reconfirmer sur la machine de l'ami au prochain build
 - [#13 — Ajouter une piste à la playlist coupe la lecture en cours](https://github.com/RAbdGen/JukeBox_DnD/issues/13) — `AudioManager.loadPlaylist()` diff-aware, ne stoppe/recharge plus que ce qui a réellement changé
 - [#14 — Impossible de réordonner ou supprimer une piste dans une playlist existante](https://github.com/RAbdGen/JukeBox_DnD/issues/14) — boutons ↑/↓/✕ par piste + `reorderPlaylistTracks()`
+- [#15 — Gestion des versions d'une piste (réordonner/ajouter/supprimer) dans la modal d'édition](https://github.com/RAbdGen/JukeBox_DnD/issues/15)
+- [#16 — Remplacer le preview au survol par un bouton preview](https://github.com/RAbdGen/JukeBox_DnD/issues/16) — bouton explicite ▶/⏸ par piste
 - [#19 — Contraste de texte insuffisant (tous thèmes)](https://github.com/RAbdGen/JukeBox_DnD/issues/19) — élargi en système de 8 thèmes WCAG AA, voir section "Système de thèmes" plus haut
 
 **À faire (`Todo`) :**
-- [#15 — Gestion des versions d'une piste (réordonner/ajouter/supprimer) dans la modal d'édition](https://github.com/RAbdGen/JukeBox_DnD/issues/15) — priorité moyenne
-- [#16 — Remplacer le preview au survol par un bouton preview](https://github.com/RAbdGen/JukeBox_DnD/issues/16) — priorité moyenne
 - [#17 — Personnalisation : durée de fondu (crossfade) réglable](https://github.com/RAbdGen/JukeBox_DnD/issues/17) — priorité moyenne
 - [#18 — Personnalisation : synchronisation BPM entre pistes avec décalage](https://github.com/RAbdGen/JukeBox_DnD/issues/18) — priorité basse, faisabilité non étudiée
 - [#21 — Renommer l'application « JukeBox & DnD » → « Jukebox JDR »](https://github.com/RAbdGen/JukeBox_DnD/issues/21) — priorité basse
