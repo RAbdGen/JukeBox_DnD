@@ -133,9 +133,9 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#11 — Le timer de preview au survol survit à un re-rendu de la bibliothèque](https://github.com/RAbdGen/JukeBox_DnD/issues/11)
 - [#12 — fadeVolume() ignore un ajustement manuel du slider pendant le fondu](https://github.com/RAbdGen/JukeBox_DnD/issues/12)
 - [#20 — Temps de démarrage très long sur machine modeste (8Go RAM) + loading screen](https://github.com/RAbdGen/JukeBox_DnD/issues/20) — NSIS + écran de chargement, à reconfirmer sur la machine de l'ami au prochain build
+- [#13 — Ajouter une piste à la playlist coupe la lecture en cours](https://github.com/RAbdGen/JukeBox_DnD/issues/13) — `AudioManager.loadPlaylist()` diff-aware, ne stoppe/recharge plus que ce qui a réellement changé
 
 **À faire (`Todo`) :**
-- [#13 — Ajouter une piste à la playlist coupe la lecture en cours](https://github.com/RAbdGen/JukeBox_DnD/issues/13) — priorité haute
 - [#14 — Impossible de réordonner ou supprimer une piste dans une playlist existante](https://github.com/RAbdGen/JukeBox_DnD/issues/14) — priorité haute
 - [#19 — Contraste de texte insuffisant (tous thèmes)](https://github.com/RAbdGen/JukeBox_DnD/issues/19) — priorité haute
 - [#15 — Gestion des versions d'une piste (réordonner/ajouter/supprimer) dans la modal d'édition](https://github.com/RAbdGen/JukeBox_DnD/issues/15) — priorité moyenne
