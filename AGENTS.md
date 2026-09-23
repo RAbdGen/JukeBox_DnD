@@ -134,7 +134,14 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#12 — fadeVolume() ignore un ajustement manuel du slider pendant le fondu](https://github.com/RAbdGen/JukeBox_DnD/issues/12)
 
 **À faire (`Todo`) :**
-Aucune issue ouverte.
+- [#20 — Temps de démarrage très long sur machine modeste (8Go RAM) + loading screen](https://github.com/RAbdGen/JukeBox_DnD/issues/20) — priorité **critique** (label `priority: critical`, en plus de `priority: high` côté Project)
+- [#13 — Ajouter une piste à la playlist coupe la lecture en cours](https://github.com/RAbdGen/JukeBox_DnD/issues/13) — priorité haute
+- [#14 — Impossible de réordonner ou supprimer une piste dans une playlist existante](https://github.com/RAbdGen/JukeBox_DnD/issues/14) — priorité haute
+- [#19 — Contraste de texte insuffisant (tous thèmes)](https://github.com/RAbdGen/JukeBox_DnD/issues/19) — priorité haute
+- [#15 — Gestion des versions d'une piste (réordonner/ajouter/supprimer) dans la modal d'édition](https://github.com/RAbdGen/JukeBox_DnD/issues/15) — priorité moyenne
+- [#16 — Remplacer le preview au survol par un bouton preview](https://github.com/RAbdGen/JukeBox_DnD/issues/16) — priorité moyenne
+- [#17 — Personnalisation : durée de fondu (crossfade) réglable](https://github.com/RAbdGen/JukeBox_DnD/issues/17) — priorité moyenne
+- [#18 — Personnalisation : synchronisation BPM entre pistes avec décalage](https://github.com/RAbdGen/JukeBox_DnD/issues/18) — priorité basse, faisabilité non étudiée
 
 ### Conventions de code
 - ESM partout sauf les fichiers `.cjs` d'Electron (ne pas toucher au module system sans raison)
