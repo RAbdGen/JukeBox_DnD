@@ -323,26 +323,47 @@ export class AudioManager {
     // ========================================
 
     /**
-     * Charger une playlist complète
+     * Charger (ou resynchroniser) une playlist complète.
+     *
+     * Si la piste en cours de lecture fait partie de la nouvelle config
+     * (ex: ajout/retrait d'une autre piste dans la playlist active), la
+     * lecture n'est pas interrompue : seules les pistes qui ont réellement
+     * disparu de la config sont déchargées, les autres conservent leur
+     * instance Track/Howl existante. Sinon (changement effectif de
+     * playlist), le comportement reste inchangé : on stoppe tout et on
+     * repart de l'index 0.
      * @param {Array} playlistConfig - Configuration de la playlist
      */
     loadPlaylist(playlistConfig) {
         console.log(`📀 Chargement de la playlist (${playlistConfig.length} pistes)`);
 
-        // Arrêter la piste en cours avant de charger une nouvelle playlist
-        if (this.currentTrack) {
+        const newIds = new Set(playlistConfig.map(t => t.id));
+        const currentTrackId = this.currentTrack ? this.currentTrack.id : null;
+        const keepPlaying = currentTrackId !== null && newIds.has(currentTrackId);
+
+        if (!keepPlaying && this.currentTrack) {
             this.currentTrack.stop();
             this.currentTrack = null;
         }
-        this.currentTrackIndex = 0;
+
+        // Décharger les pistes qui ne font plus partie de la playlist (la piste
+        // en cours, si elle en fait encore partie, a déjà été stoppée ci-dessus)
+        for (const [id, track] of this.tracks) {
+            if (!newIds.has(id)) {
+                if (id !== currentTrackId) track.stop();
+                this.tracks.delete(id);
+            }
+        }
 
         this.playlist = [];
 
-        playlistConfig.forEach((trackConfig, index) => {
+        playlistConfig.forEach((trackConfig) => {
             const { id, title, versions, defaultVersion, defaultVolume } = trackConfig;
 
-            // Charger la piste
-            this.loadTrack(id, title, versions);
+            // Ne recharger (recréer les Howl) que si la piste n'est pas déjà chargée
+            if (!this.tracks.has(id)) {
+                this.loadTrack(id, title, versions);
+            }
 
             // Ajouter à la playlist
             this.playlist.push({ id, title, defaultVersion: defaultVersion || 'calm' });
@@ -358,6 +379,10 @@ export class AudioManager {
                 }
             }
         });
+
+        this.currentTrackIndex = keepPlaying
+            ? this.playlist.findIndex(t => t.id === currentTrackId)
+            : 0;
 
         console.log(`✅ Playlist chargée : ${this.playlist.length} pistes`);
     }
