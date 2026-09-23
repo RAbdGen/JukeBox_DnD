@@ -58,6 +58,11 @@ L'application est utilisée dans une ambiance tamisée, en soirée, pendant une 
 - **Effets :** légères textures (grain, vignette), transitions douces, pas d'animations agressives (l'app tourne en arrière-plan pendant une session)
 - **Layout :** 2 panneaux principaux (Player | Bibliothèque), navigation sobre, modals claires
 
+### Système de thèmes (depuis #19)
+8 palettes sélectionnables dans Réglages, persistées dans `settings.theme`, appliquées via `document.documentElement.dataset.theme` + variables CSS (`[data-theme="x"]` dans `frontend/styles.css`) : **nuit** (défaut), **grimoire**, **taverne**, **arcane**, **forêt**, **sang**, **givre**, **parchemin** (seul thème clair — le reste suit la direction "sombre, lisible dans le noir" ci-dessus).
+
+Toute nouvelle palette doit garantir `--bone-dim` et `--gold-2` >= 4.5:1 (WCAG AA) contre `--ink-2` (le fond le plus clair où ils apparaissent réellement — cartes/panneaux) — c'est le pire cas, passer ce seuil garantit le reste. Vérifier par calcul (pas à l'oeil) ; `tests/theme-contrast.test.js` revérifie automatiquement les 8 thèmes existants à partir de `styles.css`, à étendre si une palette est ajoutée. Penser aussi à redéfinir `--ink-dark/warm/mid/top` (vignettage) et `color-scheme` dans le nouveau bloc — oubliés une fois, ça fait hériter du vignettage de "nuit" à la place du sien.
+
 ### Règles UI à respecter
 - Scrollbar custom ou masquée (le bug de scrollbar visible à droite doit être réglé)
 - Inputs avec labels clairs et taille de texte lisible (bug de l'input trop petit pour nom de version/musique)
@@ -135,9 +140,9 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#20 — Temps de démarrage très long sur machine modeste (8Go RAM) + loading screen](https://github.com/RAbdGen/JukeBox_DnD/issues/20) — NSIS + écran de chargement, à reconfirmer sur la machine de l'ami au prochain build
 - [#13 — Ajouter une piste à la playlist coupe la lecture en cours](https://github.com/RAbdGen/JukeBox_DnD/issues/13) — `AudioManager.loadPlaylist()` diff-aware, ne stoppe/recharge plus que ce qui a réellement changé
 - [#14 — Impossible de réordonner ou supprimer une piste dans une playlist existante](https://github.com/RAbdGen/JukeBox_DnD/issues/14) — boutons ↑/↓/✕ par piste + `reorderPlaylistTracks()`
+- [#19 — Contraste de texte insuffisant (tous thèmes)](https://github.com/RAbdGen/JukeBox_DnD/issues/19) — élargi en système de 8 thèmes WCAG AA, voir section "Système de thèmes" plus haut
 
 **À faire (`Todo`) :**
-- [#19 — Contraste de texte insuffisant (tous thèmes)](https://github.com/RAbdGen/JukeBox_DnD/issues/19) — priorité haute
 - [#15 — Gestion des versions d'une piste (réordonner/ajouter/supprimer) dans la modal d'édition](https://github.com/RAbdGen/JukeBox_DnD/issues/15) — priorité moyenne
 - [#16 — Remplacer le preview au survol par un bouton preview](https://github.com/RAbdGen/JukeBox_DnD/issues/16) — priorité moyenne
 - [#17 — Personnalisation : durée de fondu (crossfade) réglable](https://github.com/RAbdGen/JukeBox_DnD/issues/17) — priorité moyenne
