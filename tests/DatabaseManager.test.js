@@ -78,3 +78,76 @@ describe('DatabaseManager.reorderPlaylistTracks', () => {
         expect(manager.db.write).not.toHaveBeenCalled();
     });
 });
+
+describe('DatabaseManager.removeVersionFromTrack', () => {
+    function trackWithVersions(versions, extra = {}) {
+        const paths = Object.fromEntries(versions.map(v => [v, `/music/${v}.mp3`]));
+        return { id: 't1', title: 'Piste', originalPaths: { ...paths }, localPaths: { ...paths }, defaultVersion: versions[0], ...extra };
+    }
+
+    it('removes a non-default version and keeps the rest', async () => {
+        const manager = createDatabaseManager({ library: [trackWithVersions(['calm', 'combat', 'tension'])], playlists: [], metadata: {} });
+
+        const result = await manager.removeVersionFromTrack('t1', 'combat');
+        const track = manager.db.data.library[0];
+
+        expect(result).toBe(true);
+        expect(track.localPaths).toEqual({ calm: '/music/calm.mp3', tension: '/music/tension.mp3' });
+        expect(track.originalPaths).toEqual({ calm: '/music/calm.mp3', tension: '/music/tension.mp3' });
+        expect(track.defaultVersion).toBe('calm');
+    });
+
+    it('resets defaultVersion to the first remaining version when the default is removed', async () => {
+        const manager = createDatabaseManager({ library: [trackWithVersions(['calm', 'combat'])], playlists: [], metadata: {} });
+
+        await manager.removeVersionFromTrack('t1', 'calm');
+        const track = manager.db.data.library[0];
+
+        expect(track.defaultVersion).toBe('combat');
+    });
+
+    it('refuses to remove the last remaining version', async () => {
+        const manager = createDatabaseManager({ library: [trackWithVersions(['calm'])], playlists: [], metadata: {} });
+
+        await expect(manager.removeVersionFromTrack('t1', 'calm')).rejects.toThrow();
+        expect(manager.db.data.library[0].localPaths).toEqual({ calm: '/music/calm.mp3' });
+        expect(manager.db.write).not.toHaveBeenCalled();
+    });
+
+    it('returns false for a version that does not exist on the track', async () => {
+        const manager = createDatabaseManager({ library: [trackWithVersions(['calm', 'combat'])], playlists: [], metadata: {} });
+
+        const result = await manager.removeVersionFromTrack('t1', 'inexistante');
+
+        expect(result).toBe(false);
+        expect(manager.db.write).not.toHaveBeenCalled();
+    });
+});
+
+describe('DatabaseManager.reorderTrackVersions', () => {
+    function trackWithVersions(versions) {
+        const paths = Object.fromEntries(versions.map(v => [v, `/music/${v}.mp3`]));
+        return { id: 't1', title: 'Piste', originalPaths: { ...paths }, localPaths: { ...paths }, defaultVersion: versions[0] };
+    }
+
+    it('applies a valid permutation, preserving each version path', async () => {
+        const manager = createDatabaseManager({ library: [trackWithVersions(['calm', 'combat', 'tension'])], playlists: [], metadata: {} });
+
+        const result = await manager.reorderTrackVersions('t1', ['tension', 'calm', 'combat']);
+        const track = manager.db.data.library[0];
+
+        expect(result).toBe(true);
+        expect(Object.keys(track.localPaths)).toEqual(['tension', 'calm', 'combat']);
+        expect(track.localPaths.combat).toBe('/music/combat.mp3');
+    });
+
+    it('rejects an order that is not a permutation of the current versions', async () => {
+        const manager = createDatabaseManager({ library: [trackWithVersions(['calm', 'combat'])], playlists: [], metadata: {} });
+
+        const result = await manager.reorderTrackVersions('t1', ['calm', 'inexistante']);
+
+        expect(result).toBe(false);
+        expect(Object.keys(manager.db.data.library[0].localPaths)).toEqual(['calm', 'combat']);
+        expect(manager.db.write).not.toHaveBeenCalled();
+    });
+});

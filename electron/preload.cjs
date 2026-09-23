@@ -31,6 +31,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
     deleteTrack: (trackId) => ipcRenderer.invoke('library:deleteTrack', trackId),
     addVersion: (trackId, versionName, filePath) =>
         ipcRenderer.invoke('library:addVersion', trackId, versionName, filePath),
+    removeVersion: (trackId, versionName) =>
+        ipcRenderer.invoke('library:removeVersion', trackId, versionName),
+    reorderVersions: (trackId, orderedVersionNames) =>
+        ipcRenderer.invoke('library:reorderVersions', trackId, orderedVersionNames),
 
     /**
      * Exporter la bibliothèque (JSON + copie des fichiers audio) vers un

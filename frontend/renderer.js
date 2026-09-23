@@ -15,6 +15,9 @@ let volumeBeforeMute = null; // volume mémorisé pour le mute rapide (raccourci
 let libraryCache = []; // dernière bibliothèque chargée, pour filtrer la recherche sans re-fetch IPC
 let previewHowl = null; // Howl dédié au preview au survol (séparé de audioManager, n'interfère pas avec la lecture en cours)
 const pendingDeletions = createPendingDeletionStore();
+// État de travail des versions dans la modal d'édition (#15) : { name, isNew, filePath? }[].
+// Rien n'est persisté tant que "Sauvegarder" n'est pas cliqué (même logique que volume/tags).
+let editingVersions = [];
 
 // ========================================
 // Toast — Undo suppression
@@ -232,11 +235,10 @@ async function loadPlaylist(id) {
 // ========================================
 
 /**
- * Ouvre la modale d'édition de piste, limitée au volume par défaut et
- * aux tags (normalisation manuelle + organisation de la bibliothèque).
- * Le titre est affiché pour le contexte mais en lecture seule, et la
- * section Versions / le bouton Supprimer sont masqués : hors scope, la
- * modale gère plus de champs dans le HTML que ce qui est branché ici.
+ * Ouvre la modale d'édition de piste : renommage (lecture seule, hors
+ * scope), volume par défaut, tags, et gestion des versions (#15 —
+ * réordonner/ajouter/supprimer). Le bouton Supprimer (piste entière) reste
+ * masqué : la suppression complète passe par le bouton 🗑️ de la bibliothèque.
  */
 function openEditTrackModal(track) {
     const modal = document.getElementById('edit-track-modal');
@@ -249,12 +251,151 @@ function openEditTrackModal(track) {
     document.getElementById('edit-track-volume-value').textContent = `${volumePercent}%`;
     document.getElementById('edit-track-tags').value = (track.tags || []).join(', ');
 
-    // Hors scope pour l'instant (voir commentaire ci-dessus)
-    document.getElementById('edit-versions-group').classList.add('hidden');
+    const versionNames = Object.keys(track.localPaths || track.originalPaths || {});
+    editingVersions = versionNames.map(name => ({ name, isNew: false }));
+    renderEditVersionList();
+
     document.getElementById('delete-track-btn').classList.add('hidden');
 
     document.body.style.overflow = 'hidden';
     modal.classList.remove('hidden');
+}
+
+/**
+ * Échange la position de deux versions dans l'état de travail local
+ * (rien n'est persisté avant Sauvegarder).
+ */
+function swapEditingVersions(indexA, indexB) {
+    [editingVersions[indexA], editingVersions[indexB]] = [editingVersions[indexB], editingVersions[indexA]];
+    renderEditVersionList();
+}
+
+function removeEditingVersion(index) {
+    editingVersions.splice(index, 1);
+    renderEditVersionList();
+}
+
+/**
+ * Rend la liste des versions de la piste en cours d'édition avec des
+ * boutons ↑/↓/✕ par ligne (même pattern que le réordonnancement de
+ * playlist, #14) : rien n'est persisté ici, seul "Sauvegarder" écrit.
+ */
+function renderEditVersionList() {
+    const container = document.getElementById('edit-version-list');
+    container.replaceChildren();
+
+    editingVersions.forEach((version, index) => {
+        const row = document.createElement('div');
+        row.className = 'edit-version-row';
+
+        const nameSpan = document.createElement('span');
+        nameSpan.className = 'edit-version-row-name';
+        nameSpan.textContent = version.name + (version.isNew ? ' (nouvelle)' : '');
+
+        const actions = document.createElement('div');
+        actions.className = 'edit-version-row-actions';
+
+        const upBtn = document.createElement('button');
+        upBtn.type = 'button';
+        upBtn.className = 'icon-btn';
+        upBtn.title = 'Monter';
+        upBtn.textContent = '↑';
+        upBtn.disabled = index === 0;
+        upBtn.addEventListener('click', () => swapEditingVersions(index, index - 1));
+
+        const downBtn = document.createElement('button');
+        downBtn.type = 'button';
+        downBtn.className = 'icon-btn';
+        downBtn.title = 'Descendre';
+        downBtn.textContent = '↓';
+        downBtn.disabled = index === editingVersions.length - 1;
+        downBtn.addEventListener('click', () => swapEditingVersions(index, index + 1));
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'icon-btn danger-icon';
+        removeBtn.title = 'Retirer cette version';
+        removeBtn.textContent = '✕';
+        removeBtn.disabled = editingVersions.length <= 1;
+        removeBtn.addEventListener('click', () => removeEditingVersion(index));
+
+        actions.append(upBtn, downBtn, removeBtn);
+        row.append(nameSpan, actions);
+        container.appendChild(row);
+    });
+}
+
+/**
+ * Affiche une ligne temporaire pour saisir le nom + fichier d'une nouvelle
+ * version. Ne modifie `editingVersions` qu'à la confirmation — annuler ne
+ * laisse aucune trace. Un seul ajout à la fois (pas de ligne dupliquée).
+ */
+function showAddVersionRow() {
+    const container = document.getElementById('edit-version-list');
+    if (container.querySelector('.pending-version-row')) return;
+
+    let pickedFilePath = null;
+
+    const row = document.createElement('div');
+    row.className = 'version-input pending-version-row';
+
+    const nameInput = document.createElement('input');
+    nameInput.type = 'text';
+    nameInput.className = 'version-name';
+    nameInput.placeholder = 'Nom (combat...)';
+
+    const fileBtn = document.createElement('button');
+    fileBtn.type = 'button';
+    fileBtn.className = 'select-file-btn';
+    fileBtn.textContent = '📁 Fichier';
+
+    const filePathSpan = document.createElement('span');
+    filePathSpan.className = 'file-path';
+    filePathSpan.textContent = 'Aucun fichier';
+
+    fileBtn.addEventListener('click', async () => {
+        const files = await window.electronAPI.openFiles();
+        if (files && files.length > 0) {
+            pickedFilePath = files[0];
+            filePathSpan.textContent = files[0].split('/').pop();
+            filePathSpan.classList.add('file-loaded');
+            row.classList.add('has-file');
+        }
+    });
+
+    const confirmBtn = document.createElement('button');
+    confirmBtn.type = 'button';
+    confirmBtn.className = 'icon-btn';
+    confirmBtn.title = 'Confirmer';
+    confirmBtn.textContent = '✓';
+    confirmBtn.addEventListener('click', () => {
+        const name = nameInput.value.trim();
+        if (!name) {
+            alert('Le nom de la version est requis');
+            return;
+        }
+        if (editingVersions.some(v => v.name.toLowerCase() === name.toLowerCase())) {
+            alert('Une version porte déjà ce nom');
+            return;
+        }
+        if (!pickedFilePath) {
+            alert('Sélectionnez un fichier audio');
+            return;
+        }
+        editingVersions.push({ name, isNew: true, filePath: pickedFilePath });
+        renderEditVersionList();
+    });
+
+    const cancelBtn = document.createElement('button');
+    cancelBtn.type = 'button';
+    cancelBtn.className = 'icon-btn danger-icon';
+    cancelBtn.title = 'Annuler';
+    cancelBtn.textContent = '✕';
+    cancelBtn.addEventListener('click', () => row.remove());
+
+    row.append(nameInput, fileBtn, filePathSpan, confirmBtn, cancelBtn);
+    container.appendChild(row);
+    nameInput.focus();
 }
 
 /**
@@ -1103,6 +1244,10 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('edit-track-volume-value').textContent = `${e.target.value}%`;
     });
 
+    document.getElementById('add-edit-version-btn').addEventListener('click', () => {
+        showAddVersionRow();
+    });
+
     document.getElementById('save-track-edits').addEventListener('click', async () => {
         const trackId = document.getElementById('edit-track-id').value;
         const volume = document.getElementById('edit-track-volume').value / 100;
@@ -1111,12 +1256,41 @@ document.addEventListener('DOMContentLoaded', () => {
             .map(t => t.trim().toLowerCase())
             .filter(Boolean);
 
-        await window.electronAPI.updateTrack(trackId, { defaultVolume: volume, tags });
+        const originalTrack = libraryCache.find(t => t.id === trackId);
+        const originalNames = Object.keys(originalTrack?.localPaths || originalTrack?.originalPaths || {});
+        const finalNames = editingVersions.map(v => v.name);
+        const removedNames = originalNames.filter(name => !finalNames.includes(name));
+        const newVersions = editingVersions.filter(v => v.isNew);
+
+        try {
+            // Ajouter avant de retirer : si l'utilisateur remplace la seule
+            // version existante par une nouvelle, retirer en premier
+            // déclencherait le garde-fou "dernière version" côté backend.
+            for (const v of newVersions) {
+                await window.electronAPI.addVersion(trackId, v.name, v.filePath);
+            }
+            for (const name of removedNames) {
+                await window.electronAPI.removeVersion(trackId, name);
+            }
+            if (finalNames.length > 0) {
+                await window.electronAPI.reorderVersions(trackId, finalNames);
+            }
+
+            const updates = { defaultVolume: volume, tags };
+            if (originalTrack?.defaultVersion && removedNames.includes(originalTrack.defaultVersion)) {
+                updates.defaultVersion = finalNames[0];
+            }
+            await window.electronAPI.updateTrack(trackId, updates);
+        } catch (err) {
+            console.error(err);
+            alert('Erreur lors de la sauvegarde des versions');
+            return;
+        }
 
         document.body.style.overflow = '';
         document.getElementById('edit-track-modal').classList.add('hidden');
 
-        // Recharger pour que les Track en mémoire reprennent le nouveau defaultVolume
+        // Recharger pour que les Track en mémoire reprennent le nouveau defaultVolume/versions
         await loadLibrary();
         if (currentPlaylistId) await loadPlaylist(currentPlaylistId);
     });

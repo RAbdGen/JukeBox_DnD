@@ -211,6 +211,91 @@ export class DatabaseManager {
         return track;
     }
 
+    /**
+     * Retirer une version d'une piste (métadonnées DB uniquement — le
+     * fichier audio local est supprimé côté appelant via FileManager).
+     * Refuse de retirer la dernière version restante : une piste doit
+     * toujours avoir au moins une version jouable.
+     * @param {string} trackId
+     * @param {string} versionName
+     * @returns {Promise<boolean>}
+     */
+    async removeVersionFromTrack(trackId, versionName) {
+        const track = this.db.data.library.find(t => t.id === trackId);
+
+        if (!track) {
+            throw new Error(`Track ${trackId} introuvable`);
+        }
+
+        const names = Object.keys(track.localPaths || track.originalPaths || {});
+
+        if (!names.includes(versionName)) {
+            return false;
+        }
+
+        if (names.length <= 1) {
+            throw new Error('Impossible de retirer la dernière version d\'une piste');
+        }
+
+        if (track.originalPaths) delete track.originalPaths[versionName];
+        if (track.localPaths) delete track.localPaths[versionName];
+
+        if (track.defaultVersion === versionName) {
+            track.defaultVersion = Object.keys(track.localPaths || track.originalPaths || {})[0];
+        }
+
+        if (track.metadata) {
+            track.metadata.modifiedAt = new Date().toISOString();
+        }
+
+        this.updateMetadata();
+        await this.db.write();
+
+        console.log(`🗑️ Version "${versionName}" retirée de "${track.title}"`);
+        return true;
+    }
+
+    /**
+     * Réordonner les versions d'une piste.
+     * @param {string} trackId
+     * @param {string[]} orderedVersionNames - Doit contenir exactement les
+     *   mêmes noms de version que ceux actuellement présents (permutation).
+     * @returns {Promise<boolean>}
+     */
+    async reorderTrackVersions(trackId, orderedVersionNames) {
+        const track = this.db.data.library.find(t => t.id === trackId);
+
+        if (!track) {
+            return false;
+        }
+
+        const current = Object.keys(track.localPaths || track.originalPaths || {}).sort();
+        const incoming = [...(orderedVersionNames || [])].sort();
+        const isSamePermutation = current.length === incoming.length
+            && current.every((name, i) => name === incoming[i]);
+
+        if (!isSamePermutation) {
+            console.error(`❌ reorderTrackVersions: orderedVersionNames n'est pas une permutation valide pour ${trackId}`);
+            return false;
+        }
+
+        const reorder = (obj) => {
+            if (!obj) return obj;
+            const result = {};
+            for (const name of orderedVersionNames) result[name] = obj[name];
+            return result;
+        };
+
+        track.originalPaths = reorder(track.originalPaths);
+        track.localPaths = reorder(track.localPaths);
+
+        this.updateMetadata();
+        await this.db.write();
+
+        console.log(`🔀 Versions de "${track.title}" réordonnées`);
+        return true;
+    }
+
     // ============================================
     // GESTION DES PLAYLISTS
     // ============================================

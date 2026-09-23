@@ -241,6 +241,30 @@ ipcHandle('library:addVersion', async (event, trackId, versionName, filePath) =>
     }
 });
 
+ipcHandle('library:removeVersion', async (event, trackId, versionName) => {
+    try {
+        const track = await dbManager.getTrack(trackId);
+        const localPath = track?.localPaths?.[versionName];
+        const removed = await dbManager.removeVersionFromTrack(trackId, versionName);
+        if (removed && localPath) {
+            await fileManager.deleteAudioFile(localPath);
+        }
+        return removed;
+    } catch (error) {
+        console.error('❌ Erreur removeVersion:', error);
+        throw error;
+    }
+});
+
+ipcHandle('library:reorderVersions', async (event, trackId, orderedVersionNames) => {
+    try {
+        return await dbManager.reorderTrackVersions(trackId, orderedVersionNames);
+    } catch (error) {
+        console.error('❌ Erreur reorderVersions:', error);
+        return false;
+    }
+});
+
 // Export : dossier destination → jukebox-export.json + music/ (copie des
 // fichiers avec des chemins relatifs, portables entre machines/OS)
 ipcHandle('library:exportLibrary', async () => {

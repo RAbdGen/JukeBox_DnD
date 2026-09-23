@@ -1279,6 +1279,35 @@ main::-webkit-scrollbar {
         0 0 10px var(--gold-glow);
 }
 
+/* Lignes de version existantes dans la modal d'édition (#15) */
+.edit-version-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 8px 10px;
+    margin-bottom: 6px;
+    background: var(--ink-0);
+    border: 1px solid var(--ink-3);
+    border-radius: 4px;
+}
+
+.edit-version-row-name {
+    flex: 1;
+    font-family: 'IM Fell English', serif;
+    font-size: 0.95rem;
+    color: var(--bone);
+}
+
+.edit-version-row-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.edit-version-row-actions .icon-btn {
+    font-size: 0.9rem;
+}
+
 /* Version Inputs */
 .version-input {
     display: flex;
