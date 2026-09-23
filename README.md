@@ -1,4 +1,4 @@
-# 🎵 JukeBox DnD 🎲
+# 🎵 Jukebox JDR 🎲
 
 Application desktop de gestion de musique d'ambiance pour les sessions de jeu de rôle. Chargez vos pistes, organisez-les en playlists et passez entre différentes *versions* d'une même musique (ex : `calm`, `combat`, `tension`) avec des transitions crossfade fluides.
 

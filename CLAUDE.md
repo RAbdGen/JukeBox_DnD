@@ -144,10 +144,10 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#16 — Remplacer le preview au survol par un bouton preview](https://github.com/RAbdGen/JukeBox_DnD/issues/16) — bouton explicite ▶/⏸ par piste
 - [#17 — Personnalisation : durée de fondu (crossfade) réglable](https://github.com/RAbdGen/JukeBox_DnD/issues/17) — réglage par piste dans la modal d'édition
 - [#19 — Contraste de texte insuffisant (tous thèmes)](https://github.com/RAbdGen/JukeBox_DnD/issues/19) — élargi en système de 8 thèmes WCAG AA, voir section "Système de thèmes" plus haut
+- [#21 — Renommer l'application « JukeBox & DnD » → « Jukebox JDR »](https://github.com/RAbdGen/JukeBox_DnD/issues/21) — au passage, dossier `userData` figé explicitement (voir section "Build et distribution")
 
 **À faire (`Todo`) :**
 - [#18 — Personnalisation : synchronisation BPM entre pistes avec décalage](https://github.com/RAbdGen/JukeBox_DnD/issues/18) — priorité basse, faisabilité non étudiée
-- [#21 — Renommer l'application « JukeBox & DnD » → « Jukebox JDR »](https://github.com/RAbdGen/JukeBox_DnD/issues/21) — priorité basse
 - [#22 — Version anglaise de l'application (« Jukebox RPG »)](https://github.com/RAbdGen/JukeBox_DnD/issues/22) — priorité basse, pas de spec complète
 
 ### Conventions de code
@@ -186,7 +186,8 @@ npm run build      # Vite d'abord, puis electron-builder
 - `.github/workflows/release.yml` — sur un tag `v*`, build Linux (AppImage) + Windows (installeur NSIS) sur des runners GitHub natifs (pas besoin du dual-boot), publie une GitHub Release avec les deux artefacts
 - Déclenchement manuel possible (`workflow_dispatch`) pour tester le build sans créer de release
 - Le dual-boot reste utile pour tester l'app en conditions réelles (surtout Windows), mais n'est plus nécessaire pour produire les installeurs
-- **Windows : NSIS plutôt que portable** (depuis #20) — le mode portable d'electron-builder auto-extrait toute l'app dans un dossier temp à *chaque* lancement, identifié comme cause probable des dizaines de secondes de démarrage remontées sur une machine modeste. NSIS installe une fois (`oneClick: true`, `perMachine: false` — pas de droits admin nécessaires) puis lance directement le binaire installé. `data.json`/`music/` restent dans `app.getPath('userData')` (`%APPDATA%\JukeBox DnD\` sous Windows), indépendant du mode d'installation : une désinstallation NSIS ne touche pas ce dossier par défaut (`deleteAppDataOnUninstall` volontairement non activé)
+- **Windows : NSIS plutôt que portable** (depuis #20) — le mode portable d'electron-builder auto-extrait toute l'app dans un dossier temp à *chaque* lancement, identifié comme cause probable des dizaines de secondes de démarrage remontées sur une machine modeste. NSIS installe une fois (`oneClick: true`, `perMachine: false` — pas de droits admin nécessaires) puis lance directement le binaire installé. `data.json`/`music/` restent dans `app.getPath('userData')`, indépendant du mode d'installation : une désinstallation NSIS ne touche pas ce dossier par défaut (`deleteAppDataOnUninstall` volontairement non activé)
+- **Dossier `userData` figé explicitement** (depuis #21) — `electron/main.cjs` appelle `app.setPath('userData', ...)` avec le nom stable `jukebox` (celui de `package.json`, jamais celui de `productName`/branding). `%APPDATA%\jukebox\` sous Windows, `~/.config/jukebox` sous Linux. But : un futur changement de nom d'affichage (comme #21 qui passe `productName` à "Jukebox JDR") ne doit jamais faire migrer silencieusement `data.json`/`music/` vers un autre dossier — ne jamais changer cette valeur sans plan de migration explicite
 
 ---
 

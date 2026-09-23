@@ -3,6 +3,13 @@ const path = require('path');
 const fs = require('fs').promises;
 const { pathToFileURL } = require('url');
 
+// Fige le dossier userData sur le nom stable de package.json ("jukebox"),
+// indépendamment de productName/branding (#21 — "JukeBox DnD" → "Jukebox
+// JDR"). Sans ça, app.getPath('userData') dépend implicitement du nom de
+// l'app à l'exécution : un futur changement de branding pourrait décaler
+// data.json/music/ vers un nouveau dossier et faire "perdre" la
+// bibliothèque de l'utilisateur au prochain lancement.
+app.setPath('userData', path.join(app.getPath('appData'), 'jukebox'));
 
 let dbManager;
 let fileManager;

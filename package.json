@@ -34,7 +34,7 @@
   },
   "build": {
     "appId": "com.jukebox.dnd",
-    "productName": "JukeBox DnD",
+    "productName": "Jukebox JDR",
     "icon": "build/icon.png",
     "publish": null,
     "files": [

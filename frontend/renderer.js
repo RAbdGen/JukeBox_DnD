@@ -113,7 +113,7 @@ async function init() {
             loadLibrary(),
         ]);
 
-        console.log('✅ JukeBox DnD initialisé');
+        console.log('✅ Jukebox JDR initialisé');
     } catch (error) {
         console.error('❌ Erreur initialisation:', error);
     } finally {
