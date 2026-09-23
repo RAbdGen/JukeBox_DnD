@@ -68,4 +68,21 @@ describe('createPreviewController', () => {
         expect(howls[0].unload).toHaveBeenCalledOnce();
         expect(button.textContent).toBe('▶');
     });
+
+    it('uses an injected translator for the button labels (#22)', () => {
+        const { createHowl } = createHowlFactory();
+        const t = vi.fn(key => (key === 'preview.stop' ? 'Stop preview' : 'Preview'));
+        const preview = createPreviewController({
+            createHowl,
+            getSource: () => 'file:///music/forest.mp3',
+            getVolume: () => 0.5,
+            t,
+        });
+        const button = createButton();
+
+        preview.toggle({ id: 'forest' }, button);
+
+        expect(t).toHaveBeenCalledWith('preview.stop');
+        expect(button.title).toBe('Stop preview');
+    });
 });

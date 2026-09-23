@@ -13,14 +13,14 @@
         <div class="loading-ornament">
             <span class="loading-gem">◆</span>
         </div>
-        <p class="loading-title">Jukebox JDR</p>
-        <p class="loading-text">Ouverture du grimoire…</p>
+        <p class="loading-title" data-i18n="app.name">Jukebox JDR</p>
+        <p class="loading-text" data-i18n="app.loading">Ouverture du grimoire…</p>
     </div>
 
     <div id="app">
         <header>
-            <p class="subtitle">Maître · du · Jeu</p>
-            <h1>Jukebox JDR</h1>
+            <p class="subtitle" data-i18n="app.tagline">Maître · du · Jeu</p>
+            <h1 data-i18n="app.name">Jukebox JDR</h1>
             <div class="header-ornament">
                 <span class="ornament-line"></span>
                 <span class="ornament-gem">◆</span>
@@ -32,10 +32,10 @@
             <div class="container">
                 <!-- Onglets -->
                 <div id="view-tabs">
-                    <button class="tab-btn active" data-view="player">Lecture</button>
-                    <button class="tab-btn" data-view="library">Grimoire</button>
-                    <button class="tab-btn" data-view="effets">Effets</button>
-                    <button class="tab-btn" data-view="reglages">Réglages</button>
+                    <button class="tab-btn active" data-view="player" data-i18n="nav.player">Lecture</button>
+                    <button class="tab-btn" data-view="library" data-i18n="nav.library">Grimoire</button>
+                    <button class="tab-btn" data-view="effets" data-i18n="nav.effects">Effets</button>
+                    <button class="tab-btn" data-view="reglages" data-i18n="nav.settings">Réglages</button>
                 </div>
 
                 <!-- ======================== -->
@@ -46,23 +46,23 @@
                     <select id="playlist-select" class="hidden-select"></select>
                     <div id="track-info" style="display:none">
                         <div class="track-name">
-                            <span class="label">Version :</span>
+                            <span class="label" data-i18n="player.versionLabel">Version :</span>
                             <span id="current-version">-</span>
                         </div>
-                        <div id="track-status" class="status arrêté">Arrêté</div>
+                        <div id="track-status" class="status stopped" data-i18n="status.stopped">Arrêté</div>
                     </div>
 
                     <!-- Barre playlist -->
                     <div class="playlist-header">
-                        <button class="breadcrumb-btn" data-target-view="library">← Grimoire Sonore</button>
+                        <button class="breadcrumb-btn" data-target-view="library" data-i18n="player.breadcrumbLibrary">← Grimoire Sonore</button>
                         <div class="playlist-info-bar" style="position:relative">
                             <div class="playlist-meta-group">
-                                <span class="playlist-meta">Liste de lecture · <span id="track-count">0</span> pistes</span>
-                                <button id="playlist-name-display" class="playlist-name-display" title="Changer de playlist">—</button>
+                                <span class="playlist-meta" id="playlist-meta-text">Liste de lecture · 0 pistes</span>
+                                <button id="playlist-name-display" class="playlist-name-display" data-i18n-title="controls.changePlaylist" title="Changer de playlist">—</button>
                             </div>
                             <div class="playlist-actions">
-                                <button id="create-playlist-btn" class="icon-btn" title="Créer une playlist">＋</button>
-                                <button id="delete-playlist-btn" class="icon-btn danger-icon" title="Supprimer la playlist">🗑</button>
+                                <button id="create-playlist-btn" class="icon-btn" data-i18n-title="controls.createPlaylist" title="Créer une playlist">＋</button>
+                                <button id="delete-playlist-btn" class="icon-btn danger-icon" data-i18n-title="controls.deletePlaylist" title="Supprimer la playlist">🗑</button>
                             </div>
                             <div id="playlist-dropdown" class="playlist-dropdown hidden"></div>
                         </div>
@@ -74,12 +74,12 @@
                         <!-- ── Carte lecteur ── -->
                         <div class="player-card">
                             <div class="player-card-header">
-                                <span class="incantation-label">En cours d'incantation</span>
+                                <span class="incantation-label" data-i18n="player.nowCasting">En cours d'incantation</span>
                                 <span id="version-badge" class="version-badge">● —</span>
                             </div>
 
                             <div id="current-track-indicator">
-                                <span class="track-title">Aucune piste</span>
+                                <span class="track-title" data-i18n="player.noTrack">Aucune piste</span>
                                 <span class="track-number">Piste 0/0</span>
                             </div>
 
@@ -98,23 +98,23 @@
                             </div>
 
                             <div id="player-controls">
-                                <button id="prev-btn" class="ctrl-btn" title="Piste précédente">⏮</button>
-                                <button id="stop-btn" class="ctrl-btn" title="Arrêter">■</button>
-                                <button id="play-btn" class="ctrl-btn ctrl-play" title="Lecture / Pause">▶</button>
-                                <button id="next-btn" class="ctrl-btn" title="Piste suivante">⏭</button>
+                                <button id="prev-btn" class="ctrl-btn" data-i18n-title="controls.prevTrack" title="Piste précédente">⏮</button>
+                                <button id="stop-btn" class="ctrl-btn" data-i18n-title="controls.stop" title="Arrêter">■</button>
+                                <button id="play-btn" class="ctrl-btn ctrl-play" data-i18n-title="controls.playPause" title="Lecture / Pause">▶</button>
+                                <button id="next-btn" class="ctrl-btn" data-i18n-title="controls.nextTrack" title="Piste suivante">⏭</button>
                             </div>
 
                             <div class="player-footer-controls">
                                 <div id="volume-control">
-                                    <label for="volume">Vol</label>
+                                    <label for="volume" data-i18n="controls.volumeLabel">Vol</label>
                                     <input type="range" id="volume" min="0" max="100" value="50" />
                                     <span id="volume-value">50%</span>
                                 </div>
                                 <div id="play-mode-selector">
                                     <div class="mode-buttons">
-                                        <button class="mode-btn active" data-mode="noLoop" title="Normal">↩</button>
-                                        <button class="mode-btn" data-mode="loopOne" title="Boucle une piste">↻</button>
-                                        <button class="mode-btn" data-mode="loopAll" title="Tout répéter">⟳</button>
+                                        <button class="mode-btn active" data-mode="noLoop" data-i18n-title="controls.modeNormal" title="Normal">↩</button>
+                                        <button class="mode-btn" data-mode="loopOne" data-i18n-title="controls.modeLoopOne" title="Boucle une piste">↻</button>
+                                        <button class="mode-btn" data-mode="loopAll" data-i18n-title="controls.modeLoopAll" title="Tout répéter">⟳</button>
                                     </div>
                                 </div>
                             </div>
@@ -122,9 +122,9 @@
 
                         <!-- ── Panneau liste de pistes ── -->
                         <div class="tracklist-panel">
-                            <div class="tracklist-header">Pistes du Grimoire</div>
+                            <div class="tracklist-header" data-i18n="tracklist.header">Pistes du Grimoire</div>
                             <div id="playlist-tracks">
-                                <p class="empty-message">Aucune piste. Chargez une playlist.</p>
+                                <p class="empty-message" data-i18n="tracklist.emptyMain">Aucune piste. Chargez une playlist.</p>
                             </div>
                         </div>
 
@@ -136,17 +136,18 @@
                 <!-- ======================== -->
                 <div id="library-view" class="view hidden">
                     <div class="library-header">
-                        <h3>Grimoire Sonore</h3>
-                        <button id="add-track-btn" class="primary-btn">＋ Ajouter une piste</button>
+                        <h3 data-i18n="library.header">Grimoire Sonore</h3>
+                        <button id="add-track-btn" class="primary-btn" data-i18n="library.addTrack">＋ Ajouter une piste</button>
                     </div>
                     <input
                         type="text"
                         id="library-search"
                         class="library-search-input"
+                        data-i18n-placeholder="library.searchPlaceholder"
                         placeholder="Rechercher par titre ou tag…"
                     />
                     <div id="library-tracks">
-                        <p class="empty-message">Bibliothèque vide. Cliquez sur "Ajouter une piste" pour commencer.</p>
+                        <p class="empty-message" data-i18n="library.empty">Bibliothèque vide. Cliquez sur "Ajouter une piste" pour commencer.</p>
                     </div>
                 </div>
 
@@ -156,8 +157,8 @@
                 <div id="effets-view" class="view hidden">
                     <div class="stub-view">
                         <span class="stub-icon">⚡</span>
-                        <p class="stub-title">Effets Sonores</p>
-                        <p class="stub-desc">Fonctionnalité à venir...</p>
+                        <p class="stub-title" data-i18n="effects.title">Effets Sonores</p>
+                        <p class="stub-desc" data-i18n="effects.comingSoon">Fonctionnalité à venir...</p>
                     </div>
                 </div>
 
@@ -166,53 +167,65 @@
                 <!-- ======================== -->
                 <div id="reglages-view" class="view hidden">
                     <div class="settings-section">
-                        <h3 class="settings-title">Apparence</h3>
-                        <p class="settings-label">Thème de l'interface</p>
+                        <h3 class="settings-title" data-i18n="settings.appearanceTitle">Apparence</h3>
+                        <p class="settings-label" data-i18n="settings.themeLabel">Thème de l'interface</p>
                         <div class="theme-grid" id="theme-grid">
                             <button class="theme-card active" data-theme="nuit">
                                 <div class="theme-swatch" style="--sw-bg:#0b0b09; --sw-card:#1f1d19; --sw-gold:#cda842;"></div>
-                                <span>Nuit</span>
+                                <span data-i18n="themes.nuit">Nuit</span>
                             </button>
                             <button class="theme-card" data-theme="grimoire">
                                 <div class="theme-swatch" style="--sw-bg:#0c0b08; --sw-card:#221d16; --sw-gold:#d3a242;"></div>
-                                <span>Grimoire</span>
+                                <span data-i18n="themes.grimoire">Grimoire</span>
                             </button>
                             <button class="theme-card" data-theme="taverne">
                                 <div class="theme-swatch" style="--sw-bg:#0e0a07; --sw-card:#261b12; --sw-gold:#dc9747;"></div>
-                                <span>Taverne</span>
+                                <span data-i18n="themes.taverne">Taverne</span>
                             </button>
                             <button class="theme-card" data-theme="arcane">
                                 <div class="theme-swatch" style="--sw-bg:#09080d; --sw-card:#181523; --sw-gold:#ba9fdf;"></div>
-                                <span>Arcane</span>
+                                <span data-i18n="themes.arcane">Arcane</span>
                             </button>
                             <button class="theme-card" data-theme="foret">
                                 <div class="theme-swatch" style="--sw-bg:#080c0a; --sw-card:#16221b; --sw-gold:#41c884;"></div>
-                                <span>Forêt</span>
+                                <span data-i18n="themes.foret">Forêt</span>
                             </button>
                             <button class="theme-card" data-theme="sang">
                                 <div class="theme-swatch" style="--sw-bg:#0d0708; --sw-card:#241415; --sw-gold:#e48871;"></div>
-                                <span>Sang</span>
+                                <span data-i18n="themes.sang">Sang</span>
                             </button>
                             <button class="theme-card" data-theme="glace">
                                 <div class="theme-swatch" style="--sw-bg:#080b0c; --sw-card:#161d22; --sw-gold:#68acc6;"></div>
-                                <span>Givre</span>
+                                <span data-i18n="themes.glace">Givre</span>
                             </button>
                             <button class="theme-card" data-theme="parchemin">
                                 <div class="theme-swatch" style="--sw-bg:#efeae1; --sw-card:#dcd4c6; --sw-gold:#795415;"></div>
-                                <span>Parchemin</span>
+                                <span data-i18n="themes.parchemin">Parchemin</span>
                             </button>
                         </div>
                     </div>
 
                     <div class="settings-section">
-                        <h3 class="settings-title">Bibliothèque</h3>
-                        <p class="settings-description">
+                        <h3 class="settings-title" data-i18n="settings.languageTitle">Langue</h3>
+                        <div class="theme-grid language-grid" id="language-grid">
+                            <button class="theme-card active" data-lang="fr">
+                                <span data-i18n="settings.languageFr">Français</span>
+                            </button>
+                            <button class="theme-card" data-lang="en">
+                                <span data-i18n="settings.languageEn">English</span>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="settings-section">
+                        <h3 class="settings-title" data-i18n="settings.libraryTitle">Bibliothèque</h3>
+                        <p class="settings-description" data-i18n="settings.libraryDescription">
                             Sauvegarder ou restaurer la bibliothèque (pistes + playlists + fichiers audio),
                             pour synchroniser entre le dual-boot ou partager avec un autre joueur.
                         </p>
                         <div class="settings-actions">
-                            <button id="export-library-btn" class="secondary-btn">Exporter la bibliothèque</button>
-                            <button id="import-library-btn" class="secondary-btn">Importer une bibliothèque</button>
+                            <button id="export-library-btn" class="secondary-btn" data-i18n="settings.exportBtn">Exporter la bibliothèque</button>
+                            <button id="import-library-btn" class="secondary-btn" data-i18n="settings.importBtn">Importer une bibliothèque</button>
                         </div>
                         <p id="export-import-status" class="settings-status"></p>
                     </div>
@@ -221,7 +234,7 @@
             </div>
         </main>
 
-        <footer>V 2.0 · Jukebox JDR · Par votre Maître du Jeu</footer>
+        <footer id="app-footer">V 2.0 · Jukebox JDR · Par votre Maître du Jeu</footer>
     </div>
 
     <!-- ======================== -->
@@ -230,31 +243,31 @@
     <div id="add-track-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Ajouter une musique</h2>
+                <h2 data-i18n="modal.addTrack.title">Ajouter une musique</h2>
                 <button class="close-modal-btn">&times;</button>
             </div>
 
             <div class="modal-body">
                 <div class="form-group">
-                    <label>Titre de la piste *</label>
-                    <input type="text" id="new-track-title" placeholder="Ex: Taverne Médiévale" required />
+                    <label data-i18n="modal.addTrack.titleLabel">Titre de la piste *</label>
+                    <input type="text" id="new-track-title" data-i18n-placeholder="modal.addTrack.titlePlaceholder" placeholder="Ex: Taverne Médiévale" required />
                 </div>
 
                 <div class="form-group">
-                    <label>Versions audio</label>
+                    <label data-i18n="modal.addTrack.versionsLabel">Versions audio</label>
                     <div id="version-inputs">
                         <div class="version-input" data-index="0">
-                            <input type="text" class="version-name" placeholder="Nom (calm, combat...)" value="calm" />
-                            <button type="button" class="select-file-btn">Fichier</button>
-                            <span class="file-path">Aucun fichier</span>
+                            <input type="text" class="version-name" data-i18n-placeholder="modal.addTrack.versionNamePlaceholder" placeholder="Nom (calm, combat...)" value="calm" />
+                            <button type="button" class="select-file-btn" data-i18n="modal.addTrack.selectFile">Fichier</button>
+                            <span class="file-path" data-i18n="modal.addTrack.noFile">Aucun fichier</span>
                             <input type="hidden" class="file-path-value" />
                         </div>
                     </div>
-                    <button type="button" id="add-version-input-btn" class="secondary-btn">+ Ajouter une version</button>
+                    <button type="button" id="add-version-input-btn" class="secondary-btn" data-i18n="modal.addTrack.addVersionBtn">+ Ajouter une version</button>
                 </div>
 
                 <div class="form-group">
-                    <label>Volume par défaut</label>
+                    <label data-i18n="modal.addTrack.volumeLabel">Volume par défaut</label>
                     <div class="volume-slider-group">
                         <input type="range" id="new-track-volume" min="0" max="100" value="50" />
                         <span id="new-track-volume-value">50%</span>
@@ -262,18 +275,18 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Ajouter aux playlists</label>
+                    <label data-i18n="modal.addTrack.addToPlaylists">Ajouter aux playlists</label>
                     <div id="playlist-checkboxes"></div>
                     <div class="inline-create">
-                        <input type="text" id="new-playlist-name" placeholder="Nouvelle playlist..." />
-                        <button type="button" id="create-playlist-inline-btn" class="secondary-btn">Créer</button>
+                        <input type="text" id="new-playlist-name" data-i18n-placeholder="modal.addTrack.newPlaylistPlaceholder" placeholder="Nouvelle playlist..." />
+                        <button type="button" id="create-playlist-inline-btn" class="secondary-btn" data-i18n="modal.addTrack.createBtn">Créer</button>
                     </div>
                 </div>
             </div>
 
             <div class="modal-footer">
-                <button type="button" id="cancel-add-track" class="secondary-btn">Annuler</button>
-                <button type="button" id="confirm-add-track" class="primary-btn">Ajouter la piste</button>
+                <button type="button" id="cancel-add-track" class="secondary-btn" data-i18n="modal.addTrack.cancelBtn">Annuler</button>
+                <button type="button" id="confirm-add-track" class="primary-btn" data-i18n="modal.addTrack.submitBtn">Ajouter la piste</button>
             </div>
         </div>
     </div>
@@ -284,20 +297,20 @@
     <div id="create-playlist-modal" class="modal hidden">
         <div class="modal-content modal-small">
             <div class="modal-header">
-                <h2>Nouvelle Playlist</h2>
+                <h2 data-i18n="modal.createPlaylist.title">Nouvelle Playlist</h2>
                 <button class="close-modal-btn">&times;</button>
             </div>
 
             <div class="modal-body">
                 <div class="form-group">
-                    <label>Nom de la playlist</label>
-                    <input type="text" id="playlist-name-input" placeholder="Ex: Ambiance Donjon" />
+                    <label data-i18n="modal.createPlaylist.nameLabel">Nom de la playlist</label>
+                    <input type="text" id="playlist-name-input" data-i18n-placeholder="modal.createPlaylist.namePlaceholder" placeholder="Ex: Ambiance Donjon" />
                 </div>
             </div>
 
             <div class="modal-footer">
-                <button type="button" class="cancel-modal-btn secondary-btn">Annuler</button>
-                <button type="button" id="confirm-create-playlist" class="primary-btn">Créer</button>
+                <button type="button" class="cancel-modal-btn secondary-btn" data-i18n="modal.addTrack.cancelBtn">Annuler</button>
+                <button type="button" id="confirm-create-playlist" class="primary-btn" data-i18n="modal.addTrack.createBtn">Créer</button>
             </div>
         </div>
     </div>
@@ -308,7 +321,7 @@
     <div id="edit-track-modal" class="modal hidden">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Modifier la piste</h2>
+                <h2 data-i18n="modal.editTrack.title">Modifier la piste</h2>
                 <button class="close-modal-btn">&times;</button>
             </div>
 
@@ -316,18 +329,18 @@
                 <input type="hidden" id="edit-track-id" />
 
                 <div class="form-group">
-                    <label>Titre</label>
+                    <label data-i18n="modal.editTrack.titleLabel">Titre</label>
                     <input type="text" id="edit-track-title" />
                 </div>
 
                 <div class="form-group" id="edit-versions-group">
-                    <label>Versions</label>
+                    <label data-i18n="modal.editTrack.versionsLabel">Versions</label>
                     <div id="edit-version-list"></div>
-                    <button type="button" id="add-edit-version-btn" class="secondary-btn">+ Ajouter une version</button>
+                    <button type="button" id="add-edit-version-btn" class="secondary-btn" data-i18n="modal.editTrack.addVersionBtn">+ Ajouter une version</button>
                 </div>
 
                 <div class="form-group">
-                    <label>Volume par défaut</label>
+                    <label data-i18n="modal.editTrack.volumeLabel">Volume par défaut</label>
                     <div class="volume-slider-group">
                         <input type="range" id="edit-track-volume" min="0" max="100" value="50" />
                         <span id="edit-track-volume-value">50%</span>
@@ -335,7 +348,7 @@
                 </div>
 
                 <div class="form-group">
-                    <label for="edit-track-crossfade-duration">Durée du fondu entre versions</label>
+                    <label for="edit-track-crossfade-duration" data-i18n="modal.editTrack.crossfadeLabel">Durée du fondu entre versions</label>
                     <div class="volume-slider-group">
                         <input type="range" id="edit-track-crossfade-duration" min="1" max="30" step="1" value="10" />
                         <output id="edit-track-crossfade-duration-value" for="edit-track-crossfade-duration" aria-live="polite">10%</output>
@@ -343,15 +356,15 @@
                 </div>
 
                 <div class="form-group">
-                    <label>Tags</label>
-                    <input type="text" id="edit-track-tags" placeholder="forêt, ambiance, jour" />
+                    <label data-i18n="modal.editTrack.tagsLabel">Tags</label>
+                    <input type="text" id="edit-track-tags" data-i18n-placeholder="modal.editTrack.tagsPlaceholder" placeholder="forêt, ambiance, jour" />
                 </div>
             </div>
 
             <div class="modal-footer">
-                <button type="button" id="delete-track-btn" class="danger-btn">Supprimer</button>
-                <button type="button" class="cancel-modal-btn secondary-btn">Annuler</button>
-                <button type="button" id="save-track-edits" class="primary-btn">Sauvegarder</button>
+                <button type="button" id="delete-track-btn" class="danger-btn" data-i18n="modal.editTrack.deleteBtn">Supprimer</button>
+                <button type="button" class="cancel-modal-btn secondary-btn" data-i18n="modal.addTrack.cancelBtn">Annuler</button>
+                <button type="button" id="save-track-edits" class="primary-btn" data-i18n="modal.editTrack.saveBtn">Sauvegarder</button>
             </div>
         </div>
     </div>

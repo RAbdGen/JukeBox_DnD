@@ -14,6 +14,21 @@ app.setPath('userData', path.join(app.getPath('appData'), 'jukebox'));
 let dbManager;
 let fileManager;
 let mainWindow;
+let t; // fonction de traduction (#22), liée une fois backend/i18n.js importé dans initManagers()
+let normalizeLanguage; // idem, liée dans initManagers()
+
+// Les handlers 'dialog:*' ci-dessous n'attendent pas managersReadyPromise :
+// t peut donc être encore undefined si l'utilisateur clique extrêmement vite
+// après le lancement. Filet de sécurité plutôt qu'un crash IPC.
+function dt(key, fallback) {
+    return t ? t(key) : fallback;
+}
+
+// Langue courante pour les dialogues natifs (titres de dialog.showOpenDialog).
+// Suivie séparément de settings.language car les handlers 'dialog:*' ci-dessous
+// n'attendent pas managersReadyPromise (pas besoin des managers) et ne peuvent
+// donc pas lire dbManager.getSettings() de façon sûre à tout moment.
+let currentLanguage = 'fr';
 
 // Resolves once initManagers() completes — IPC handlers await this before touching managers
 let managersReadyResolve;
@@ -30,9 +45,13 @@ function ipcHandle(channel, handler) {
 async function initManagers() {
     const dbManagerPath = pathToFileURL(path.join(__dirname, '..', 'backend', 'DatabaseManager.js')).href;
     const fileManagerPath = pathToFileURL(path.join(__dirname, '..', 'backend', 'FileManager.js')).href;
+    const i18nPath = pathToFileURL(path.join(__dirname, '..', 'backend', 'i18n.js')).href;
 
     const { DatabaseManager } = await import(dbManagerPath);
     const { FileManager } = await import(fileManagerPath);
+    const { t: translate, normalizeLanguage: normalizeLang } = await import(i18nPath);
+    t = (key, vars) => translate(currentLanguage, key, vars);
+    normalizeLanguage = normalizeLang;
 
     const userDataPath = app.getPath('userData');
 
@@ -41,6 +60,9 @@ async function initManagers() {
 
     fileManager = new FileManager(userDataPath);
     await fileManager.init();
+
+    const settings = await dbManager.getSettings();
+    currentLanguage = normalizeLanguage(settings?.language);
 
     console.log('✅ Database et FileManager initialisés');
     managersReadyResolve();
@@ -116,7 +138,7 @@ ipcMain.handle('dialog:openFiles', async () => {
         filters: [
             { name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac'] }
         ],
-        title: 'Sélectionner des fichiers audio'
+        title: dt('dialog.selectAudioFiles', 'Sélectionner des fichiers audio')
     });
 
     if (result.canceled) return [];
@@ -128,7 +150,7 @@ ipcMain.handle('dialog:openFiles', async () => {
 ipcMain.handle('dialog:openFolder', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
         properties: ['openDirectory'],
-        title: 'Sélectionner un dossier de musique'
+        title: dt('dialog.selectMusicFolder', 'Sélectionner un dossier de musique')
     });
 
     if (result.canceled || result.filePaths.length === 0) return null;
@@ -278,7 +300,7 @@ ipcHandle('library:reorderVersions', async (event, trackId, orderedVersionNames)
 ipcHandle('library:exportLibrary', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
         properties: ['openDirectory', 'createDirectory'],
-        title: "Choisir le dossier de destination de l'export",
+        title: t('dialog.selectExportDestination'),
     });
 
     if (result.canceled || result.filePaths.length === 0) return null;
@@ -322,7 +344,7 @@ ipcHandle('library:exportLibrary', async () => {
 ipcHandle('library:importLibrary', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
         properties: ['openDirectory'],
-        title: 'Choisir le dossier exporté à importer',
+        title: t('dialog.selectImportFolder'),
     });
 
     if (result.canceled || result.filePaths.length === 0) return null;
@@ -444,7 +466,14 @@ ipcHandle('playlist:reorderTracks', async (event, playlistId, orderedTrackIds) =
 
 ipcHandle('settings:save', async (event, settings) => {
     try {
-        return await dbManager.saveSettings(settings);
+        const result = await dbManager.saveSettings(settings);
+        // Suit la langue choisie pour les titres de dialogues natifs (#22) —
+        // dialog:openFiles/openFolder ne passent pas par ipcHandle donc ne
+        // peuvent pas relire dbManager.getSettings() à la demande.
+        if (Object.hasOwn(settings, 'language')) {
+            currentLanguage = normalizeLanguage(settings.language);
+        }
+        return result;
     } catch (error) {
         console.error('❌ Erreur saveSettings:', error);
         throw error;

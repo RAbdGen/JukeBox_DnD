@@ -63,6 +63,17 @@ L'application est utilisée dans une ambiance tamisée, en soirée, pendant une 
 
 Toute nouvelle palette doit garantir `--bone-dim` et `--gold-2` >= 4.5:1 (WCAG AA) contre `--ink-2` (le fond le plus clair où ils apparaissent réellement — cartes/panneaux) — c'est le pire cas, passer ce seuil garantit le reste. Vérifier par calcul (pas à l'oeil) ; `tests/theme-contrast.test.js` revérifie automatiquement les 8 thèmes existants à partir de `styles.css`, à étendre si une palette est ajoutée. Penser aussi à redéfinir `--ink-dark/warm/mid/top` (vignettage) et `color-scheme` dans le nouveau bloc — oubliés une fois, ça fait hériter du vignettage de "nuit" à la place du sien.
 
+### Système d'internationalisation (depuis #22)
+Français/anglais, fichiers maison (pas de lib i18n) dans `backend/i18n.js` — un seul module partagé par le renderer (`import`) et le processus main (`import()` dynamique dans `initManagers()`, comme `DatabaseManager`/`FileManager`). Le nom de l'app change avec la langue (`app.name` : "Jukebox JDR" / "Jukebox RPG"), pas juste le contenu.
+
+- **Clés** : `zone.sousClé` en camelCase, `t(lang, key, vars)` interpole `{placeholder}` et retombe sur le français puis sur la clé brute si absente — jamais un écran vide.
+- **HTML statique** : attributs `data-i18n` / `data-i18n-placeholder` / `data-i18n-title`, appliqués par `applyTranslations()` (`frontend/renderer.js`) au chargement et à chaque changement de langue. Toute nouvelle chaîne d'UI statique doit être taguée ainsi plutôt que codée en dur.
+- **Texte dynamique** (toasts, statuts, messages d'erreur) : passer par le wrapper local `t(key, vars)` de `renderer.js`, jamais une chaîne française codée en dur.
+- **Piège classes CSS ⇄ texte traduit** : `updateStatus()` prend une clé stable (`'playing'|'paused'|'stopped'`) et non le texte affiché — le nom de classe CSS (`.status.playing` etc. dans `styles.css`) ne doit **jamais** dépendre du texte traduit, sinon changer de langue casse le style. Même piège à surveiller pour toute future dérivation classe-depuis-texte.
+- **Sélecteur `.theme-card`** : réutilisé à la fois par la grille de thèmes (`#theme-grid`) et la grille de langue (`#language-grid`) pour le style — toujours scoper les listeners JS (`#theme-grid .theme-card` / `#language-grid .theme-card`), jamais `.theme-card` seul, sous peine de croiser les deux (`applyTheme(undefined)` sur un clic de langue).
+- **Dialogues natifs Electron** (`dialog.showOpenDialog`) : langue suivie séparément dans `electron/main.cjs` (variable `currentLanguage`, mise à jour par `settings:save`) car les handlers `dialog:openFiles`/`dialog:openFolder` n'attendent pas `managersReadyPromise` et ne peuvent pas relire `dbManager.getSettings()` à la demande.
+- `tests/i18n.test.js` vérifie que les deux dictionnaires ont exactement le même jeu de clés (parité fr/en) — à garder au vert : une clé oubliée dans une langue retombe silencieusement sur l'autre plutôt que de planter, donc seul ce test l'attrape.
+
 ### Règles UI à respecter
 - Scrollbar custom ou masquée (le bug de scrollbar visible à droite doit être réglé)
 - Inputs avec labels clairs et taille de texte lisible (bug de l'input trop petit pour nom de version/musique)
@@ -145,10 +156,10 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#17 — Personnalisation : durée de fondu (crossfade) réglable](https://github.com/RAbdGen/JukeBox_DnD/issues/17) — réglage par piste dans la modal d'édition
 - [#19 — Contraste de texte insuffisant (tous thèmes)](https://github.com/RAbdGen/JukeBox_DnD/issues/19) — élargi en système de 8 thèmes WCAG AA, voir section "Système de thèmes" plus haut
 - [#21 — Renommer l'application « JukeBox & DnD » → « Jukebox JDR »](https://github.com/RAbdGen/JukeBox_DnD/issues/21) — au passage, dossier `userData` figé explicitement (voir section "Build et distribution")
+- [#22 — Version anglaise de l'application (« Jukebox RPG »)](https://github.com/RAbdGen/JukeBox_DnD/issues/22) — i18n complète (UI + messages dynamiques + dialogues natifs), voir section "Système d'internationalisation" plus haut
 
 **À faire (`Todo`) :**
 - [#18 — Personnalisation : synchronisation BPM entre pistes avec décalage](https://github.com/RAbdGen/JukeBox_DnD/issues/18) — priorité basse, faisabilité non étudiée
-- [#22 — Version anglaise de l'application (« Jukebox RPG »)](https://github.com/RAbdGen/JukeBox_DnD/issues/22) — priorité basse, pas de spec complète
 
 ### Conventions de code
 - ESM partout sauf les fichiers `.cjs` d'Electron (ne pas toucher au module system sans raison)

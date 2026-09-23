@@ -421,20 +421,22 @@ main::-webkit-scrollbar {
     font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
 
-.status.arrêté {
+/* Noms de classe stables (indépendants de la langue affichée, #22) :
+   le libellé vient de i18n, mais la classe reste "stopped"/"playing"/"paused" */
+.status.stopped {
     background: rgba(107, 20, 20, 0.3);
     color: #c87070;
     border: 1px solid rgba(107, 20, 20, 0.6);
 }
 
-.status.en-lecture {
+.status.playing {
     background: rgba(138, 102, 34, 0.2);
     color: var(--gold-3);
     border: 1px solid var(--gold-2);
     animation: pulse-glow 2.5s infinite;
 }
 
-.status.en-pause {
+.status.paused {
     background: rgba(58, 47, 32, 0.4);
     color: var(--gold-2);
     border: 1px solid var(--ink-3);
@@ -2348,6 +2350,10 @@ footer {
     display: grid;
     grid-template-columns: repeat(4, 1fr);
     gap: 1rem;
+}
+
+.language-grid {
+    grid-template-columns: repeat(2, minmax(0, 160px));
 }
 
 .settings-description {

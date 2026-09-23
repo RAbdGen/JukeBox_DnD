@@ -1,15 +1,24 @@
 /**
  * Gère le cycle de vie du preview d'une piste sans interférer avec la
  * lecture principale. Un seul preview peut être actif à la fois.
+ * @param {object} deps
+ * @param {(key: string) => string} [deps.t] - Fonction de traduction (#22),
+ *   appelée avec 'preview.play'/'preview.stop'. Par défaut : libellés en
+ *   français, pour rester utilisable sans changement côté appelant.
  */
-export function createPreviewController({ createHowl, getSource, getVolume }) {
+export function createPreviewController({
+    createHowl,
+    getSource,
+    getVolume,
+    t = key => (key === 'preview.stop' ? 'Arrêter le preview' : 'Préécouter'),
+}) {
     let activeHowl = null;
     let activeTrackId = null;
     let activeButton = null;
 
     const setButtonState = (button, isActive) => {
         button.textContent = isActive ? '⏸' : '▶';
-        button.title = isActive ? 'Arrêter le preview' : 'Préécouter';
+        button.title = isActive ? t('preview.stop') : t('preview.play');
         button.ariaLabel = button.title;
     };
 

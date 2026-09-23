@@ -1,5 +1,6 @@
 import { Howl } from 'howler';
 import { AudioManager } from '../backend/AudioManager.js';
+import { normalizeLanguage, t as translate } from '../backend/i18n.js';
 import { createPendingDeletionStore } from './pendingDeletions.js';
 import { createPreviewController } from './previewController.js';
 import { createPreviewState } from './previewState.js';
@@ -20,6 +21,45 @@ const pendingDeletions = createPendingDeletionStore();
 let editingVersions = [];
 
 // ========================================
+// i18n (#22) — langue courante persistée dans settings.language
+// ========================================
+
+let currentLanguage = 'fr';
+
+function t(key, vars) {
+    return translate(currentLanguage, key, vars);
+}
+
+/**
+ * Applique la traduction courante à tout le HTML statique tagué
+ * (data-i18n / data-i18n-placeholder / data-i18n-title), puis met à jour
+ * les quelques éléments qui mélangent texte traduit et données dynamiques
+ * (nom de l'app, footer) et ne peuvent pas passer par un simple attribut.
+ */
+function applyTranslations() {
+    document.documentElement.lang = currentLanguage;
+    document.title = t('app.name');
+
+    document.querySelectorAll('[data-i18n]').forEach(el => {
+        el.textContent = t(el.dataset.i18n);
+    });
+    document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
+        el.placeholder = t(el.dataset.i18nPlaceholder);
+    });
+    document.querySelectorAll('[data-i18n-title]').forEach(el => {
+        el.title = t(el.dataset.i18nTitle);
+        if (el.hasAttribute('aria-label')) el.setAttribute('aria-label', el.title);
+    });
+
+    const footer = document.getElementById('app-footer');
+    if (footer) footer.textContent = `V 2.0 · ${t('app.name')} · ${t('app.footerTagline')}`;
+
+    document.querySelectorAll('#language-grid .theme-card').forEach(card => {
+        card.classList.toggle('active', card.dataset.lang === currentLanguage);
+    });
+}
+
+// ========================================
 // Toast — Undo suppression
 // ========================================
 
@@ -37,7 +77,7 @@ function showUndoToast(message, { duration = 7000, onExpire, onUndo } = {}) {
     toast.className = 'toast';
     toast.innerHTML = `
         <span class="toast-message"></span>
-        <button type="button" class="toast-undo-btn">Annuler</button>
+        <button type="button" class="toast-undo-btn">${t('toast.undoBtn')}</button>
         <div class="toast-progress" style="animation-duration: ${duration}ms"></div>
     `;
     toast.querySelector('.toast-message').textContent = message; // évite l'injection HTML via un titre de piste/playlist
@@ -82,6 +122,9 @@ async function init() {
             window.electronAPI.getSettings(),
             window.electronAPI.getAllPlaylists(),
         ]);
+
+        currentLanguage = normalizeLanguage(settings?.language);
+        applyTranslations();
 
         if (settings) {
             if (settings.volume !== undefined) {
@@ -135,13 +178,13 @@ function populatePlaylists(playlists) {
     select.replaceChildren();
     const defaultOpt = document.createElement('option');
     defaultOpt.value = '';
-    defaultOpt.textContent = '-- Choisir une playlist --';
+    defaultOpt.textContent = t('playlist.defaultOption');
     select.appendChild(defaultOpt);
 
     playlists.forEach(p => {
         const option = document.createElement('option');
         option.value = p.id;
-        option.textContent = `${p.name} (${p.trackIds.length} pistes)`;
+        option.textContent = t('playlist.optionLabel', { name: p.name, count: p.trackIds.length });
         option.dataset.name = p.name; // nom pur, sans le compteur de pistes (utilisé par ex. dans le toast d'undo)
         select.appendChild(option);
     });
@@ -163,9 +206,9 @@ function populatePlaylists(playlists) {
     const selectedPlaylist = playlists.find(p => p.id === selectedId);
     if (selectedPlaylist) {
         const nameDisplay = document.getElementById('playlist-name-display');
-        const trackCount = document.getElementById('track-count');
+        const metaText = document.getElementById('playlist-meta-text');
         if (nameDisplay) nameDisplay.textContent = selectedPlaylist.name;
-        if (trackCount) trackCount.textContent = selectedPlaylist.trackIds.length;
+        if (metaText) metaText.textContent = t('player.playlistMeta', { count: selectedPlaylist.trackIds.length });
     }
 
     // Peupler le dropdown de sélection
@@ -214,9 +257,9 @@ async function loadPlaylist(id) {
 
         // Mettre à jour l'affichage de la playlist
         const nameDisplay = document.getElementById('playlist-name-display');
-        const trackCount = document.getElementById('track-count');
+        const metaText = document.getElementById('playlist-meta-text');
         if (nameDisplay) nameDisplay.textContent = playlistData.name;
-        if (trackCount) trackCount.textContent = playlistData.tracks.length;
+        if (metaText) metaText.textContent = t('player.playlistMeta', { count: playlistData.tracks.length });
 
         // Mettre à jour l'item actif dans le dropdown
         document.querySelectorAll('.playlist-dropdown-item').forEach(item => {
@@ -227,7 +270,7 @@ async function loadPlaylist(id) {
         console.log(`✅ Playlist "${playlistData.name}" chargée`);
     } else {
         console.error("Playlist vide ou introuvable");
-        document.getElementById('playlist-tracks').innerHTML = '<p class="empty-message">Playlist vide ou introuvable.</p>';
+        document.getElementById('playlist-tracks').innerHTML = `<p class="empty-message">${t('tracklist.playlistNotFound')}</p>`;
     }
 }
 
@@ -294,7 +337,7 @@ function renderEditVersionList() {
 
         const nameSpan = document.createElement('span');
         nameSpan.className = 'edit-version-row-name';
-        nameSpan.textContent = version.name + (version.isNew ? ' (nouvelle)' : '');
+        nameSpan.textContent = version.name + (version.isNew ? t('modal.editTrack.newVersionSuffix') : '');
 
         const actions = document.createElement('div');
         actions.className = 'edit-version-row-actions';
@@ -302,7 +345,7 @@ function renderEditVersionList() {
         const upBtn = document.createElement('button');
         upBtn.type = 'button';
         upBtn.className = 'icon-btn';
-        upBtn.title = 'Monter';
+        upBtn.title = t('tracklist.moveUp');
         upBtn.textContent = '↑';
         upBtn.disabled = index === 0;
         upBtn.addEventListener('click', () => swapEditingVersions(index, index - 1));
@@ -310,7 +353,7 @@ function renderEditVersionList() {
         const downBtn = document.createElement('button');
         downBtn.type = 'button';
         downBtn.className = 'icon-btn';
-        downBtn.title = 'Descendre';
+        downBtn.title = t('tracklist.moveDown');
         downBtn.textContent = '↓';
         downBtn.disabled = index === editingVersions.length - 1;
         downBtn.addEventListener('click', () => swapEditingVersions(index, index + 1));
@@ -318,7 +361,7 @@ function renderEditVersionList() {
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
         removeBtn.className = 'icon-btn danger-icon';
-        removeBtn.title = 'Retirer cette version';
+        removeBtn.title = t('modal.editTrack.removeVersion');
         removeBtn.textContent = '✕';
         removeBtn.disabled = editingVersions.length <= 1;
         removeBtn.addEventListener('click', () => removeEditingVersion(index));
@@ -346,16 +389,16 @@ function showAddVersionRow() {
     const nameInput = document.createElement('input');
     nameInput.type = 'text';
     nameInput.className = 'version-name';
-    nameInput.placeholder = 'Nom (combat...)';
+    nameInput.placeholder = t('modal.editTrack.versionNamePlaceholder');
 
     const fileBtn = document.createElement('button');
     fileBtn.type = 'button';
     fileBtn.className = 'select-file-btn';
-    fileBtn.textContent = '📁 Fichier';
+    fileBtn.textContent = `📁 ${t('modal.addTrack.selectFile')}`;
 
     const filePathSpan = document.createElement('span');
     filePathSpan.className = 'file-path';
-    filePathSpan.textContent = 'Aucun fichier';
+    filePathSpan.textContent = t('modal.addTrack.noFile');
 
     fileBtn.addEventListener('click', async () => {
         const files = await window.electronAPI.openFiles();
@@ -370,20 +413,20 @@ function showAddVersionRow() {
     const confirmBtn = document.createElement('button');
     confirmBtn.type = 'button';
     confirmBtn.className = 'icon-btn';
-    confirmBtn.title = 'Confirmer';
+    confirmBtn.title = t('modal.editTrack.confirm');
     confirmBtn.textContent = '✓';
     confirmBtn.addEventListener('click', () => {
         const name = nameInput.value.trim();
         if (!name) {
-            alert('Le nom de la version est requis');
+            alert(t('modal.editTrack.versionNameRequired'));
             return;
         }
         if (editingVersions.some(v => v.name.toLowerCase() === name.toLowerCase())) {
-            alert('Une version porte déjà ce nom');
+            alert(t('modal.editTrack.duplicateVersionName'));
             return;
         }
         if (!pickedFilePath) {
-            alert('Sélectionnez un fichier audio');
+            alert(t('modal.editTrack.selectAudioFile'));
             return;
         }
         editingVersions.push({ name, isNew: true, filePath: pickedFilePath });
@@ -393,7 +436,7 @@ function showAddVersionRow() {
     const cancelBtn = document.createElement('button');
     cancelBtn.type = 'button';
     cancelBtn.className = 'icon-btn danger-icon';
-    cancelBtn.title = 'Annuler';
+    cancelBtn.title = t('modal.editTrack.cancel');
     cancelBtn.textContent = '✕';
     cancelBtn.addEventListener('click', () => row.remove());
 
@@ -418,6 +461,7 @@ const previewController = createPreviewController({
     createHowl: options => new Howl(options),
     getSource: getPreviewSource,
     getVolume: getPreviewVolume,
+    t, // référence stable : lit currentLanguage à chaque appel, donc suit les changements de langue
 });
 
 const previewState = createPreviewState({
@@ -438,8 +482,8 @@ function renderLibraryList(tracks) {
 
     if (tracks.length === 0) {
         container.innerHTML = libraryCache.length === 0
-            ? '<p class="empty-message">Bibliothèque vide. Cliquez sur "Ajouter une piste" pour commencer.</p>'
-            : '<p class="empty-message">Aucune piste ne correspond à la recherche.</p>';
+            ? `<p class="empty-message">${t('library.empty')}</p>`
+            : `<p class="empty-message">${t('library.noSearchResults')}</p>`;
         return;
     }
 
@@ -456,16 +500,17 @@ function renderLibraryList(tracks) {
 
         div.innerHTML = `
             <div class="track-info-main">
-                <span class="track-title">${track.title}</span>
-                <span class="track-details">${versionsCount} version(s) • ${playlistsCount} playlist(s)</span>
+                <span class="track-title"></span>
+                <span class="track-details">${t('library.versionsCount', { versions: versionsCount, playlists: playlistsCount })}</span>
             </div>
             <div class="track-actions">
-                <button class="preview-track-btn secondary-btn" data-id="${track.id}" title="Préécouter" aria-label="Préécouter" ${canPreview ? '' : 'disabled'}>▶</button>
-                <button class="add-to-playlist-btn secondary-btn" data-id="${track.id}" title="Ajouter à la playlist active" ${currentPlaylistId ? '' : 'disabled'}>➕</button>
-                <button class="edit-track-btn secondary-btn" data-id="${track.id}" title="Modifier le volume">✏️</button>
+                <button class="preview-track-btn secondary-btn" data-id="${track.id}" title="${t('preview.play')}" aria-label="${t('preview.play')}" ${canPreview ? '' : 'disabled'}>▶</button>
+                <button class="add-to-playlist-btn secondary-btn" data-id="${track.id}" title="${t('library.addToPlaylist')}" ${currentPlaylistId ? '' : 'disabled'}>➕</button>
+                <button class="edit-track-btn secondary-btn" data-id="${track.id}" title="${t('library.editTrack')}">✏️</button>
                 <button class="delete-track-btn danger-btn" data-id="${track.id}">🗑️</button>
             </div>
         `;
+        div.querySelector('.track-title').textContent = track.title; // texte utilisateur : jamais interpolé brut dans l'innerHTML
 
         // Pastilles de tags construites via le DOM (pas d'innerHTML) : un tag
         // est du texte saisi par l'utilisateur, à ne jamais interpoler brut
@@ -517,7 +562,7 @@ function renderLibraryList(tracks) {
             pendingDeletions.markTrack(track.id);
             div.remove();
 
-            showUndoToast(`Piste "${track.title}" supprimée.`, {
+            showUndoToast(t('toast.trackDeleted', { title: track.title }), {
                 onExpire: async () => {
                     try {
                         await window.electronAPI.deleteTrack(track.id);
@@ -566,23 +611,37 @@ async function loadLibrary() {
 // UI Updates
 // ========================================
 
-function updateStatus(status) {
+/**
+ * @param {'playing'|'paused'|'stopped'} statusKey - Clé stable, indépendante
+ *   de la langue affichée (#22) : le nom de classe CSS en dépend
+ *   directement (voir .status.playing/.paused/.stopped dans styles.css),
+ *   donc il ne doit jamais être dérivé du texte traduit.
+ */
+function updateStatus(statusKey) {
     const el = document.getElementById('track-status');
     if (el) {
-        el.textContent = status;
-        el.className = 'status ' + status.toLowerCase().replace(' ', '-');
+        el.textContent = t(`status.${statusKey}`);
+        el.className = 'status ' + statusKey;
     }
+}
+
+const KNOWN_VERSION_KEYS = { calm: 'version.calm', combat: 'version.combat', tension: 'version.tension' };
+
+function versionLabel(version) {
+    return KNOWN_VERSION_KEYS[version] ? t(KNOWN_VERSION_KEYS[version]) : version;
 }
 
 function updateVersionDisplay(version) {
     const el = document.getElementById('current-version');
-    if (el) el.textContent = version === 'calm' ? 'Calme' : (version === 'combat' ? 'Combat' : version);
+    if (el) el.textContent = versionLabel(version);
 }
 
 function updateVersionBadge(version) {
     const badge = document.getElementById('version-badge');
     if (badge && version) {
-        const label = version.charAt(0).toUpperCase() + version.slice(1);
+        const label = KNOWN_VERSION_KEYS[version]
+            ? versionLabel(version)
+            : version.charAt(0).toUpperCase() + version.slice(1);
         badge.textContent = `● ${label}`;
     }
 }
@@ -601,7 +660,7 @@ function updateVersionButtons(currentTrack, currentVersion) {
     // Track.getState() returns availableVersions, not versions
     const versions = currentTrack?.availableVersions || currentTrack?.versions;
     if (!currentTrack || !versions || versions.length === 0) {
-        container.innerHTML = '<p class="empty-message">Aucune version disponible</p>';
+        container.innerHTML = `<p class="empty-message">${t('tracklist.noVersionAvailable')}</p>`;
         return;
     }
 
@@ -612,10 +671,10 @@ function updateVersionButtons(currentTrack, currentVersion) {
 
         // Icons for known versions
         let icon = '';
-        let label = v.charAt(0).toUpperCase() + v.slice(1);
-        if (v === 'calm') { icon = '🌙'; label = 'Calme'; }
-        else if (v === 'tension') { icon = '⚡'; label = 'Tension'; }
-        else if (v === 'combat') { icon = '⚔️'; label = 'Combat'; }
+        let label = KNOWN_VERSION_KEYS[v] ? versionLabel(v) : v.charAt(0).toUpperCase() + v.slice(1);
+        if (v === 'calm') icon = '🌙';
+        else if (v === 'tension') icon = '⚡';
+        else if (v === 'combat') icon = '⚔️';
 
         btn.textContent = icon ? `${icon} ${label}` : label;
 
@@ -727,7 +786,7 @@ function renderPlaylistUI() {
         container.replaceChildren();
         const empty = document.createElement('p');
         empty.className = 'empty-message';
-        empty.textContent = 'Aucune piste dans cette playlist.';
+        empty.textContent = t('tracklist.emptyPlaylist');
         container.appendChild(empty);
         return;
     }
@@ -738,8 +797,10 @@ function renderPlaylistUI() {
         const div = document.createElement('div');
         div.className = `playlist-track ${index === state.currentTrackIndex ? 'active' : ''}`;
 
-        const versionLabel = track.defaultVersion
-            ? track.defaultVersion.charAt(0).toUpperCase() + track.defaultVersion.slice(1)
+        const versionDisplayLabel = track.defaultVersion
+            ? (KNOWN_VERSION_KEYS[track.defaultVersion]
+                ? versionLabel(track.defaultVersion)
+                : track.defaultVersion.charAt(0).toUpperCase() + track.defaultVersion.slice(1))
             : '';
 
         const numSpan = document.createElement('span');
@@ -752,7 +813,7 @@ function renderPlaylistUI() {
 
         const versionSpan = document.createElement('span');
         versionSpan.className = 'playlist-track-version';
-        versionSpan.textContent = versionLabel;
+        versionSpan.textContent = versionDisplayLabel;
 
         const durationSpan = document.createElement('span');
         durationSpan.className = 'playlist-track-duration';
@@ -764,7 +825,7 @@ function renderPlaylistUI() {
         const upBtn = document.createElement('button');
         upBtn.type = 'button';
         upBtn.className = 'icon-btn';
-        upBtn.title = 'Monter';
+        upBtn.title = t('tracklist.moveUp');
         upBtn.textContent = '↑';
         upBtn.disabled = index === 0;
         upBtn.addEventListener('click', (e) => {
@@ -775,7 +836,7 @@ function renderPlaylistUI() {
         const downBtn = document.createElement('button');
         downBtn.type = 'button';
         downBtn.className = 'icon-btn';
-        downBtn.title = 'Descendre';
+        downBtn.title = t('tracklist.moveDown');
         downBtn.textContent = '↓';
         downBtn.disabled = index === state.playlist.length - 1;
         downBtn.addEventListener('click', (e) => {
@@ -786,7 +847,7 @@ function renderPlaylistUI() {
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
         removeBtn.className = 'icon-btn danger-icon';
-        removeBtn.title = 'Retirer de la playlist';
+        removeBtn.title = t('tracklist.removeFromPlaylist');
         removeBtn.textContent = '✕';
         removeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -810,9 +871,9 @@ function updateUI() {
     const state = audioManager.getPlaylistState();
 
     // Titre piste
-    const title = state.currentTrack?.name || 'Aucune piste';
+    const title = state.currentTrack?.name || t('player.noTrack');
     document.querySelector('.track-title').textContent = title;
-    document.querySelector('.track-number').textContent = `Piste ${state.currentTrackIndex + 1}/${state.totalTracks}`;
+    document.querySelector('.track-number').textContent = t('player.trackCounter', { current: state.currentTrackIndex + 1, total: state.totalTracks });
 
     // Versions
     updateVersionButtons(state.currentTrack, state.currentVersion);
@@ -825,11 +886,11 @@ function updateUI() {
 
     // Status : toujours mis à jour pour refléter l'état réel
     if (audioManager.isPlaying()) {
-        updateStatus('En lecture');
+        updateStatus('playing');
     } else if (audioManager.currentTrack && audioManager.currentTrack.currentVersion) {
-        updateStatus('En pause');
+        updateStatus('paused');
     } else {
-        updateStatus('Arrêté');
+        updateStatus('stopped');
     }
 }
 
@@ -907,47 +968,69 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Theme Selector ---
-    document.querySelectorAll('.theme-card').forEach(card => {
+    // Scopé à #theme-grid : #language-grid réutilise aussi .theme-card pour
+    // son style, mais porte data-lang et non data-theme (sinon un clic sur
+    // "English" retomberait sur applyTheme(undefined) → reset vers "nuit").
+    document.querySelectorAll('#theme-grid .theme-card').forEach(card => {
         card.addEventListener('click', () => {
             applyTheme(card.dataset.theme);
             window.electronAPI.saveSettings({ theme: card.dataset.theme });
         });
     });
 
+    // --- Language Selector (#22) ---
+    document.querySelectorAll('#language-grid .theme-card').forEach(card => {
+        card.addEventListener('click', () => {
+            currentLanguage = normalizeLanguage(card.dataset.lang);
+            applyTranslations();
+            window.electronAPI.saveSettings({ language: currentLanguage });
+            // Retraduit aussi tout ce qui est construit dynamiquement (compteurs,
+            // libellés de version, sélecteur de playlist...), pas seulement le
+            // HTML statique tagué data-i18n.
+            loadPlaylists();
+            if (currentPlaylistId) loadPlaylist(currentPlaylistId);
+            loadLibrary();
+            updateUI();
+        });
+    });
+
     // --- Export / Import bibliothèque ---
     document.getElementById('export-library-btn').addEventListener('click', async () => {
         const statusEl = document.getElementById('export-import-status');
-        statusEl.textContent = 'Export en cours…';
+        statusEl.textContent = t('export.inProgress');
         try {
             const result = await window.electronAPI.exportLibrary();
             statusEl.textContent = result
-                ? `✅ ${result.trackCount} piste(s), ${result.playlistCount} playlist(s) exportées vers ${result.path}`
+                ? t('export.success', { trackCount: result.trackCount, playlistCount: result.playlistCount, path: result.path })
                 : '';
         } catch (err) {
             console.error(err);
-            statusEl.textContent = "❌ Erreur lors de l'export";
+            statusEl.textContent = t('export.error');
         }
     });
 
     document.getElementById('import-library-btn').addEventListener('click', async () => {
         const statusEl = document.getElementById('export-import-status');
-        statusEl.textContent = 'Import en cours…';
+        statusEl.textContent = t('import.inProgress');
         try {
             const stats = await window.electronAPI.importLibrary();
             if (!stats) {
                 statusEl.textContent = '';
                 return;
             }
-            statusEl.textContent =
-                `✅ ${stats.tracksAdded} piste(s) ajoutée(s) (${stats.tracksSkipped} déjà présente(s)), ` +
-                `${stats.playlistsAdded} playlist(s) ajoutée(s), ${stats.playlistsMerged} fusionnée(s)`;
+            statusEl.textContent = t('import.success', {
+                tracksAdded: stats.tracksAdded,
+                tracksSkipped: stats.tracksSkipped,
+                playlistsAdded: stats.playlistsAdded,
+                playlistsMerged: stats.playlistsMerged,
+            });
 
             await loadLibrary();
             await loadPlaylists();
             if (currentPlaylistId) await loadPlaylist(currentPlaylistId);
         } catch (err) {
             console.error(err);
-            statusEl.textContent = "❌ Erreur lors de l'import";
+            statusEl.textContent = t('import.error');
         }
     });
 
@@ -1066,9 +1149,9 @@ document.addEventListener('DOMContentLoaded', () => {
         document.getElementById('new-track-title').value = '';
         document.getElementById('version-inputs').innerHTML = `
             <div class="version-input" data-index="0">
-                <input type="text" class="version-name" placeholder="Nom" value="calm" />
-                <button type="button" class="select-file-btn">📁 Fichier</button>
-                <span class="file-path">Aucun fichier</span>
+                <input type="text" class="version-name" placeholder="${t('modal.addTrack.versionNamePlaceholderShort')}" value="calm" />
+                <button type="button" class="select-file-btn">📁 ${t('modal.addTrack.selectFile')}</button>
+                <span class="file-path">${t('modal.addTrack.noFile')}</span>
                 <input type="hidden" class="file-path-value" />
                 <button type="button" class="remove-version-btn danger-btn-small">✕</button>
             </div>
@@ -1105,9 +1188,9 @@ document.addEventListener('DOMContentLoaded', () => {
         div.className = 'version-input';
         div.dataset.index = index;
         div.innerHTML = `
-            <input type="text" class="version-name" placeholder="Nom (combat...)" />
-            <button type="button" class="select-file-btn">📁 Fichier</button>
-            <span class="file-path">Aucun fichier</span>
+            <input type="text" class="version-name" placeholder="${t('modal.addTrack.versionNamePlaceholder')}" />
+            <button type="button" class="select-file-btn">📁 ${t('modal.addTrack.selectFile')}</button>
+            <span class="file-path">${t('modal.addTrack.noFile')}</span>
             <input type="hidden" class="file-path-value" />
             <button type="button" class="remove-version-btn danger-btn-small">✕</button>
         `;
@@ -1140,7 +1223,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     parent.classList.add('has-file');
 
                     // Update button text
-                    e.target.textContent = 'Modifier';
+                    e.target.textContent = t('modal.addTrack.changeFile');
                 }
             });
         });
@@ -1162,7 +1245,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('confirm-add-track').addEventListener('click', async () => {
         const title = document.getElementById('new-track-title').value;
         if (!title) {
-            alert('Le titre est requis');
+            alert(t('modal.addTrack.titleRequired'));
             return;
         }
 
@@ -1178,7 +1261,7 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         if (!hasVersion) {
-            alert('Ajoutez au moins une version avec un fichier');
+            alert(t('modal.addTrack.needOneVersion'));
             return;
         }
 
@@ -1193,12 +1276,12 @@ document.addEventListener('DOMContentLoaded', () => {
         };
 
         try {
-            document.getElementById('confirm-add-track').textContent = 'Ajout...';
+            document.getElementById('confirm-add-track').textContent = t('modal.addTrack.submitting');
             await window.electronAPI.addTrack(trackData, selectedPlaylists);
 
             document.body.style.overflow = '';
             addTrackModal.classList.add('hidden');
-            document.getElementById('confirm-add-track').textContent = 'Ajouter la piste';
+            document.getElementById('confirm-add-track').textContent = t('modal.addTrack.submitBtn');
 
             // Reload UI
             await loadLibrary();
@@ -1207,8 +1290,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
         } catch (err) {
             console.error(err);
-            alert("Erreur lors de l'ajout");
-            document.getElementById('confirm-add-track').textContent = 'Ajouter la piste';
+            alert(t('modal.addTrack.errorAdding'));
+            document.getElementById('confirm-add-track').textContent = t('modal.addTrack.submitBtn');
         }
     });
 
@@ -1264,7 +1347,7 @@ document.addEventListener('DOMContentLoaded', () => {
             await window.electronAPI.updateTrack(trackId, updates);
         } catch (err) {
             console.error(err);
-            alert('Erreur lors de la sauvegarde des versions');
+            alert(t('modal.editTrack.saveVersionsError'));
             return;
         }
 
@@ -1325,7 +1408,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const playlistId = select.value;
         if (!playlistId) return;
 
-        const playlistName = select.selectedOptions[0]?.dataset.name || 'la playlist';
+        const playlistName = select.selectedOptions[0]?.dataset.name || t('playlist.fallbackName');
         const wasCurrent = currentPlaylistId === playlistId;
         pendingDeletions.markPlaylist(playlistId);
 
@@ -1337,12 +1420,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         // Si plus de playlist, vider l'UI
         if (select.options.length <= 1) { // Juste l'option par défaut
-            document.getElementById('playlist-tracks').innerHTML = '<p class="empty-message">Aucune playlist.</p>';
+            document.getElementById('playlist-tracks').innerHTML = `<p class="empty-message">${t('tracklist.emptyNoPlaylist')}</p>`;
             audioManager.stop();
             updateUI();
         }
 
-        showUndoToast(`Playlist "${playlistName}" supprimée.`, {
+        showUndoToast(t('toast.playlistDeleted', { name: playlistName }), {
             onExpire: async () => {
                 try {
                     await window.electronAPI.deletePlaylist(playlistId);
