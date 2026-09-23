@@ -397,6 +397,15 @@ ipcHandle('playlist:removeTrack', async (event, playlistId, trackId) => {
     }
 });
 
+ipcHandle('playlist:reorderTracks', async (event, playlistId, orderedTrackIds) => {
+    try {
+        return await dbManager.reorderPlaylistTracks(playlistId, orderedTrackIds);
+    } catch (error) {
+        console.error('❌ Erreur reorderPlaylistTracks:', error);
+        return false;
+    }
+});
+
 // ========================================
 // IPC HANDLERS - Settings
 // ========================================

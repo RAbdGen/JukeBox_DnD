@@ -581,6 +581,25 @@ function showCrossfadeIndicator(duration) {
     // ... code indicateur existant ...
 }
 
+/**
+ * Échange la position de deux pistes de la playlist active (réordonnancement
+ * par boutons ↑/↓, plus simple et robuste qu'un drag & drop en vanilla JS).
+ * Persiste côté DB puis recharge la playlist : grâce au fix #13,
+ * `loadPlaylist()` ne coupe pas la lecture en cours tant que l'ensemble des
+ * pistes reste le même (seul l'ordre change).
+ */
+async function swapPlaylistTracks(state, indexA, indexB) {
+    const orderedIds = state.playlist.map(t => t.id);
+    [orderedIds[indexA], orderedIds[indexB]] = [orderedIds[indexB], orderedIds[indexA]];
+    await window.electronAPI.reorderPlaylistTracks(currentPlaylistId, orderedIds);
+    await loadPlaylist(currentPlaylistId);
+}
+
+async function removeFromActivePlaylist(trackId) {
+    await window.electronAPI.removeTrackFromPlaylist(currentPlaylistId, trackId);
+    await Promise.all([loadPlaylist(currentPlaylistId), loadLibrary()]);
+}
+
 function renderPlaylistUI() {
     const container = document.getElementById('playlist-tracks');
     if (!container) return;
@@ -622,7 +641,43 @@ function renderPlaylistUI() {
         durationSpan.className = 'playlist-track-duration';
         durationSpan.textContent = '-:--';
 
-        div.append(numSpan, titleSpan, versionSpan, durationSpan);
+        const actionsDiv = document.createElement('div');
+        actionsDiv.className = 'playlist-track-actions';
+
+        const upBtn = document.createElement('button');
+        upBtn.type = 'button';
+        upBtn.className = 'icon-btn';
+        upBtn.title = 'Monter';
+        upBtn.textContent = '↑';
+        upBtn.disabled = index === 0;
+        upBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            swapPlaylistTracks(state, index, index - 1);
+        });
+
+        const downBtn = document.createElement('button');
+        downBtn.type = 'button';
+        downBtn.className = 'icon-btn';
+        downBtn.title = 'Descendre';
+        downBtn.textContent = '↓';
+        downBtn.disabled = index === state.playlist.length - 1;
+        downBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            swapPlaylistTracks(state, index, index + 1);
+        });
+
+        const removeBtn = document.createElement('button');
+        removeBtn.type = 'button';
+        removeBtn.className = 'icon-btn danger-icon';
+        removeBtn.title = 'Retirer de la playlist';
+        removeBtn.textContent = '✕';
+        removeBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            removeFromActivePlaylist(track.id);
+        });
+
+        actionsDiv.append(upBtn, downBtn, removeBtn);
+        div.append(numSpan, titleSpan, versionSpan, durationSpan, actionsDiv);
 
         div.addEventListener('click', () => {
             audioManager.playTrackAtIndex(index);

@@ -58,6 +58,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
         ipcRenderer.invoke('playlist:addTrack', playlistId, trackId),
     removeTrackFromPlaylist: (playlistId, trackId) =>
         ipcRenderer.invoke('playlist:removeTrack', playlistId, trackId),
+    reorderPlaylistTracks: (playlistId, orderedTrackIds) =>
+        ipcRenderer.invoke('playlist:reorderTracks', playlistId, orderedTrackIds),
 
     // ========================================
     // SETTINGS

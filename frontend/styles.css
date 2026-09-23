@@ -305,6 +305,17 @@ main::-webkit-scrollbar {
     filter: drop-shadow(0 0 6px var(--gold-glow));
 }
 
+.icon-btn:disabled {
+    color: var(--bone-faint);
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+.icon-btn:disabled:hover {
+    transform: none;
+    filter: none;
+}
+
 .danger-icon {
     color: #c87070;
 }
@@ -2003,7 +2014,7 @@ header {
 /* ── Track rows with version tag ── */
 .tracklist-panel .playlist-track {
     display: grid;
-    grid-template-columns: 26px 1fr auto auto;
+    grid-template-columns: 26px 1fr auto auto auto;
     align-items: center;
     gap: 0.4rem;
     padding: 9px 12px;
@@ -2013,6 +2024,16 @@ header {
     border-bottom: 1px solid rgba(58, 47, 32, 0.35);
     background: transparent;
     box-shadow: none;
+}
+
+.playlist-track-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.playlist-track-actions .icon-btn {
+    font-size: 0.9rem;
 }
 
 .tracklist-panel .playlist-track:hover {

@@ -350,6 +350,40 @@ export class DatabaseManager {
         return false;
     }
 
+    /**
+     * Réordonner les pistes d'une playlist.
+     * @param {string} playlistId
+     * @param {string[]} orderedTrackIds - Doit contenir exactement les mêmes IDs
+     *   que `playlist.trackIds` (même ensemble, même longueur), dans le nouvel ordre.
+     * @returns {Promise<boolean>} false si la playlist est introuvable ou si
+     *   orderedTrackIds n'est pas une permutation valide de trackIds actuel
+     */
+    async reorderPlaylistTracks(playlistId, orderedTrackIds) {
+        const playlist = this.db.data.playlists.find(p => p.id === playlistId);
+
+        if (!playlist) {
+            return false;
+        }
+
+        const current = [...playlist.trackIds].sort();
+        const incoming = [...(orderedTrackIds || [])].sort();
+        const isSamePermutation = current.length === incoming.length
+            && current.every((id, i) => id === incoming[i]);
+
+        if (!isSamePermutation) {
+            console.error(`❌ reorderPlaylistTracks: orderedTrackIds n'est pas une permutation valide pour playlist ${playlistId}`);
+            return false;
+        }
+
+        playlist.trackIds = [...orderedTrackIds];
+
+        this.updateMetadata();
+        await this.db.write();
+
+        console.log(`🔀 Playlist ${playlistId} réordonnée`);
+        return true;
+    }
+
     // ============================================
     // SETTINGS
     // ============================================
