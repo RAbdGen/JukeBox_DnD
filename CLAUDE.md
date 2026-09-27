@@ -90,11 +90,11 @@ Traiter dans cet ordre de priorité :
 
 2. **Input trop petit** — Les champs nom de version et nom de musique ont une taille inadaptée. Revoir le sizing CSS de tous les `<input>` dans les modals et formulaires inline.
 
-3. **Scrollbar visible à droite** — Masquer la scrollbar native sur le conteneur principal tout en conservant le scroll fonctionnel. CSS : `scrollbar-width: none` (Firefox) + `::-webkit-scrollbar { display: none }` (Chromium/WebView2).
+3. **Scrollbar visible à droite** — Masquer la scrollbar native sur le conteneur principal tout en conservant le scroll fonctionnel. CSS : `scrollbar-width: none` (Firefox) + `::-webkit-scrollbar { display: none }` (Chromium/WebView2). À terme remplacé par une scrollbar fine stylée par le thème ([#30](https://github.com/RAbdGen/JukeBox_DnD/issues/30)).
 
 4. **Version 1 par défaut au changement de piste** — Quand on change de musique active, toujours remettre la version index 0 comme version courante dans `AudioManager.js`.
 
-5. **Transitions en % plutôt qu'en secondes** — Dans `Track.js`, remplacer la durée de crossfade absolue (secondes) par un pourcentage de la durée totale de la piste. Nécessite de récupérer `Howl.duration()` après chargement.
+5. ~~**Transitions en % plutôt qu'en secondes**~~ — fait (#17), puis inversé par [#28](https://github.com/RAbdGen/JukeBox_DnD/issues/28) : l'utilisateur préfère finalement une durée de fondu en **secondes**.
 
 ---
 
@@ -103,7 +103,9 @@ Traiter dans cet ordre de priorité :
 ### Prioritaire — Découpe de piste en versions
 Permettre de prendre un fichier audio unique et de le découper en segments temporels pour créer les différentes versions d'un Track (ex : 0:00–1:30 = `calm`, 1:30–3:00 = `combat`).
 
-- UI : dans la modal d'édition d'un Track, afficher une waveform simplifiée ou une timeline avec des marqueurs déplaçables
+Suivi : [#24](https://github.com/RAbdGen/JukeBox_DnD/issues/24). Découpe **manuelle** uniquement (pas de détection auto des sections).
+
+- UI : un onglet dédié **Découpage** remplace l'onglet « Effets » (placeholder) — l'utilisateur y ajoute un fichier, le découpe bout par bout avec une waveform simplifiée / timeline à marqueurs déplaçables, puis l'ajoute à la bibliothèque comme une musique à plusieurs versions
 - Backend : stocker les segments comme `{ version: "combat", start: 90, end: 180 }` dans le schema DB
 - Lecture : utiliser `Howl` avec `sprite` pour lire uniquement le segment défini
 - Ne pas modifier/couper le fichier source sur le disque — tout est géré en mémoire/metadata
@@ -159,7 +161,16 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#22 — Version anglaise de l'application (« Jukebox RPG »)](https://github.com/RAbdGen/JukeBox_DnD/issues/22) — i18n complète (UI + messages dynamiques + dialogues natifs), voir section "Système d'internationalisation" plus haut
 
 **À faire (`Todo`) :**
-- [#18 — Personnalisation : synchronisation BPM entre pistes avec décalage](https://github.com/RAbdGen/JukeBox_DnD/issues/18) — priorité basse, faisabilité non étudiée
+- [#23 — Actions pendant un fondu / switch de musique cassent l'état de lecture (lié au mode de boucle)](https://github.com/RAbdGen/JukeBox_DnD/issues/23) — priorité haute, review ciblée crossfade × modes de boucle
+- [#24 — Onglet « Découpage » à la place de « Effets » : découper une musique en versions](https://github.com/RAbdGen/JukeBox_DnD/issues/24) — priorité haute, voir « Découpe de piste en versions » plus haut
+- [#18 — Personnalisation : synchronisation BPM entre versions (mode avancé)](https://github.com/RAbdGen/JukeBox_DnD/issues/18) — spec complète dans l'issue : BPM + décalage du premier temps par version, `Z2 = (Z1 − Y1) × (X1 / X2) + Y2`, comportement actuel conservé si rien n'est renseigné
+- [#25 — Choisir la version de lancement en cliquant sur une version](https://github.com/RAbdGen/JukeBox_DnD/issues/25)
+- [#26 — Raccourci clavier personnalisable pour changer de version](https://github.com/RAbdGen/JukeBox_DnD/issues/26)
+- [#27 — Contraste insuffisant des petits textes (tous thèmes)](https://github.com/RAbdGen/JukeBox_DnD/issues/27) — suite de #19
+- [#28 — Durée de fondu en secondes plutôt qu'en pourcentage](https://github.com/RAbdGen/JukeBox_DnD/issues/28) — inverse le bug n°5 ci-dessus
+- [#29 — Le mute reprend la durée de fondu de la piste active](https://github.com/RAbdGen/JukeBox_DnD/issues/29)
+- [#30 — Scrollbar intégrée au thème](https://github.com/RAbdGen/JukeBox_DnD/issues/30)
+- [#31 — Renommer le mode de lecture « Normal » → « Une fois » / « Once »](https://github.com/RAbdGen/JukeBox_DnD/issues/31)
 
 ### Conventions de code
 - ESM partout sauf les fichiers `.cjs` d'Electron (ne pas toucher au module system sans raison)
