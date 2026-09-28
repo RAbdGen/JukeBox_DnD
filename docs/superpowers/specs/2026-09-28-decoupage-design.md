@@ -89,7 +89,7 @@ Hors scope : détection automatique des sections, time-stretching, édition du f
 - **Segments** : fin éditable (champ texte `m:ss.d`, valeur invalide → revient à la précédente) = déplace le marqueur correspondant ; nom (placeholder « vide = ignoré ») ; ▶ écoute le segment ; ✕ supprime le marqueur de début du segment (fusion avec le précédent). Le dernier segment n'a pas de fin éditable, le premier pas de ✕.
 - **Écoute** : Howl dédié (html5) sur le fichier source, qui coupe le preview bibliothèque (#16) ; n'interrompt pas le lecteur principal.
 - **Validation** (au clic sur Ajouter / Enregistrer), messages dans l'onglet (pas d'`alert()`) : titre non vide ; au moins un segment nommé ; noms uniques (après trim) ; chaque segment nommé ≥ 0,5 s (garanti par les contraintes de marqueurs, revérifié).
-- **Ajouter** : `library:addSegmentedTrack` ; succès → toast, bibliothèque et playlist active rechargées, onglet vidé.
+- **Ajouter** : `library:addSegmentedTrack` ; succès → message de confirmation dans l'onglet (l'app n'a qu'un toast d'annulation, inadapté ici), bibliothèque et playlist active rechargées, onglet vidé.
 - **Retouche** : bouton ✂ sur une ligne de bibliothèque dont `segments` n'est pas vide → bascule vers l'onglet, charge le fichier partagé, reconstruit marqueurs et noms (titre en lecture seule, pas de choix de playlists) ; bouton « Enregistrer » → `library:updateSegments`. Un segment renommé = version retirée + version ajoutée (même fichier) ; si `defaultVersion` est renommée elle suit, si elle disparaît elle devient la première version.
 - **Changer d'onglet** conserve l'état de la découpe en cours ; « Annuler » le vide.
 - Fichier illisible / non décodable → message dans l'onglet, rien d'autre ne change.
