@@ -1,7 +1,8 @@
 import { Howl } from 'howler';
 import {
-    DEFAULT_CROSSFADE_DURATION_PERCENT,
-    normalizeCrossfadeOverridePercent,
+    DEFAULT_CROSSFADE_DURATION_SECONDS,
+    legacyPercentToSeconds,
+    normalizeCrossfadeDurationSeconds,
 } from './crossfadeDuration.js';
 
 /**
@@ -23,7 +24,11 @@ export class Track {
         this.isPlaying = false;
         this.loop = false; // Appliqué à *toutes* les versions (#23)
         this.defaultVolume = 0.5;
-        this.crossfadeDurationPercent = DEFAULT_CROSSFADE_DURATION_PERCENT;
+        // Durée de fondu en secondes (#28). null tant qu'une piste n'a que l'ancien
+        // réglage en % (legacyCrossfadePercent), migré dès que la durée est connue.
+        this.crossfadeDurationSeconds = null;
+        this.legacyCrossfadePercent = null;
+        this.onCrossfadeDurationMigrated = null; // (seconds) => void, pour persister la migration
         this.onEndCallback = null; // Callback pour fin de piste (playlist)
 
         // Fondu en cours : { fromVersion, toVersion, currentSeek, timers, loadListener, started, complete }
@@ -61,6 +66,7 @@ export class Track {
                 preload: false, // Chargement à la première lecture, pas au démarrage
                 onload: () => {
                     console.log(`✅ Version "${versionName}" de "${this.name}" chargée`);
+                    this._migrateLegacyCrossfade(this.versions[versionName].duration());
                 },
                 onloaderror: (id, error) => {
                     console.error(`❌ Erreur de chargement "${versionName}" (${path}):`, error);
@@ -81,6 +87,35 @@ export class Track {
                 },
             });
         });
+    }
+
+    /**
+     * Ancien réglage en % → secondes, dès que la durée réelle est connue (#28).
+     * Même calcul que l'ancien crossfade : la durée entendue ne change pas.
+     */
+    _migrateLegacyCrossfade(trackDurationSeconds) {
+        if (this.crossfadeDurationSeconds !== null || this.legacyCrossfadePercent === null) return;
+        if (!(trackDurationSeconds > 0)) return;
+
+        this.crossfadeDurationSeconds = legacyPercentToSeconds(this.legacyCrossfadePercent, trackDurationSeconds);
+        this.legacyCrossfadePercent = null;
+        console.log(`🔁 Fondu de "${this.name}" migré : ${this.crossfadeDurationSeconds}s`);
+        if (this.onCrossfadeDurationMigrated) this.onCrossfadeDurationMigrated(this.crossfadeDurationSeconds);
+    }
+
+    /**
+     * Durée de fondu effective de la piste, en millisecondes
+     * @returns {number}
+     */
+    getCrossfadeDurationMs() {
+        if (this.crossfadeDurationSeconds !== null) {
+            return this.crossfadeDurationSeconds * 1000;
+        }
+        if (this.legacyCrossfadePercent !== null) {
+            const howl = this.currentVersion && this.versions[this.currentVersion];
+            return legacyPercentToSeconds(this.legacyCrossfadePercent, howl ? howl.duration() : undefined) * 1000;
+        }
+        return DEFAULT_CROSSFADE_DURATION_SECONDS * 1000;
     }
 
     /**
@@ -148,10 +183,10 @@ export class Track {
      * - stop / autre piste / play() : le fondu est annulé, rien ne redémarre
      *
      * @param {string} toVersion - Version cible
-     * @param {number} durationPercent - Durée du crossfade en fraction de la piste (0.0–1.0, défaut: 0.1 = 10%)
+     * @param {number} [durationSeconds] - Durée du fondu ; par défaut celle réglée sur la piste
      * @param {(success: boolean) => void} [onComplete] - Appelé une fois le crossfade terminé (ou avorté)
      */
-    crossfade(toVersion, durationPercent = 0.1, onComplete) {
+    crossfade(toVersion, durationSeconds, onComplete) {
         const complete = (success) => {
             if (onComplete) onComplete(success);
         };
@@ -188,12 +223,11 @@ export class Track {
             return;
         }
 
-        // Calcul de la durée réelle : % de la longueur de la piste, encadrée entre 500 ms et 5000 ms
-        const normalizedDurationPercent = normalizeCrossfadeOverridePercent(durationPercent);
-        const trackDurationMs = (this.versions[this.currentVersion].duration() || 30) * 1000;
-        const duration = Math.min(Math.max(Math.floor(trackDurationMs * normalizedDurationPercent), 500), 5000);
+        const duration = durationSeconds === undefined
+            ? this.getCrossfadeDurationMs()
+            : normalizeCrossfadeDurationSeconds(durationSeconds) * 1000;
 
-        console.log(`🔀 Crossfade: ${this.currentVersion} → ${toVersion} (${duration}ms / ${Math.round(normalizedDurationPercent * 100)}% de la piste)`);
+        console.log(`🔀 Crossfade: ${this.currentVersion} → ${toVersion} (${duration}ms)`);
 
         const fromVersion = this.versions[this.currentVersion];
         const toVersionHowl = this.versions[toVersion];

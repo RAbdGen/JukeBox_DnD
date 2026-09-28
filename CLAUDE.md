@@ -21,6 +21,7 @@ frontend/               → Vanilla JS ESM, bundlé par Vite → dist/
 - Données persistées dans `app.getPath('userData')` : `data.json` + dossier `music/`
 - DB schema v2.0 : `library[]` (pistes) + `playlists[]` (IDs de tracks)
 - Champs optionnels sur un track (ajout additif, pas de migration requise) : `tags: string[]` — toujours lire via `track.tags || []`
+- Durée de fondu d'un track (depuis #28) : `crossfadeDurationSeconds` (0,5–10 s, défaut 5 s, voir `backend/crossfadeDuration.js`). L'ancien `crossfadeDurationPercent` (#17) n'est plus écrit, seulement lu pour migrer : sa conversion exige la durée réelle du fichier (absente de `data.json`), donc elle se fait au premier chargement Howler de la piste (`Track._migrateLegacyCrossfade` → persistée via `updateTrack`, qui retire l'ancien champ) ou à l'ouverture de la modal d'édition (métadonnées audio). Même calcul que l'ancien fondu (% × durée, borné 0,5–5 s) : la durée entendue ne change pas
 - Un `Track` peut avoir plusieurs versions audio avec crossfade
 - `webSecurity: false` dans BrowserWindow pour les `file://` URLs
 - Dev : `make dev` ou `npm run dev` (Vite sur :3000 + electronmon)
@@ -94,7 +95,7 @@ Traiter dans cet ordre de priorité :
 
 4. **Version 1 par défaut au changement de piste** — Quand on change de musique active, toujours remettre la version index 0 comme version courante dans `AudioManager.js`.
 
-5. ~~**Transitions en % plutôt qu'en secondes**~~ — fait (#17), puis inversé par [#28](https://github.com/RAbdGen/JukeBox_DnD/issues/28) : l'utilisateur préfère finalement une durée de fondu en **secondes**.
+5. ~~**Transitions en % plutôt qu'en secondes**~~ — fait (#17), puis inversé par [#28](https://github.com/RAbdGen/JukeBox_DnD/issues/28) (fait) : la durée de fondu est désormais réglée en **secondes**.
 
 ---
 
@@ -160,6 +161,9 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#21 — Renommer l'application « JukeBox & DnD » → « Jukebox JDR »](https://github.com/RAbdGen/JukeBox_DnD/issues/21) — au passage, dossier `userData` figé explicitement (voir section "Build et distribution")
 - [#22 — Version anglaise de l'application (« Jukebox RPG »)](https://github.com/RAbdGen/JukeBox_DnD/issues/22) — i18n complète (UI + messages dynamiques + dialogues natifs), voir section "Système d'internationalisation" plus haut
 - [#23 — Actions pendant un fondu / switch de musique cassent l'état de lecture (lié au mode de boucle)](https://github.com/RAbdGen/JukeBox_DnD/issues/23) — boucle appliquée à toutes les versions, fondu annulable/terminable, voir « Notes importantes »
+- [#28 — Durée de fondu en secondes plutôt qu'en pourcentage](https://github.com/RAbdGen/JukeBox_DnD/issues/28) — `crossfadeDurationSeconds`, migration exacte différée (voir « Champs optionnels sur un track »)
+- [#29 — Le mute reprend la durée de fondu de la piste active](https://github.com/RAbdGen/JukeBox_DnD/issues/29) — 300 ms si aucune piste active
+- [#31 — Renommer le mode de lecture « Normal » → « Une fois » / « Once »](https://github.com/RAbdGen/JukeBox_DnD/issues/31)
 
 **À faire (`Todo`) :**
 - [#24 — Onglet « Découpage » à la place de « Effets » : découper une musique en versions](https://github.com/RAbdGen/JukeBox_DnD/issues/24) — priorité haute, voir « Découpe de piste en versions » plus haut
@@ -167,10 +171,7 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#25 — Choisir la version de lancement en cliquant sur une version](https://github.com/RAbdGen/JukeBox_DnD/issues/25)
 - [#26 — Raccourci clavier personnalisable pour changer de version](https://github.com/RAbdGen/JukeBox_DnD/issues/26)
 - [#27 — Contraste insuffisant des petits textes (tous thèmes)](https://github.com/RAbdGen/JukeBox_DnD/issues/27) — suite de #19
-- [#28 — Durée de fondu en secondes plutôt qu'en pourcentage](https://github.com/RAbdGen/JukeBox_DnD/issues/28) — inverse le bug n°5 ci-dessus
-- [#29 — Le mute reprend la durée de fondu de la piste active](https://github.com/RAbdGen/JukeBox_DnD/issues/29)
 - [#30 — Scrollbar intégrée au thème](https://github.com/RAbdGen/JukeBox_DnD/issues/30)
-- [#31 — Renommer le mode de lecture « Normal » → « Une fois » / « Once »](https://github.com/RAbdGen/JukeBox_DnD/issues/31)
 
 ### Conventions de code
 - ESM partout sauf les fichiers `.cjs` d'Electron (ne pas toucher au module system sans raison)

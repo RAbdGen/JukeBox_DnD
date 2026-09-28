@@ -112,7 +112,7 @@
                                 </div>
                                 <div id="play-mode-selector">
                                     <div class="mode-buttons">
-                                        <button class="mode-btn active" data-mode="noLoop" data-i18n-title="controls.modeNormal" title="Normal">↩</button>
+                                        <button class="mode-btn active" data-mode="noLoop" data-i18n-title="controls.modeNormal" title="Une fois">↩</button>
                                         <button class="mode-btn" data-mode="loopOne" data-i18n-title="controls.modeLoopOne" title="Boucle une piste">↻</button>
                                         <button class="mode-btn" data-mode="loopAll" data-i18n-title="controls.modeLoopAll" title="Tout répéter">⟳</button>
                                     </div>
@@ -350,8 +350,8 @@
                 <div class="form-group">
                     <label for="edit-track-crossfade-duration" data-i18n="modal.editTrack.crossfadeLabel">Durée du fondu entre versions</label>
                     <div class="volume-slider-group">
-                        <input type="range" id="edit-track-crossfade-duration" min="1" max="30" step="1" value="10" />
-                        <output id="edit-track-crossfade-duration-value" for="edit-track-crossfade-duration" aria-live="polite">10%</output>
+                        <input type="range" id="edit-track-crossfade-duration" min="0.5" max="10" step="0.5" value="5" />
+                        <output id="edit-track-crossfade-duration-value" for="edit-track-crossfade-duration" aria-live="polite">5 s</output>
                     </div>
                 </div>
 

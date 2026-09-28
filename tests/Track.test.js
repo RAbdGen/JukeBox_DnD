@@ -80,7 +80,7 @@ describe('Track — actions pendant un fondu (#23)', () => {
         track.setLoop(true);
         track.play('calm');
 
-        track.crossfade('combat', 0.1);
+        track.crossfade('combat', 1);
         vi.runAllTimers();
 
         expect(track.currentVersion).toBe('combat');
@@ -90,7 +90,7 @@ describe('Track — actions pendant un fondu (#23)', () => {
     it('pause pendant un fondu : termine le fondu puis met en pause la version cible', () => {
         const track = createTrack();
         track.play('calm');
-        track.crossfade('combat', 0.1);
+        track.crossfade('combat', 1);
         vi.advanceTimersByTime(100); // fondu en cours
 
         track.pause();
@@ -119,7 +119,7 @@ describe('Track — actions pendant un fondu (#23)', () => {
         track.play('calm');
         track.versions.combat.play = vi.fn(() => 1); // la cible « ne joue pas » → ancienne branche de restauration
 
-        track.crossfade('combat', 0.1);
+        track.crossfade('combat', 1);
         track.stop();
         vi.runAllTimers();
 
@@ -132,7 +132,7 @@ describe('Track — actions pendant un fondu (#23)', () => {
         track.play('calm');
         track.versions.combat._state = 'unloaded';
 
-        track.crossfade('combat', 0.1);
+        track.crossfade('combat', 1);
         track.stop();
         track.versions.combat.finishLoading();
         vi.runAllTimers();
@@ -146,7 +146,7 @@ describe('Track — actions pendant un fondu (#23)', () => {
         track.versions.calm.seek(42);
         track.versions.combat._state = 'unloaded';
 
-        track.crossfade('combat', 0.1);
+        track.crossfade('combat', 1);
         track.pause();
         track.versions.combat.finishLoading();
         vi.runAllTimers();
@@ -164,9 +164,9 @@ describe('Track — actions pendant un fondu (#23)', () => {
         track.play('calm');
         const results = [];
 
-        track.crossfade('combat', 0.1, ok => results.push(['combat', ok]));
+        track.crossfade('combat', 1, ok => results.push(['combat', ok]));
         vi.advanceTimersByTime(100);
-        track.crossfade('tension', 0.1, ok => results.push(['tension', ok]));
+        track.crossfade('tension', 1, ok => results.push(['tension', ok]));
         vi.runAllTimers();
 
         expect(track.currentVersion).toBe('tension');
@@ -178,7 +178,7 @@ describe('Track — actions pendant un fondu (#23)', () => {
         const track = createTrack();
         track.onEndCallback = vi.fn();
         track.play('calm');
-        track.crossfade('combat', 0.1);
+        track.crossfade('combat', 1);
         vi.advanceTimersByTime(100);
 
         track.versions.calm.opts.onend();
@@ -205,7 +205,7 @@ describe('Track — actions pendant un fondu (#23)', () => {
     it('seek pendant un fondu : termine le fondu et déplace la version cible', () => {
         const track = createTrack();
         track.play('calm');
-        track.crossfade('combat', 0.1);
+        track.crossfade('combat', 1);
         vi.advanceTimersByTime(100);
 
         track.seek(12);
@@ -213,5 +213,33 @@ describe('Track — actions pendant un fondu (#23)', () => {
         expect(track.isCrossfading).toBe(false);
         expect(playingVersions(track)).toEqual(['combat']);
         expect(track.versions.combat.seek()).toBe(12);
+    });
+});
+
+describe('Track — durée de fondu en secondes (#28)', () => {
+    it('migre l\'ancien % au chargement de la première version, avec sa durée réelle', () => {
+        const track = createTrack();
+        track.legacyCrossfadePercent = 0.03;
+        track.onCrossfadeDurationMigrated = vi.fn();
+
+        track.versions.calm.opts.onload(); // FakeHowl : 100 s → 3 % = 3 s
+
+        expect(track.crossfadeDurationSeconds).toBe(3);
+        expect(track.legacyCrossfadePercent).toBeNull();
+        expect(track.onCrossfadeDurationMigrated).toHaveBeenCalledWith(3);
+
+        track.versions.combat.opts.onload();
+        expect(track.onCrossfadeDurationMigrated).toHaveBeenCalledOnce();
+    });
+
+    it('ne touche pas une piste déjà réglée en secondes', () => {
+        const track = createTrack();
+        track.crossfadeDurationSeconds = 2;
+        track.onCrossfadeDurationMigrated = vi.fn();
+
+        track.versions.calm.opts.onload();
+
+        expect(track.getCrossfadeDurationMs()).toBe(2000);
+        expect(track.onCrossfadeDurationMigrated).not.toHaveBeenCalled();
     });
 });

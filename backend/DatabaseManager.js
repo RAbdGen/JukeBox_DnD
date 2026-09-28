@@ -2,7 +2,26 @@ import { Low } from 'lowdb';
 import { JSONFile } from 'lowdb/node';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import { normalizeCrossfadeDurationPercent } from './crossfadeDuration.js';
+import {
+    normalizeCrossfadeDurationPercent,
+    normalizeCrossfadeDurationSeconds,
+} from './crossfadeDuration.js';
+
+/**
+ * Durée de fondu d'une piste entrante (ajout / import) : secondes (#28) si
+ * présentes, sinon ancien % conservé pour migration différée (sa conversion
+ * exige la durée du fichier, inconnue ici), sinon valeur par défaut en secondes.
+ */
+function normalizeIncomingCrossfade(track) {
+    const { crossfadeDurationPercent, ...rest } = track;
+    if (track.crossfadeDurationSeconds !== undefined && track.crossfadeDurationSeconds !== null) {
+        return { ...rest, crossfadeDurationSeconds: normalizeCrossfadeDurationSeconds(track.crossfadeDurationSeconds) };
+    }
+    if (crossfadeDurationPercent !== undefined && crossfadeDurationPercent !== null) {
+        return { ...rest, crossfadeDurationPercent: normalizeCrossfadeDurationPercent(crossfadeDurationPercent) };
+    }
+    return { ...rest, crossfadeDurationSeconds: normalizeCrossfadeDurationSeconds(undefined) };
+}
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -132,7 +151,7 @@ export class DatabaseManager {
             };
         }
 
-        track.crossfadeDurationPercent = normalizeCrossfadeDurationPercent(track.crossfadeDurationPercent);
+        track = normalizeIncomingCrossfade(track);
         this.db.data.library.push(track);
 
         this.updateMetadata();
@@ -156,6 +175,12 @@ export class DatabaseManager {
             normalizedUpdates.crossfadeDurationPercent = normalizeCrossfadeDurationPercent(
                 normalizedUpdates.crossfadeDurationPercent
             );
+        }
+        if (Object.hasOwn(normalizedUpdates, 'crossfadeDurationSeconds')) {
+            normalizedUpdates.crossfadeDurationSeconds = normalizeCrossfadeDurationSeconds(
+                normalizedUpdates.crossfadeDurationSeconds
+            );
+            delete track.crossfadeDurationPercent; // Ancien format migré (#28)
         }
         Object.assign(track, normalizedUpdates);
 
@@ -550,10 +575,7 @@ export class DatabaseManager {
                 stats.tracksSkipped++;
                 continue;
             }
-            this.db.data.library.push({
-                ...track,
-                crossfadeDurationPercent: normalizeCrossfadeDurationPercent(track.crossfadeDurationPercent),
-            });
+            this.db.data.library.push(normalizeIncomingCrossfade(track));
             existingTrackIds.add(track.id);
             stats.tracksAdded++;
         }

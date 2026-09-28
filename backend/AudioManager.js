@@ -1,9 +1,8 @@
 import { Howler } from 'howler';
 import { Track } from './Track.js';
 import {
-    DEFAULT_CROSSFADE_DURATION_PERCENT,
     normalizeCrossfadeDurationPercent,
-    normalizeCrossfadeOverridePercent,
+    normalizeCrossfadeDurationSeconds,
 } from './crossfadeDuration.js';
 
 /**
@@ -19,6 +18,7 @@ export class AudioManager {
             onTrackChange: null,
             onVersionChange: null,
             onTimeUpdate: null,
+            onCrossfadeDurationMigrated: null, // (trackId, seconds) : ancien réglage en % converti (#28)
         };
 
         // Playlist
@@ -54,7 +54,7 @@ export class AudioManager {
      */
     loadTracks(config) {
         Object.keys(config).forEach(trackId => {
-            const { name, versions, defaultVersion, crossfadeDurationPercent } = config[trackId];
+            const { name, versions, defaultVersion, crossfadeDurationSeconds, crossfadeDurationPercent } = config[trackId];
             this.loadTrack(trackId, name, versions);
 
             // Stocker la version par défaut
@@ -62,10 +62,26 @@ export class AudioManager {
             if (track && defaultVersion) {
                 track.defaultVersion = defaultVersion;
             }
-            if (track && crossfadeDurationPercent !== undefined && crossfadeDurationPercent !== null) {
-                track.crossfadeDurationPercent = normalizeCrossfadeDurationPercent(crossfadeDurationPercent);
-            }
+            if (track) this._applyCrossfadeConfig(track, crossfadeDurationSeconds, crossfadeDurationPercent);
         });
+    }
+
+    /**
+     * Durée de fondu d'une piste : secondes (#28), sinon ancien % à migrer
+     * dès que la durée du fichier sera connue.
+     */
+    _applyCrossfadeConfig(track, seconds, legacyPercent) {
+        if (seconds !== undefined && seconds !== null) {
+            track.crossfadeDurationSeconds = normalizeCrossfadeDurationSeconds(seconds);
+            track.legacyCrossfadePercent = null;
+        } else if (legacyPercent !== undefined && legacyPercent !== null && track.crossfadeDurationSeconds === null) {
+            track.legacyCrossfadePercent = normalizeCrossfadeDurationPercent(legacyPercent);
+        }
+        track.onCrossfadeDurationMigrated = (migratedSeconds) => {
+            if (this.callbacks.onCrossfadeDurationMigrated) {
+                this.callbacks.onCrossfadeDurationMigrated(track.id, migratedSeconds);
+            }
+        };
     }
 
     /**
@@ -103,22 +119,16 @@ export class AudioManager {
     /**
      * Effectuer un crossfade vers une autre version de la piste actuelle
      * @param {string} toVersion - Version cible
-     * @param {number} [durationPercent] - Override historique en fraction de la piste (0.0–1.0)
+     * @param {number} [durationSeconds] - Durée imposée ; par défaut celle réglée sur la piste
      */
-    crossfade(toVersion, durationPercent) {
+    crossfade(toVersion, durationSeconds) {
         if (!this.currentTrack) {
             console.warn('⚠️ Aucune piste en cours de lecture');
             return;
         }
 
-        const configuredDurationPercent = durationPercent === undefined
-            ? this.currentTrack.crossfadeDurationPercent ?? DEFAULT_CROSSFADE_DURATION_PERCENT
-            : durationPercent;
-        const normalizedDurationPercent = durationPercent === undefined
-            ? normalizeCrossfadeDurationPercent(configuredDurationPercent)
-            : normalizeCrossfadeOverridePercent(configuredDurationPercent);
         const track = this.currentTrack;
-        track.crossfade(toVersion, normalizedDurationPercent, () => {
+        track.crossfade(toVersion, durationSeconds, () => {
             // Fondu annulé par un changement de piste : l'état appartient déjà à la nouvelle piste
             if (track !== this.currentTrack) return;
 
@@ -270,6 +280,15 @@ export class AudioManager {
     }
 
     /**
+     * Durée de fondu de la piste active, en ms (réutilisée par le mute, #29)
+     * @param {number} fallbackMs - Si aucune piste n'est active
+     * @returns {number}
+     */
+    getCrossfadeDurationMs(fallbackMs) {
+        return this.currentTrack ? this.currentTrack.getCrossfadeDurationMs() : fallbackMs;
+    }
+
+    /**
      * Obtenir la position actuelle de lecture
      * @returns {number} Position en secondes
      */
@@ -394,7 +413,7 @@ export class AudioManager {
         this.playlist = [];
 
         playlistConfig.forEach((trackConfig) => {
-            const { id, title, versions, defaultVersion, defaultVolume, crossfadeDurationPercent } = trackConfig;
+            const { id, title, versions, defaultVersion, defaultVolume, crossfadeDurationSeconds, crossfadeDurationPercent } = trackConfig;
 
             // Ne recharger (recréer les Howl) que si la piste n'est pas déjà chargée
             if (!this.tracks.has(id)) {
@@ -413,9 +432,7 @@ export class AudioManager {
                 if (defaultVolume !== undefined && defaultVolume !== null) {
                     track.defaultVolume = defaultVolume;
                 }
-                if (crossfadeDurationPercent !== undefined && crossfadeDurationPercent !== null) {
-                    track.crossfadeDurationPercent = normalizeCrossfadeDurationPercent(crossfadeDurationPercent);
-                }
+                this._applyCrossfadeConfig(track, crossfadeDurationSeconds, crossfadeDurationPercent);
             }
         });
 

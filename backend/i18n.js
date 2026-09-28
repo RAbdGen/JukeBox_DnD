@@ -37,7 +37,7 @@ const fr = {
     'controls.playPause': 'Lecture / Pause',
     'controls.nextTrack': 'Piste suivante',
     'controls.volumeLabel': 'Vol',
-    'controls.modeNormal': 'Normal',
+    'controls.modeNormal': 'Une fois',
     'controls.modeLoopOne': 'Boucle une piste',
     'controls.modeLoopAll': 'Tout répéter',
 
@@ -127,6 +127,7 @@ const fr = {
     'modal.editTrack.addVersionBtn': '+ Ajouter une version',
     'modal.editTrack.volumeLabel': 'Volume par défaut',
     'modal.editTrack.crossfadeLabel': 'Durée du fondu entre versions',
+    'modal.editTrack.crossfadeValue': '{value} s',
     'modal.editTrack.tagsLabel': 'Tags',
     'modal.editTrack.tagsPlaceholder': 'forêt, ambiance, jour',
     'modal.editTrack.deleteBtn': 'Supprimer',
@@ -185,7 +186,7 @@ const en = {
     'controls.playPause': 'Play / Pause',
     'controls.nextTrack': 'Next track',
     'controls.volumeLabel': 'Vol',
-    'controls.modeNormal': 'Normal',
+    'controls.modeNormal': 'Once',
     'controls.modeLoopOne': 'Loop one track',
     'controls.modeLoopAll': 'Repeat all',
 
@@ -275,6 +276,7 @@ const en = {
     'modal.editTrack.addVersionBtn': '+ Add a version',
     'modal.editTrack.volumeLabel': 'Default volume',
     'modal.editTrack.crossfadeLabel': 'Crossfade duration between versions',
+    'modal.editTrack.crossfadeValue': '{value} s',
     'modal.editTrack.tagsLabel': 'Tags',
     'modal.editTrack.tagsPlaceholder': 'forest, ambiance, day',
     'modal.editTrack.deleteBtn': 'Delete',

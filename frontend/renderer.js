@@ -1,5 +1,6 @@
 import { Howl } from 'howler';
 import { AudioManager } from '../backend/AudioManager.js';
+import { DEFAULT_CROSSFADE_DURATION_SECONDS, legacyPercentToSeconds } from '../backend/crossfadeDuration.js';
 import { normalizeLanguage, t as translate } from '../backend/i18n.js';
 import { createPendingDeletionStore } from './pendingDeletions.js';
 import { createPreviewController } from './previewController.js';
@@ -18,6 +19,17 @@ audioManager.on('trackChange', () => {
     if (!audioManager.isPlaying()) stopProgressUpdate();
 });
 audioManager.on('versionChange', () => updateUI());
+// Ancien réglage de fondu en % converti en secondes dès que la durée du fichier
+// est connue (#28) : on persiste pour que la migration n'ait lieu qu'une fois
+audioManager.on('crossfadeDurationMigrated', (trackId, seconds) => {
+    const cached = libraryCache.find(track => track.id === trackId);
+    if (cached) {
+        cached.crossfadeDurationSeconds = seconds;
+        delete cached.crossfadeDurationPercent;
+    }
+    window.electronAPI.updateTrack(trackId, { crossfadeDurationSeconds: seconds })
+        .catch(err => console.error('❌ Migration de la durée de fondu:', err));
+});
 let currentPlaylistId = 'default';
 let updateInterval = null;
 let volumeBeforeMute = null; // volume mémorisé pour le mute rapide (raccourci clavier) ; null = pas muté
@@ -256,7 +268,8 @@ async function loadPlaylist(id) {
             versions: t.localPaths || t.originalPaths, // Utiliser local si dispo
             defaultVersion: t.defaultVersion || 'calm',
             defaultVolume: t.defaultVolume ?? 0.5,
-            crossfadeDurationPercent: t.crossfadeDurationPercent ?? 0.1
+            crossfadeDurationSeconds: t.crossfadeDurationSeconds,
+            crossfadeDurationPercent: t.crossfadeDurationPercent, // ancien format, migré au chargement (#28)
         }));
 
         audioManager.loadPlaylist(tracksConfig);
@@ -285,6 +298,53 @@ async function loadPlaylist(id) {
 // Gestion de la Bibliothèque
 // ========================================
 
+function setCrossfadeDurationField(seconds) {
+    document.getElementById('edit-track-crossfade-duration').value = seconds;
+    updateCrossfadeDurationOutput();
+}
+
+function updateCrossfadeDurationOutput() {
+    const seconds = Number(document.getElementById('edit-track-crossfade-duration').value);
+    document.getElementById('edit-track-crossfade-duration-value').textContent =
+        t('modal.editTrack.crossfadeValue', { value: seconds.toLocaleString(currentLanguage) });
+}
+
+/**
+ * Durée de fondu affichée dans la modal (#28). Une piste encore à l'ancien
+ * format (%) est convertie avec la durée réelle de son fichier, lue via les
+ * métadonnées audio — même calcul que la migration au chargement Howler.
+ * Enregistrer la modal persiste ensuite la valeur en secondes.
+ */
+function initCrossfadeDurationField(track) {
+    const field = document.getElementById('edit-track-crossfade-duration');
+    const knownSeconds = track.crossfadeDurationSeconds
+        ?? audioManager.getTrack(track.id)?.crossfadeDurationSeconds;
+    delete field.dataset.touched;
+
+    if (knownSeconds !== undefined && knownSeconds !== null) {
+        setCrossfadeDurationField(knownSeconds);
+        return;
+    }
+    if (track.crossfadeDurationPercent === undefined || track.crossfadeDurationPercent === null) {
+        setCrossfadeDurationField(DEFAULT_CROSSFADE_DURATION_SECONDS);
+        return;
+    }
+
+    setCrossfadeDurationField(legacyPercentToSeconds(track.crossfadeDurationPercent));
+    const src = getPreviewSource(track);
+    if (!src) return;
+    const audio = new Audio();
+    audio.preload = 'metadata';
+    audio.addEventListener('loadedmetadata', () => {
+        const stillEditing = document.getElementById('edit-track-id').value === track.id;
+        if (stillEditing && !field.dataset.touched) {
+            setCrossfadeDurationField(legacyPercentToSeconds(track.crossfadeDurationPercent, audio.duration));
+        }
+        audio.removeAttribute('src');
+    }, { once: true });
+    audio.src = src;
+}
+
 /**
  * Ouvre la modale d'édition de piste : renommage (lecture seule, hors
  * scope), volume par défaut, tags, et gestion des versions (#15 —
@@ -294,15 +354,13 @@ async function loadPlaylist(id) {
 function openEditTrackModal(track) {
     const modal = document.getElementById('edit-track-modal');
     const volumePercent = Math.round((track.defaultVolume ?? 0.5) * 100);
-    const crossfadeDurationPercent = Math.round((track.crossfadeDurationPercent ?? 0.1) * 100);
 
     document.getElementById('edit-track-id').value = track.id;
     document.getElementById('edit-track-title').value = track.title;
     document.getElementById('edit-track-title').readOnly = true;
     document.getElementById('edit-track-volume').value = volumePercent;
     document.getElementById('edit-track-volume-value').textContent = `${volumePercent}%`;
-    document.getElementById('edit-track-crossfade-duration').value = crossfadeDurationPercent;
-    document.getElementById('edit-track-crossfade-duration-value').textContent = `${crossfadeDurationPercent}%`;
+    initCrossfadeDurationField(track);
     document.getElementById('edit-track-tags').value = (track.tags || []).join(', ');
 
     const versionNames = Object.keys(track.localPaths || track.originalPaths || {});
@@ -902,7 +960,8 @@ function updateUI() {
 async function toggleMute() {
     const slider = document.getElementById('volume');
     const volumeValue = document.getElementById('volume-value');
-    const FADE_MS = 300;
+    // Même durée que le fondu réglé sur la piste active (#29) ; 300 ms sans piste active
+    const FADE_MS = audioManager.getCrossfadeDurationMs(300);
 
     if (volumeBeforeMute !== null) {
         // Rétablir le volume précédent
@@ -1300,7 +1359,8 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     document.getElementById('edit-track-crossfade-duration').addEventListener('input', (e) => {
-        document.getElementById('edit-track-crossfade-duration-value').textContent = `${e.target.value}%`;
+        e.target.dataset.touched = 'true'; // ne plus écraser par la conversion asynchrone
+        updateCrossfadeDurationOutput();
     });
 
     document.getElementById('add-edit-version-btn').addEventListener('click', () => {
@@ -1310,7 +1370,7 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('save-track-edits').addEventListener('click', async () => {
         const trackId = document.getElementById('edit-track-id').value;
         const volume = document.getElementById('edit-track-volume').value / 100;
-        const crossfadeDurationPercent = document.getElementById('edit-track-crossfade-duration').value / 100;
+        const crossfadeDurationSeconds = Number(document.getElementById('edit-track-crossfade-duration').value);
         const tags = document.getElementById('edit-track-tags').value
             .split(',')
             .map(t => t.trim().toLowerCase())
@@ -1336,7 +1396,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await window.electronAPI.reorderVersions(trackId, finalNames);
             }
 
-            const updates = { defaultVolume: volume, crossfadeDurationPercent, tags };
+            const updates = { defaultVolume: volume, crossfadeDurationSeconds, tags };
             if (originalTrack?.defaultVersion && removedNames.includes(originalTrack.defaultVersion)) {
                 updates.defaultVersion = finalNames[0];
             }

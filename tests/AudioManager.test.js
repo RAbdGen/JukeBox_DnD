@@ -76,20 +76,40 @@ describe('AudioManager volume handling', () => {
 });
 
 describe('AudioManager.loadPlaylist', () => {
-    it('applies a track-specific crossfade duration from the playlist configuration', () => {
+    it('applique la durée de fondu en secondes de la config (#28)', () => {
         const manager = new AudioManager();
 
         manager.loadPlaylist([{
             id: 't1',
             title: 'Track 1',
             versions: { calm: 'a.mp3' },
-            crossfadeDurationPercent: 0.25,
+            crossfadeDurationSeconds: 2.5,
         }]);
 
-        expect(manager.getTrack('t1').crossfadeDurationPercent).toBe(0.25);
+        expect(manager.getTrack('t1').getCrossfadeDurationMs()).toBe(2500);
     });
 
-    it('defaults a track crossfade duration to 10 percent', () => {
+    it('garde un ancien réglage en % pour le migrer quand la durée sera connue (#28)', () => {
+        const manager = new AudioManager();
+        const onMigrated = vi.fn();
+        manager.on('crossfadeDurationMigrated', onMigrated);
+
+        manager.loadPlaylist([{
+            id: 't1',
+            title: 'Track 1',
+            versions: { calm: 'a.mp3' },
+            crossfadeDurationPercent: 0.05,
+        }]);
+        const track = manager.getTrack('t1');
+        expect(track.legacyCrossfadePercent).toBe(0.05);
+
+        track._migrateLegacyCrossfade(60); // 5 % de 60 s
+
+        expect(track.crossfadeDurationSeconds).toBe(3);
+        expect(onMigrated).toHaveBeenCalledWith('t1', 3);
+    });
+
+    it('durée de fondu par défaut : 5 s', () => {
         const manager = new AudioManager();
 
         manager.loadPlaylist([{
@@ -98,7 +118,7 @@ describe('AudioManager.loadPlaylist', () => {
             versions: { calm: 'a.mp3' },
         }]);
 
-        expect(manager.getTrack('t1').crossfadeDurationPercent).toBe(0.1);
+        expect(manager.getTrack('t1').getCrossfadeDurationMs()).toBe(5000);
     });
 
     it('ne coupe pas la lecture en cours quand la piste jouée reste dans la nouvelle config (#13)', () => {
@@ -145,49 +165,40 @@ describe('AudioManager.loadPlaylist', () => {
 });
 
 describe('AudioManager crossfade handling', () => {
-    it('uses the active track crossfade duration instead of a global default', () => {
+    it('laisse la piste active appliquer sa propre durée de fondu', () => {
         const manager = new AudioManager();
         const track = {
-            crossfadeDurationPercent: 0.25,
             currentVersion: 'calm',
-            crossfade: vi.fn((toVersion, durationPercent, onComplete) => onComplete(true)),
+            crossfade: vi.fn((toVersion, durationSeconds, onComplete) => onComplete(true)),
             getState: vi.fn(() => ({ currentVersion: 'combat' })),
         };
         manager.currentTrack = track;
 
         manager.crossfade('combat');
 
-        expect(track.crossfade).toHaveBeenCalledWith('combat', 0.25, expect.any(Function));
+        expect(track.crossfade).toHaveBeenCalledWith('combat', undefined, expect.any(Function));
     });
 
-    it('keeps accepting an explicit crossfade duration for existing callers', () => {
+    it('accepte encore une durée imposée en secondes', () => {
         const manager = new AudioManager();
         const track = {
-            crossfadeDurationPercent: 0.25,
             currentVersion: 'calm',
-            crossfade: vi.fn((toVersion, durationPercent, onComplete) => onComplete(true)),
+            crossfade: vi.fn((toVersion, durationSeconds, onComplete) => onComplete(true)),
             getState: vi.fn(() => ({ currentVersion: 'combat' })),
         };
         manager.currentTrack = track;
 
-        manager.crossfade('combat', 0.05);
+        manager.crossfade('combat', 2);
 
-        expect(track.crossfade).toHaveBeenCalledWith('combat', 0.05, expect.any(Function));
+        expect(track.crossfade).toHaveBeenCalledWith('combat', 2, expect.any(Function));
     });
 
-    it('keeps accepting an explicit crossfade duration above the per-track UI range', () => {
+    it('expose la durée de fondu de la piste active pour le mute (#29)', () => {
         const manager = new AudioManager();
-        const track = {
-            crossfadeDurationPercent: 0.25,
-            currentVersion: 'calm',
-            crossfade: vi.fn((toVersion, durationPercent, onComplete) => onComplete(true)),
-            getState: vi.fn(() => ({ currentVersion: 'combat' })),
-        };
-        manager.currentTrack = track;
+        expect(manager.getCrossfadeDurationMs(300)).toBe(300);
 
-        manager.crossfade('combat', 0.5);
-
-        expect(track.crossfade).toHaveBeenCalledWith('combat', 0.5, expect.any(Function));
+        manager.currentTrack = { getCrossfadeDurationMs: () => 2500 };
+        expect(manager.getCrossfadeDurationMs(300)).toBe(2500);
     });
 });
 

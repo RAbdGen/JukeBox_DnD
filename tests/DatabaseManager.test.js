@@ -8,6 +8,26 @@ function createDatabaseManager(data) {
 }
 
 describe('DatabaseManager.mergeImportedLibrary', () => {
+    it('importe une durée en secondes normalisée, sans ancien % (#28)', async () => {
+        const manager = createDatabaseManager({ library: [], playlists: [], metadata: {} });
+
+        await manager.mergeImportedLibrary({
+            library: [{ id: 't1', title: 'Importée', crossfadeDurationSeconds: 3, crossfadeDurationPercent: 0.2 }],
+            playlists: [],
+        });
+
+        expect(manager.db.data.library[0].crossfadeDurationSeconds).toBe(3);
+        expect(manager.db.data.library[0]).not.toHaveProperty('crossfadeDurationPercent');
+    });
+
+    it('donne 5 s par défaut à une piste importée sans réglage de fondu (#28)', async () => {
+        const manager = createDatabaseManager({ library: [], playlists: [], metadata: {} });
+
+        await manager.mergeImportedLibrary({ library: [{ id: 't1', title: 'Importée' }], playlists: [] });
+
+        expect(manager.db.data.library[0].crossfadeDurationSeconds).toBe(5);
+    });
+
     it('normalises an invalid imported crossfade duration to the default', async () => {
         const manager = createDatabaseManager({
             library: [],
@@ -56,6 +76,31 @@ describe('DatabaseManager.mergeImportedLibrary', () => {
 });
 
 describe('DatabaseManager.updateTrack', () => {
+    it('enregistre une durée de fondu en secondes et retire l\'ancien % (#28)', async () => {
+        const manager = createDatabaseManager({
+            library: [{ id: 't1', title: 'Piste', crossfadeDurationPercent: 0.2 }],
+            playlists: [],
+            metadata: {},
+        });
+
+        await manager.updateTrack('t1', { crossfadeDurationSeconds: 2.5 });
+
+        expect(manager.db.data.library[0].crossfadeDurationSeconds).toBe(2.5);
+        expect(manager.db.data.library[0]).not.toHaveProperty('crossfadeDurationPercent');
+    });
+
+    it('ramène une durée en secondes hors plage à la valeur par défaut (#28)', async () => {
+        const manager = createDatabaseManager({
+            library: [{ id: 't1', title: 'Piste' }],
+            playlists: [],
+            metadata: {},
+        });
+
+        await manager.updateTrack('t1', { crossfadeDurationSeconds: 60 });
+
+        expect(manager.db.data.library[0].crossfadeDurationSeconds).toBe(5);
+    });
+
     it('normalises an invalid crossfade duration before persisting a track update', async () => {
         const manager = createDatabaseManager({
             library: [{ id: 't1', title: 'Piste', crossfadeDurationPercent: 0.2 }],
