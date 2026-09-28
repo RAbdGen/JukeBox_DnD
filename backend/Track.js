@@ -4,6 +4,10 @@ import {
     legacyPercentToSeconds,
     normalizeCrossfadeDurationSeconds,
 } from './crossfadeDuration.js';
+import { trackSignature } from './segments.js';
+
+// Nom du sprite Howler d'une version découpée (#24)
+const SPRITE_NAME = 'segment';
 
 /**
  * Classe représentant une piste musicale avec plusieurs versions
@@ -14,11 +18,15 @@ export class Track {
      * @param {string} id - Identifiant unique de la piste
      * @param {string} name - Nom d'affichage de la piste
      * @param {Object} versionPaths - Chemins des différentes versions { calm: 'path.mp3', combat: 'path.mp3' }
+     * @param {Object} [segments] - Versions découpées (#24) : { combat: { start, end } } en secondes
      */
-    constructor(id, name, versionPaths) {
+    constructor(id, name, versionPaths, segments = {}) {
         this.id = id;
         this.name = name;
         this.versionPaths = versionPaths;
+        this.segments = segments || {};
+        // Permet à AudioManager de savoir si la piste doit être reconstruite (#32)
+        this.signature = trackSignature(versionPaths, this.segments);
         this.versions = {}; // Contiendra les instances Howl
         this.currentVersion = null;
         this.isPlaying = false;
@@ -38,10 +46,51 @@ export class Track {
         // Position à laquelle reprendre currentVersion (pause pendant un chargement,
         // changement de version en pause)
         this._resumeSeek = null;
+        // Id du dernier son lancé par version : la reprise se fait par id, jamais par
+        // play(sprite) qui repartirait du début du segment
+        this._soundIds = {};
+        // Version mise en pause (son reprenable par son id)
+        this._pausedVersion = null;
     }
 
     get isCrossfading() {
         return this._crossfade !== null;
+    }
+
+    _segmentOf(versionName) {
+        return this.segments[versionName] || null;
+    }
+
+    /** Durée jouée d'une version : son segment, sinon le fichier entier */
+    _versionDuration(versionName) {
+        const segment = this._segmentOf(versionName);
+        if (segment) return segment.end - segment.start;
+        const howl = this.versions[versionName];
+        return howl ? howl.duration() || 0 : 0;
+    }
+
+    /** Position relative au segment → position absolue dans le fichier */
+    _toAbsolute(versionName, position) {
+        const segment = this._segmentOf(versionName);
+        return segment ? segment.start + position : position;
+    }
+
+    /** Lance un nouveau son (le sprite du segment pour une version découpée) */
+    _startSound(versionName) {
+        const howl = this.versions[versionName];
+        const id = howl.play(this._segmentOf(versionName) ? SPRITE_NAME : undefined);
+        this._soundIds[versionName] = id;
+        return id;
+    }
+
+    /**
+     * Réordonne les versions sans recréer les Howl (simple réordonnancement
+     * dans la modal d'édition : ne doit pas couper la lecture).
+     */
+    reorderVersions(names) {
+        const known = names.filter(name => Object.hasOwn(this.versions, name));
+        this.versionPaths = Object.fromEntries(known.map(name => [name, this.versionPaths[name]]));
+        this.versions = Object.fromEntries(known.map(name => [name, this.versions[name]]));
     }
 
     /**
@@ -58,15 +107,19 @@ export class Track {
 
             console.log(`📂 Chargement version "${versionName}": ${path}`);
 
+            const segment = this._segmentOf(versionName);
+
             this.versions[versionName] = new Howl({
                 src: [path],
                 html5: true, // Use HTML5 Audio for file:// URLs
                 loop: this.loop, // false par défaut pour permettre la progression de playlist
                 volume: 0,
                 preload: false, // Chargement à la première lecture, pas au démarrage
+                // Version découpée (#24) : ne lire que son segment du fichier partagé
+                ...(segment ? { sprite: { [SPRITE_NAME]: [segment.start * 1000, (segment.end - segment.start) * 1000] } } : {}),
                 onload: () => {
                     console.log(`✅ Version "${versionName}" de "${this.name}" chargée`);
-                    this._migrateLegacyCrossfade(this.versions[versionName].duration());
+                    this._migrateLegacyCrossfade(this._versionDuration(versionName));
                 },
                 onloaderror: (id, error) => {
                     console.error(`❌ Erreur de chargement "${versionName}" (${path}):`, error);
@@ -112,8 +165,8 @@ export class Track {
             return this.crossfadeDurationSeconds * 1000;
         }
         if (this.legacyCrossfadePercent !== null) {
-            const howl = this.currentVersion && this.versions[this.currentVersion];
-            return legacyPercentToSeconds(this.legacyCrossfadePercent, howl ? howl.duration() : undefined) * 1000;
+            const duration = this.currentVersion ? this._versionDuration(this.currentVersion) : undefined;
+            return legacyPercentToSeconds(this.legacyCrossfadePercent, duration) * 1000;
         }
         return DEFAULT_CROSSFADE_DURATION_SECONDS * 1000;
     }
@@ -269,13 +322,17 @@ export class Track {
             console.log(`🔉 Fade-out: ${fromVolume.toFixed(2)} → 0 (${duration}ms)`);
             fromVersion.fade(fromVolume, 0, duration);
 
-            // 4. Configurer la nouvelle version
+            // 4. Configurer puis lancer la nouvelle version
             toVersionHowl.stop(); // Arrêter complètement si elle jouait
             toVersionHowl.volume(0); // Force le volume à 0
-            toVersionHowl.seek(currentSeek);
+            const playId = this._startSound(toVersion);
 
-            // 5. Lancer la nouvelle version
-            const playId = toVersionHowl.play();
+            // 5. Position : une cible découpée démarre au début de son segment (#24), une
+            // cible « fichier entier » au même timecode. Toujours APRÈS play() : stop() puis
+            // play() recycle le son (reset) et perd un seek fait avant.
+            if (!this._segmentOf(toVersion)) {
+                toVersionHowl.seek(currentSeek, playId);
+            }
             console.log(`▶️ Piste "${toVersion}" lancée (ID: ${playId})`);
 
             // 6. Attendre 50ms puis démarrer le fade-in
@@ -288,7 +345,7 @@ export class Track {
                     // Restaurer l'ancienne version pour éviter un silence total
                     fromVersion.volume(fromVolume);
                     if (!fromVersion.playing()) {
-                        fromVersion.play();
+                        this._startSound(cf.fromVersion);
                     }
 
                     complete(false);
@@ -338,7 +395,7 @@ export class Track {
             toHowl.volume(this.defaultVolume); // Interrompt un fade-in éventuellement en cours
         } else {
             toHowl.off('load', cf.loadListener);
-            this._resumeSeek = cf.currentSeek;
+            this._resumeSeek = this._segmentOf(cf.toVersion) ? 0 : cf.currentSeek;
             this._startWhenLoaded(toHowl, () => this._playCurrent());
         }
 
@@ -361,16 +418,30 @@ export class Track {
     }
 
     /**
-     * Lance currentVersion à plein volume, à la position mémorisée s'il y en a une.
+     * Lance currentVersion à plein volume : reprend le son en pause s'il y en a
+     * un (par son id), sinon lance un nouveau son ; puis applique la position
+     * mémorisée (toujours après play(), cf. crossfade).
      */
     _playCurrent() {
-        const howl = this.versions[this.currentVersion];
+        const versionName = this.currentVersion;
+        const howl = this.versions[versionName];
         howl.volume(this.defaultVolume);
-        if (this._resumeSeek !== null) {
-            howl.seek(this._resumeSeek);
-            this._resumeSeek = null;
+
+        const resumeSeek = this._resumeSeek;
+        this._resumeSeek = null;
+
+        let id;
+        if (this._pausedVersion === versionName && this._soundIds[versionName] !== undefined) {
+            id = this._soundIds[versionName];
+            howl.play(id);
+        } else {
+            id = this._startSound(versionName);
         }
-        howl.play();
+        this._pausedVersion = null;
+
+        if (resumeSeek !== null) {
+            howl.seek(this._toAbsolute(versionName, resumeSeek), id);
+        }
     }
 
     /**
@@ -385,6 +456,7 @@ export class Track {
         // la reprise la lancera. Sinon, pause classique.
         if (!this._cancelPendingStart()) {
             this.versions[this.currentVersion].pause();
+            this._pausedVersion = this.currentVersion;
         }
         this.isPlaying = false;
         console.log(`⏸️ Pause "${this.name}"`);
@@ -422,7 +494,8 @@ export class Track {
         this._cancelPendingStart();
         this.stopAllVersions();
         this.currentVersion = toVersion;
-        this._resumeSeek = position;
+        // Cible découpée : début de son segment (#24) ; sinon même position
+        this._resumeSeek = this._segmentOf(toVersion) ? 0 : position;
         return true;
     }
 
@@ -439,7 +512,7 @@ export class Track {
             // Pas encore démarrée : appliquée au démarrage / à la reprise
             this._resumeSeek = position;
         } else {
-            this.versions[this.currentVersion].seek(position);
+            this.versions[this.currentVersion].seek(this._toAbsolute(this.currentVersion, position));
         }
     }
 
@@ -465,6 +538,7 @@ export class Track {
                 version.stop();
             }
         });
+        this._pausedVersion = null;
     }
 
     /**
@@ -480,28 +554,27 @@ export class Track {
     }
 
     /**
-     * Obtenir la position actuelle de lecture
+     * Position de lecture, relative au segment pour une version découpée
      * @returns {number} Position en secondes
      */
     getCurrentTime() {
         if (this._resumeSeek !== null) return this._resumeSeek;
-        if (this.currentVersion && this.versions[this.currentVersion]) {
-            // Howler renvoie le Howl lui-même (et non un nombre) tant qu'il n'est pas chargé
-            const seek = this.versions[this.currentVersion].seek();
-            return typeof seek === 'number' ? seek : 0;
-        }
-        return 0;
+        const howl = this.currentVersion && this.versions[this.currentVersion];
+        if (!howl) return 0;
+        // Getter sans argument : un id périmé serait pris pour une position.
+        // Howler renvoie le Howl lui-même (et non un nombre) tant qu'il n'est pas chargé.
+        const seek = howl.seek();
+        if (typeof seek !== 'number') return 0;
+        const segment = this._segmentOf(this.currentVersion);
+        return segment ? Math.max(0, seek - segment.start) : seek;
     }
 
     /**
-     * Obtenir la durée totale de la piste
+     * Durée jouée (celle du segment pour une version découpée)
      * @returns {number} Durée en secondes
      */
     getDuration() {
-        if (this.currentVersion && this.versions[this.currentVersion]) {
-            return this.versions[this.currentVersion].duration() || 0;
-        }
-        return 0;
+        return this.currentVersion ? this._versionDuration(this.currentVersion) : 0;
     }
 
     /**

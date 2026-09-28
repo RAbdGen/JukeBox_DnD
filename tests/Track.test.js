@@ -10,10 +10,15 @@ const { FakeHowl, instances } = vi.hoisted(() => {
             this._loop = !!opts.loop;
             this._state = 'loaded';
             this._playing = false;
+            this._paused = false;
             this._seek = 0;
             this._volume = opts.volume;
+            this._sprite = opts.sprite || {};
+            this._nextId = 0;
+            this._soundId = null;
             this.listeners = {};
             this.playCount = 0;
+            this.lastPlayArg = undefined;
             instances.push(this);
         }
         state() { return this._state; }
@@ -28,9 +33,27 @@ const { FakeHowl, instances } = vi.hoisted(() => {
         off(event, fn) {
             this.listeners[event] = (this.listeners[event] || []).filter(l => l !== fn);
         }
-        play() { this.playCount++; this._playing = true; return 1; }
-        pause() { this._playing = false; }
-        stop() { this._playing = false; this._seek = 0; }
+        play(arg) {
+            this.playCount++;
+            this.lastPlayArg = arg;
+            if (typeof arg === 'number' && arg === this._soundId && this._paused) {
+                this._paused = false;
+                this._playing = true;
+                return arg;
+            }
+            // Comme Howler : un nouveau son (ou un son recyclé via reset()) repart
+            // du début de son sprite — un seek fait avant play() est perdu.
+            this._soundId = ++this._nextId;
+            const sprite = typeof arg === 'string' ? this._sprite[arg] : null;
+            this._seek = sprite ? sprite[0] / 1000 : 0;
+            this._paused = false;
+            this._playing = true;
+            return this._soundId;
+        }
+        pause() {
+            if (this._playing) { this._playing = false; this._paused = true; }
+        }
+        stop() { this._playing = false; this._paused = false; this._soundId = null; this._seek = 0; }
         playing() { return this._playing; }
         loop(value) {
             if (value === undefined) return this._loop;
@@ -47,7 +70,7 @@ const { FakeHowl, instances } = vi.hoisted(() => {
             if (typeof value === 'number') { this._seek = value; return this; }
             return this._seek;
         }
-        duration() { return 100; }
+        duration() { return 180; }
     }
     return { FakeHowl, instances };
 });
@@ -222,11 +245,11 @@ describe('Track — durée de fondu en secondes (#28)', () => {
         track.legacyCrossfadePercent = 0.03;
         track.onCrossfadeDurationMigrated = vi.fn();
 
-        track.versions.calm.opts.onload(); // FakeHowl : 100 s → 3 % = 3 s
+        track.versions.calm.opts.onload(); // FakeHowl : 180 s → 3 % = 5,4 s, plafonné à 5 s
 
-        expect(track.crossfadeDurationSeconds).toBe(3);
+        expect(track.crossfadeDurationSeconds).toBe(5);
         expect(track.legacyCrossfadePercent).toBeNull();
-        expect(track.onCrossfadeDurationMigrated).toHaveBeenCalledWith(3);
+        expect(track.onCrossfadeDurationMigrated).toHaveBeenCalledWith(5);
 
         track.versions.combat.opts.onload();
         expect(track.onCrossfadeDurationMigrated).toHaveBeenCalledOnce();
@@ -241,5 +264,120 @@ describe('Track — durée de fondu en secondes (#28)', () => {
 
         expect(track.getCrossfadeDurationMs()).toBe(2000);
         expect(track.onCrossfadeDurationMigrated).not.toHaveBeenCalled();
+    });
+});
+
+function createSplitTrack() {
+    const track = new Track('t2', 'Découpée', { calm: 'src.mp3', combat: 'src.mp3' }, {
+        calm: { start: 0, end: 90 },
+        combat: { start: 90, end: 180 },
+    });
+    track.loadVersions();
+    return track;
+}
+
+describe('Track — position lors d\'un changement de version (seek après play)', () => {
+    it('fondu entre versions fichier entier : la cible reprend au même timecode', () => {
+        const track = createTrack();
+        track.play('calm');
+        track.versions.calm.seek(40);
+
+        track.crossfade('combat', 1);
+
+        expect(track.versions.combat.seek()).toBe(40);
+    });
+});
+
+describe('Track — versions découpées (#24)', () => {
+    it('déclare un sprite par version découpée', () => {
+        const track = createSplitTrack();
+        expect(track.versions.combat.opts.sprite).toEqual({ segment: [90000, 90000] });
+    });
+
+    it('joue le sprite du segment, temps et durée relatifs au segment', () => {
+        const track = createSplitTrack();
+
+        track.play('combat');
+
+        expect(track.versions.combat.lastPlayArg).toBe('segment');
+        expect(track.getCurrentTime()).toBe(0);
+        expect(track.getDuration()).toBe(90);
+    });
+
+    it('fondu vers une version découpée : démarre au début de son segment', () => {
+        const track = createSplitTrack();
+        track.play('calm');
+        track.versions.calm.seek(40);
+
+        track.crossfade('combat', 1);
+        vi.runAllTimers();
+
+        expect(track.versions.combat.lastPlayArg).toBe('segment');
+        expect(track.versions.combat.seek()).toBe(90);
+        expect(track.getCurrentTime()).toBe(0);
+    });
+
+    it('reprise après pause : reprend le son en pause, pas le début du segment', () => {
+        const track = createSplitTrack();
+        track.play('combat');
+        track.versions.combat.seek(120);
+
+        track.pause();
+        track.resume();
+
+        expect(typeof track.versions.combat.lastPlayArg).toBe('number');
+        expect(track.getCurrentTime()).toBe(30);
+    });
+
+    it('seek relatif au segment', () => {
+        const track = createSplitTrack();
+        track.play('combat');
+
+        track.seek(10);
+
+        expect(track.versions.combat.seek()).toBe(100);
+        expect(track.getCurrentTime()).toBe(10);
+    });
+
+    it('changer de version en pause vers un segment : reprise au début du segment', () => {
+        const track = createSplitTrack();
+        track.play('calm');
+        track.versions.calm.seek(40);
+        track.pause();
+
+        track.switchVersionWhilePaused('combat');
+        expect(track.getCurrentTime()).toBe(0);
+
+        track.resume();
+        expect(track.versions.combat.seek()).toBe(90);
+    });
+
+    it('fin du segment actif → piste suivante', () => {
+        const track = createSplitTrack();
+        track.onEndCallback = vi.fn();
+        track.play('combat');
+
+        track.versions.combat.opts.onend();
+
+        expect(track.onEndCallback).toHaveBeenCalledOnce();
+    });
+
+    it('migration du fondu : utilise la durée du segment, pas celle du fichier', () => {
+        const track = createSplitTrack();
+        track.legacyCrossfadePercent = 0.05;
+
+        track.versions.calm.opts.onload(); // 5 % de 90 s = 4,5 s
+
+        expect(track.crossfadeDurationSeconds).toBe(4.5);
+    });
+
+    it('réordonne ses versions sans recréer les Howl', () => {
+        const track = createSplitTrack();
+        const combat = track.versions.combat;
+
+        track.reorderVersions(['combat', 'calm']);
+
+        expect(Object.keys(track.versions)).toEqual(['combat', 'calm']);
+        expect(track.versions.combat).toBe(combat);
     });
 });
