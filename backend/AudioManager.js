@@ -1,5 +1,6 @@
 import { Howler } from 'howler';
 import { Track } from './Track.js';
+import { trackSignature } from './segments.js';
 import {
     normalizeCrossfadeDurationPercent,
     normalizeCrossfadeDurationSeconds,
@@ -36,11 +37,12 @@ export class AudioManager {
      * @param {string} trackId - Identifiant unique de la piste
      * @param {string} name - Nom d'affichage
      * @param {Object} versionPaths - Chemins des versions { calm: 'path.mp3', combat: 'path.mp3' }
+     * @param {Object} [segments] - Versions découpées (#24)
      */
-    loadTrack(trackId, name, versionPaths) {
+    loadTrack(trackId, name, versionPaths, segments = {}) {
         console.log(`📥 Chargement de la piste "${name}" (${trackId})`);
 
-        const track = new Track(trackId, name, versionPaths);
+        const track = new Track(trackId, name, versionPaths, segments);
         track.loadVersions();
 
         this.tracks.set(trackId, track);
@@ -54,8 +56,8 @@ export class AudioManager {
      */
     loadTracks(config) {
         Object.keys(config).forEach(trackId => {
-            const { name, versions, defaultVersion, crossfadeDurationSeconds, crossfadeDurationPercent } = config[trackId];
-            this.loadTrack(trackId, name, versions);
+            const { name, versions, segments, defaultVersion, crossfadeDurationSeconds, crossfadeDurationPercent } = config[trackId];
+            this.loadTrack(trackId, name, versions, segments);
 
             // Stocker la version par défaut
             const track = this.tracks.get(trackId);
@@ -392,6 +394,22 @@ export class AudioManager {
     loadPlaylist(playlistConfig) {
         console.log(`📀 Chargement de la playlist (${playlistConfig.length} pistes)`);
 
+        // Pistes déjà chargées dont les versions, fichiers ou segments ont changé
+        // (modal d'édition #15, retouche de découpe #24) : à reconstruire, sinon le
+        // lecteur garde les anciens Howl (#32). Un simple réordonnancement ne compte pas.
+        let rebuiltCurrentId = null;
+        for (const { id, versions, segments } of playlistConfig) {
+            const existing = this.tracks.get(id);
+            if (existing && existing.signature !== trackSignature(versions, segments)) {
+                existing.stop();
+                this.tracks.delete(id);
+                if (this.currentTrack === existing) {
+                    this.currentTrack = null;
+                    rebuiltCurrentId = id;
+                }
+            }
+        }
+
         const newIds = new Set(playlistConfig.map(t => t.id));
         const currentTrackId = this.currentTrack ? this.currentTrack.id : null;
         const keepPlaying = currentTrackId !== null && newIds.has(currentTrackId);
@@ -413,11 +431,13 @@ export class AudioManager {
         this.playlist = [];
 
         playlistConfig.forEach((trackConfig) => {
-            const { id, title, versions, defaultVersion, defaultVolume, crossfadeDurationSeconds, crossfadeDurationPercent } = trackConfig;
+            const { id, title, versions, segments, defaultVersion, defaultVolume, crossfadeDurationSeconds, crossfadeDurationPercent } = trackConfig;
 
             // Ne recharger (recréer les Howl) que si la piste n'est pas déjà chargée
             if (!this.tracks.has(id)) {
-                this.loadTrack(id, title, versions);
+                this.loadTrack(id, title, versions, segments);
+            } else {
+                this.tracks.get(id).reorderVersions(Object.keys(versions || {}));
             }
 
             // Ajouter à la playlist
@@ -436,9 +456,10 @@ export class AudioManager {
             }
         });
 
-        this.currentTrackIndex = keepPlaying
-            ? this.playlist.findIndex(t => t.id === currentTrackId)
-            : 0;
+        const indexId = keepPlaying ? currentTrackId : rebuiltCurrentId;
+        this.currentTrackIndex = indexId ? Math.max(0, this.playlist.findIndex(t => t.id === indexId)) : 0;
+
+        if (rebuiltCurrentId) this._notifyTrackChange(); // la piste en cours a été arrêtée
 
         console.log(`✅ Playlist chargée : ${this.playlist.length} pistes`);
     }

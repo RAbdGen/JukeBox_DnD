@@ -307,3 +307,59 @@ describe('AudioManager — modes de boucle et switch de musique (#23)', () => {
         expect(manager.currentTrack).toBeNull();
     });
 });
+
+describe('AudioManager — versions modifiées dans la playlist active (#32)', () => {
+    const base = [
+        { id: 't1', title: 'Track 1', versions: { calm: 'a.mp3', combat: 'b.mp3' } },
+        { id: 't2', title: 'Track 2', versions: { calm: 'c.mp3' } },
+    ];
+
+    it('transmet les segments à la piste', () => {
+        const manager = new AudioManager();
+        manager.loadPlaylist([{ id: 't1', title: 'T', versions: { calm: 's.mp3' }, segments: { calm: { start: 0, end: 10 } } }]);
+
+        expect(manager.getTrack('t1').segments).toEqual({ calm: { start: 0, end: 10 } });
+    });
+
+    it('simple réordonnancement des versions : même instance, nouvel ordre', () => {
+        const manager = new AudioManager();
+        manager.loadPlaylist(base);
+        const track = manager.getTrack('t1');
+
+        manager.loadPlaylist([{ ...base[0], versions: { combat: 'b.mp3', calm: 'a.mp3' } }, base[1]]);
+
+        expect(manager.getTrack('t1')).toBe(track);
+        expect(track.getState().availableVersions).toEqual(['combat', 'calm']);
+    });
+
+    it('version ajoutée : la piste est reconstruite', () => {
+        const manager = new AudioManager();
+        manager.loadPlaylist(base);
+        const track = manager.getTrack('t1');
+
+        manager.loadPlaylist([{ ...base[0], versions: { ...base[0].versions, boss: 'd.mp3' } }, base[1]]);
+
+        expect(manager.getTrack('t1')).not.toBe(track);
+        expect(manager.getTrack('t1').getState().availableVersions).toEqual(['calm', 'combat', 'boss']);
+    });
+
+    it('segments modifiés sur la piste en cours : arrêtée, reconstruite, UI notifiée, index conservé', () => {
+        const manager = new AudioManager();
+        const onTrackChange = vi.fn();
+        manager.on('trackChange', onTrackChange);
+        const split = { id: 't1', title: 'T', versions: { calm: 's.mp3' }, segments: { calm: { start: 0, end: 10 } } };
+        manager.loadPlaylist([base[1], split]);
+        manager.playTrackAtIndex(1);
+        const oldTrack = manager.getTrack('t1');
+        const stopSpy = vi.spyOn(oldTrack, 'stop');
+        onTrackChange.mockClear();
+
+        manager.loadPlaylist([base[1], { ...split, segments: { calm: { start: 0, end: 12 } } }]);
+
+        expect(stopSpy).toHaveBeenCalled();
+        expect(manager.currentTrack).toBeNull();
+        expect(manager.getTrack('t1')).not.toBe(oldTrack);
+        expect(manager.currentTrackIndex).toBe(1);
+        expect(onTrackChange).toHaveBeenCalled();
+    });
+});
