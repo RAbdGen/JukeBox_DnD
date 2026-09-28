@@ -87,6 +87,7 @@ export class AudioManager {
         }
 
         // Jouer la nouvelle piste
+        track.setLoop(this.playMode === 'loopOne');
         track.play(version);
         this.currentTrack = track;
         this.currentVersion = track.currentVersion; // Rester synchronisé avec la version réellement appliquée
@@ -116,15 +117,47 @@ export class AudioManager {
         const normalizedDurationPercent = durationPercent === undefined
             ? normalizeCrossfadeDurationPercent(configuredDurationPercent)
             : normalizeCrossfadeOverridePercent(configuredDurationPercent);
-        this.currentTrack.crossfade(toVersion, normalizedDurationPercent, (success) => {
-            if (success) {
-                this.currentVersion = this.currentTrack.currentVersion; // Rester synchronisé une fois le crossfade réellement terminé
-            }
+        const track = this.currentTrack;
+        track.crossfade(toVersion, normalizedDurationPercent, () => {
+            // Fondu annulé par un changement de piste : l'état appartient déjà à la nouvelle piste
+            if (track !== this.currentTrack) return;
+
+            // Succès ou échec, rester synchronisé avec la version réellement jouée
+            // (l'UI peut avoir affiché la cible par anticipation)
+            this.currentVersion = track.currentVersion ?? this.currentVersion;
 
             if (this.callbacks.onVersionChange) {
-                this.callbacks.onVersionChange(this.currentTrack.getState());
+                this.callbacks.onVersionChange(track.getState());
             }
         });
+    }
+
+    /**
+     * Changer de version selon l'état de lecture (#23) :
+     * - en lecture : crossfade
+     * - en pause : bascule immédiate, la reprise jouera la nouvelle version
+     * - à l'arrêt : mémorise simplement le choix
+     * @param {string} toVersion - Version cible
+     */
+    switchVersion(toVersion) {
+        const track = this.currentTrack;
+
+        if (track && track.isPlaying) {
+            // Un fondu déjà en cours est terminé d'abord (son callback resynchronise
+            // currentVersion) : l'affichage anticipé de la cible vient donc après
+            this.crossfade(toVersion);
+            if (track.isCrossfading) this.currentVersion = toVersion; // resynchronisé à la fin du fondu
+            return;
+        }
+
+        if (track && track.currentVersion) {
+            if (track.switchVersionWhilePaused(toVersion)) {
+                this.currentVersion = toVersion;
+            }
+            return;
+        }
+
+        this.currentVersion = toVersion;
     }
 
     /**
@@ -141,17 +174,9 @@ export class AudioManager {
      * Reprendre la lecture
      */
     resume() {
-        if (this.currentTrack) {
-            const currentVersion = this.currentTrack.currentVersion;
-            if (currentVersion && this.currentTrack.versions[currentVersion]) {
-                const howl = this.currentTrack.versions[currentVersion];
-                // Le volume par piste reste indépendant du volume maître Howler.
-                // `??` conserve volontairement une normalisation à 0.
-                howl.volume(this.currentTrack.defaultVolume ?? this.globalVolume);
-                howl.play();
-                this.currentTrack.isPlaying = true;
-                console.log('▶️ Reprise de la lecture');
-            }
+        // Le volume par piste (defaultVolume) reste indépendant du volume maître Howler
+        if (this.currentTrack && this.currentTrack.resume()) {
+            console.log('▶️ Reprise de la lecture');
         }
     }
 
@@ -266,11 +291,8 @@ export class AudioManager {
      */
     seek(position) {
         if (this.currentTrack && this.currentTrack.currentVersion) {
-            const howl = this.currentTrack.versions[this.currentTrack.currentVersion];
-            if (howl) {
-                howl.seek(position);
-                console.log(`⏩ Seek à ${position.toFixed(1)}s`);
-            }
+            this.currentTrack.seek(position); // Termine un éventuel fondu en cours
+            console.log(`⏩ Seek à ${position.toFixed(1)}s`);
         }
     }
 
@@ -434,12 +456,9 @@ export class AudioManager {
             this.currentVersion = availableVersions[0];
         }
 
-        // Appliquer le mode de loop directement sur le Howl ciblé.
-        // On ne passe pas par track.setLoop() car track.currentVersion est encore null ici
-        // (la piste n'a pas encore été jouée), ce qui ferait ignorer l'appel.
-        if (track.versions[this.currentVersion]) {
-            track.versions[this.currentVersion].loop(this.playMode === 'loopOne');
-        }
+        // Mode de boucle appliqué à toutes les versions, pas seulement à celle
+        // lancée : sinon la version atteinte par crossfade ne boucle pas (#23)
+        track.setLoop(this.playMode === 'loopOne');
 
         // Jouer la piste avec la première version
         track.play(this.currentVersion);
@@ -447,23 +466,22 @@ export class AudioManager {
 
         console.log(`▶️ Lecture piste ${index + 1}/${this.playlist.length}: "${track.name}" (${this.currentVersion})`);
 
-        // Callback
+        this._notifyTrackChange();
+    }
+
+    _notifyTrackChange() {
         if (this.callbacks.onTrackChange) {
             this.callbacks.onTrackChange(this.getPlaylistState());
         }
     }
 
     /**
-     * Piste suivante
+     * Piste suivante. Action explicite de l'utilisateur : change de piste quel
+     * que soit le mode (la boucle unique ne concerne que la fin naturelle
+     * d'une piste, gérée par onTrackEnd) (#23)
      */
     nextTrack() {
         console.log('⏭️ Piste suivante');
-
-        // En mode loopOne, on reste sur la même piste (elle boucle déjà)
-        if (this.playMode === 'loopOne') {
-            console.log('ℹ️ Mode loopOne: même piste');
-            return;
-        }
 
         // Passer à la piste suivante
         if (this.currentTrackIndex < this.playlist.length - 1) {
@@ -476,6 +494,7 @@ export class AudioManager {
             } else {
                 console.log('🏁 Fin de playlist');
                 this.stop();
+                this._notifyTrackChange(); // L'arrêt peut venir de la fin naturelle : l'UI doit suivre
             }
         }
     }

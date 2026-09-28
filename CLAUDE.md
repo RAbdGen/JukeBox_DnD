@@ -159,9 +159,9 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#19 — Contraste de texte insuffisant (tous thèmes)](https://github.com/RAbdGen/JukeBox_DnD/issues/19) — élargi en système de 8 thèmes WCAG AA, voir section "Système de thèmes" plus haut
 - [#21 — Renommer l'application « JukeBox & DnD » → « Jukebox JDR »](https://github.com/RAbdGen/JukeBox_DnD/issues/21) — au passage, dossier `userData` figé explicitement (voir section "Build et distribution")
 - [#22 — Version anglaise de l'application (« Jukebox RPG »)](https://github.com/RAbdGen/JukeBox_DnD/issues/22) — i18n complète (UI + messages dynamiques + dialogues natifs), voir section "Système d'internationalisation" plus haut
+- [#23 — Actions pendant un fondu / switch de musique cassent l'état de lecture (lié au mode de boucle)](https://github.com/RAbdGen/JukeBox_DnD/issues/23) — boucle appliquée à toutes les versions, fondu annulable/terminable, voir « Notes importantes »
 
 **À faire (`Todo`) :**
-- [#23 — Actions pendant un fondu / switch de musique cassent l'état de lecture (lié au mode de boucle)](https://github.com/RAbdGen/JukeBox_DnD/issues/23) — priorité haute, review ciblée crossfade × modes de boucle
 - [#24 — Onglet « Découpage » à la place de « Effets » : découper une musique en versions](https://github.com/RAbdGen/JukeBox_DnD/issues/24) — priorité haute, voir « Découpe de piste en versions » plus haut
 - [#18 — Personnalisation : synchronisation BPM entre versions (mode avancé)](https://github.com/RAbdGen/JukeBox_DnD/issues/18) — spec complète dans l'issue : BPM + décalage du premier temps par version, `Z2 = (Z1 − Y1) × (X1 / X2) + Y2`, comportement actuel conservé si rien n'est renseigné
 - [#25 — Choisir la version de lancement en cliquant sur une version](https://github.com/RAbdGen/JukeBox_DnD/issues/25)
@@ -217,4 +217,7 @@ npm run build      # Vite d'abord, puis electron-builder
 
 - `webSecurity: false` est une dette technique : la documenter et ne pas l'aggraver
 - Howler.js est le seul moteur audio, ne pas le remplacer — il gère bien les sprites et le crossfade
+- **Crossfade et actions concurrentes (depuis #23)** — un fondu en cours est un état explicite de `Track` (`_crossfade` : timers + écouteur de chargement), jamais des `setTimeout` orphelins. Règles : nouveau changement de version → le fondu en cours est terminé immédiatement puis on enchaîne ; pause / seek → terminé immédiatement, l'action s'applique à la version cible ; stop / autre piste / `play()` → annulé, rien ne redémarre. Toute nouvelle action de lecture doit choisir explicitement l'un de ces trois comportements
+- **Boucle unique** : le mode `loopOne` est porté par `Track.loop` et appliqué à *toutes* les versions (`Track.setLoop()`), sinon la version atteinte par crossfade ne boucle pas et la lecture s'arrête en silence. `nextTrack()` change toujours de piste (action explicite) ; seule la fin naturelle (`onTrackEnd`) respecte la boucle unique. Seule la fin de la version *active* déclenche `onEndCallback` (pas celle de la version sortante d'un fondu)
+- Reprise : passer par `Track.resume()`, jamais `howl.play()` direct — sur un Howl qui joue déjà, `play()` sans id crée une seconde instance superposée
 - Le fichier `améliorations.txt` est hors git intentionnellement, son contenu est désormais intégré dans ce CLAUDE.md

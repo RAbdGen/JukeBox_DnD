@@ -21,10 +21,22 @@ export class Track {
         this.versions = {}; // Contiendra les instances Howl
         this.currentVersion = null;
         this.isPlaying = false;
-        this.isCrossfading = false;
+        this.loop = false; // Appliqué à *toutes* les versions (#23)
         this.defaultVolume = 0.5;
         this.crossfadeDurationPercent = DEFAULT_CROSSFADE_DURATION_PERCENT;
         this.onEndCallback = null; // Callback pour fin de piste (playlist)
+
+        // Fondu en cours : { fromVersion, toVersion, currentSeek, timers, loadListener, started, complete }
+        this._crossfade = null;
+        // Lecture en attente de chargement : { howl, listener }
+        this._pendingStart = null;
+        // Position à laquelle reprendre currentVersion (pause pendant un chargement,
+        // changement de version en pause)
+        this._resumeSeek = null;
+    }
+
+    get isCrossfading() {
+        return this._crossfade !== null;
     }
 
     /**
@@ -44,7 +56,7 @@ export class Track {
             this.versions[versionName] = new Howl({
                 src: [path],
                 html5: true, // Use HTML5 Audio for file:// URLs
-                loop: false, // Pas de boucle pour permettre la progression de playlist
+                loop: this.loop, // false par défaut pour permettre la progression de playlist
                 volume: 0,
                 preload: false, // Chargement à la première lecture, pas au démarrage
                 onload: () => {
@@ -57,6 +69,10 @@ export class Track {
                     console.log(`▶️ Lecture de "${this.name}" - ${versionName}`);
                 },
                 onend: () => {
+                    // Seule la version active compte : la fin de la version sortante
+                    // pendant un fondu ne doit pas faire passer à la piste suivante (#23)
+                    const activeVersion = this._crossfade ? this._crossfade.toVersion : this.currentVersion;
+                    if (versionName !== activeVersion) return;
                     console.log(`🏁 Fin de "${this.name}" - ${versionName}`);
                     // Appeler le callback de fin de piste si défini
                     if (this.onEndCallback) {
@@ -79,31 +95,58 @@ export class Track {
 
         const howl = this.versions[versionName];
 
-        // Arrêter toutes les autres versions
+        // Arrêter toutes les autres versions (et tout fondu / démarrage en attente)
+        this._cancelCrossfade();
+        this._cancelPendingStart();
         this.stopAllVersions();
 
         this.currentVersion = versionName;
+        this._resumeSeek = null;
+        this.isPlaying = true;
 
-        const startPlay = () => {
-            howl.volume(this.defaultVolume);
-            howl.play();
-            this.isPlaying = true;
-        };
-
-        // Avec html5: true, le fichier peut ne pas être encore chargé au premier clic.
-        // On attend l'événement 'load' avant de jouer pour éviter le silence au premier appel.
-        if (howl.state() === 'loaded') {
-            startPlay();
-        } else {
-            howl.once('load', startPlay);
-            if (howl.state() === 'unloaded') {
-                howl.load(); // Déclenche le chargement (preload: false)
-            }
-        }
+        this._startWhenLoaded(howl, () => this._playCurrent());
     }
 
     /**
-     * Effectuer un crossfade entre deux versions
+     * Lance `start` dès que le Howl est chargé. Avec html5: true + preload: false,
+     * le fichier peut ne pas être encore chargé au premier clic : on attend 'load'
+     * pour éviter le silence au premier appel. L'attente est annulable
+     * (pause/stop/autre version avant la fin du chargement).
+     */
+    _startWhenLoaded(howl, start) {
+        if (howl.state() === 'loaded') {
+            start();
+            return;
+        }
+        const listener = () => {
+            this._pendingStart = null;
+            start();
+        };
+        this._pendingStart = { howl, listener };
+        howl.once('load', listener);
+        if (howl.state() === 'unloaded') {
+            howl.load(); // Déclenche le chargement (preload: false)
+        }
+    }
+
+    _cancelPendingStart() {
+        if (!this._pendingStart) return false;
+        const { howl, listener } = this._pendingStart;
+        howl.off('load', listener);
+        this._pendingStart = null;
+        return true;
+    }
+
+    /**
+     * Effectuer un crossfade entre deux versions.
+     *
+     * Actions pendant un fondu (#23) — comportement explicite :
+     * - nouveau changement de version : le fondu en cours est terminé
+     *   immédiatement, puis on enchaîne sur le nouveau fondu
+     * - pause / seek : le fondu est terminé immédiatement (la cible devient la
+     *   version courante), puis l'action s'applique à la cible
+     * - stop / autre piste / play() : le fondu est annulé, rien ne redémarre
+     *
      * @param {string} toVersion - Version cible
      * @param {number} durationPercent - Durée du crossfade en fraction de la piste (0.0–1.0, défaut: 0.1 = 10%)
      * @param {(success: boolean) => void} [onComplete] - Appelé une fois le crossfade terminé (ou avorté)
@@ -112,6 +155,11 @@ export class Track {
         const complete = (success) => {
             if (onComplete) onComplete(success);
         };
+
+        if (this._crossfade) {
+            console.log('⏩ Fondu déjà en cours : terminé immédiatement avant d\'enchaîner');
+            this._finishCrossfade();
+        }
 
         if (!this.currentVersion) {
             console.warn('⚠️ Aucune version en cours, démarrage direct');
@@ -132,9 +180,11 @@ export class Track {
             return;
         }
 
-        if (this.isCrossfading) {
-            console.warn('⚠️ Crossfade déjà en cours, annulation');
-            complete(false);
+        // La version courante n'a pas encore démarré (chargement) : rien à fondre,
+        // on bascule directement sur la cible.
+        if (this._pendingStart) {
+            this.play(toVersion);
+            complete(true);
             return;
         }
 
@@ -145,18 +195,29 @@ export class Track {
 
         console.log(`🔀 Crossfade: ${this.currentVersion} → ${toVersion} (${duration}ms / ${Math.round(normalizedDurationPercent * 100)}% de la piste)`);
 
-        this.isCrossfading = true;
-
         const fromVersion = this.versions[this.currentVersion];
         const toVersionHowl = this.versions[toVersion];
 
         // 1. Récupérer la position actuelle (en secondes)
-        const currentSeek = fromVersion.seek();
+        const currentSeek = this.getCurrentTime();
         console.log(`⏱️ Position actuelle: ${currentSeek.toFixed(2)}s`);
 
         // 2. IMPORTANT: Use defaultVolume, not current volume which might be 0
         const fromVolume = this.defaultVolume;
         const toVolume = this.defaultVolume;
+
+        // Toutes les ressources du fondu (timers, écouteur de chargement) sont
+        // rattachées à cet objet pour pouvoir le terminer ou l'annuler proprement.
+        const cf = {
+            fromVersion: this.currentVersion,
+            toVersion,
+            currentSeek,
+            timers: [],
+            loadListener: null,
+            started: false,
+            complete,
+        };
+        this._crossfade = cf;
 
         // Prépare et lance la nouvelle version une fois qu'elle est chargée : même garde-fou
         // que Track.play() (avec preload:false + html5, le Howl peut ne pas être chargé au
@@ -164,9 +225,11 @@ export class Track {
         // les deux fades démarrent bien ensemble plutôt que fromVersion ne parte seule dans
         // le silence pendant qu'on attend le chargement de toVersion.
         const startToVersion = () => {
+            cf.loadListener = null;
+            cf.started = true;
+
             // Ensure fromVersion has the correct volume before fading out
             fromVersion.volume(fromVolume);
-            console.log(`📊 État avant crossfade - From: ${fromVolume.toFixed(2)}, To: 0`);
 
             // 3. Démarrer le fade-out
             console.log(`🔉 Fade-out: ${fromVolume.toFixed(2)} → 0 (${duration}ms)`);
@@ -182,10 +245,11 @@ export class Track {
             console.log(`▶️ Piste "${toVersion}" lancée (ID: ${playId})`);
 
             // 6. Attendre 50ms puis démarrer le fade-in
-            setTimeout(() => {
+            cf.timers.push(setTimeout(() => {
                 // Vérifier que la version joue bien
                 if (!toVersionHowl.playing(playId)) {
                     console.error(`❌ Erreur: la nouvelle version ne joue pas, annulation du crossfade`);
+                    this._crossfade = null;
 
                     // Restaurer l'ancienne version pour éviter un silence total
                     fromVersion.volume(fromVolume);
@@ -193,7 +257,6 @@ export class Track {
                         fromVersion.play();
                     }
 
-                    this.isCrossfading = false;
                     complete(false);
                     return;
                 }
@@ -202,23 +265,15 @@ export class Track {
                 console.log(`🔊 Fade-in: 0 → ${toVolume.toFixed(2)} (${duration}ms)`);
                 toVersionHowl.fade(0, toVolume, duration, playId);
 
-                // 7. Finaliser une fois le fade-in lancé avec succès
-                setTimeout(() => {
-                    fromVersion.stop();
-                    fromVersion.volume(this.defaultVolume); // Réinitialiser le volume
-
-                    this.currentVersion = toVersion;
-                    this.isCrossfading = false;
-
-                    console.log(`✅ Crossfade terminé, maintenant sur "${toVersion}"`);
-                    complete(true);
-                }, duration);
-            }, 50);
+                // 7. Finaliser une fois le fade-in terminé
+                cf.timers.push(setTimeout(() => this._finishCrossfade(), duration));
+            }, 50));
         };
 
         if (toVersionHowl.state() === 'loaded') {
             startToVersion();
         } else {
+            cf.loadListener = startToVersion;
             toVersionHowl.once('load', startToVersion);
             if (toVersionHowl.state() === 'unloaded') {
                 toVersionHowl.load(); // Déclenche le chargement (preload: false)
@@ -227,13 +282,130 @@ export class Track {
     }
 
     /**
+     * Amène immédiatement le fondu en cours à son état final : version sortante
+     * arrêtée, version cible courante à plein volume. Si la cible n'avait pas
+     * encore démarré (chargement), elle démarre dès que possible à la position
+     * du switch.
+     */
+    _finishCrossfade() {
+        const cf = this._crossfade;
+        if (!cf) return;
+        this._crossfade = null;
+        cf.timers.forEach(clearTimeout);
+
+        const fromHowl = this.versions[cf.fromVersion];
+        const toHowl = this.versions[cf.toVersion];
+
+        fromHowl.stop();
+        fromHowl.volume(this.defaultVolume); // Réinitialiser le volume
+        this.currentVersion = cf.toVersion;
+
+        if (cf.started) {
+            toHowl.volume(this.defaultVolume); // Interrompt un fade-in éventuellement en cours
+        } else {
+            toHowl.off('load', cf.loadListener);
+            this._resumeSeek = cf.currentSeek;
+            this._startWhenLoaded(toHowl, () => this._playCurrent());
+        }
+
+        console.log(`✅ Crossfade terminé, maintenant sur "${cf.toVersion}"`);
+        cf.complete(true);
+    }
+
+    /**
+     * Annule le fondu en cours sans rien relancer (stop, autre piste…).
+     */
+    _cancelCrossfade() {
+        const cf = this._crossfade;
+        if (!cf) return;
+        this._crossfade = null;
+        cf.timers.forEach(clearTimeout);
+        if (cf.loadListener) {
+            this.versions[cf.toVersion].off('load', cf.loadListener);
+        }
+        cf.complete(false);
+    }
+
+    /**
+     * Lance currentVersion à plein volume, à la position mémorisée s'il y en a une.
+     */
+    _playCurrent() {
+        const howl = this.versions[this.currentVersion];
+        howl.volume(this.defaultVolume);
+        if (this._resumeSeek !== null) {
+            howl.seek(this._resumeSeek);
+            this._resumeSeek = null;
+        }
+        howl.play();
+    }
+
+    /**
      * Mettre en pause la lecture
      */
     pause() {
-        if (this.currentVersion && this.versions[this.currentVersion]) {
+        if (!this.currentVersion || !this.versions[this.currentVersion]) return;
+
+        if (this._crossfade) this._finishCrossfade();
+
+        // Pas encore démarrée (chargement en cours) : on annule simplement le démarrage,
+        // la reprise la lancera. Sinon, pause classique.
+        if (!this._cancelPendingStart()) {
             this.versions[this.currentVersion].pause();
-            this.isPlaying = false;
-            console.log(`⏸️ Pause "${this.name}"`);
+        }
+        this.isPlaying = false;
+        console.log(`⏸️ Pause "${this.name}"`);
+    }
+
+    /**
+     * Reprendre la lecture de la version courante (après une pause).
+     * Ne relance jamais une version déjà en lecture : Howler.play() sans id sur un
+     * son qui joue déjà crée une seconde instance superposée.
+     * @returns {boolean} false s'il n'y a rien à reprendre
+     */
+    resume() {
+        const howl = this.currentVersion && this.versions[this.currentVersion];
+        if (!howl) return false;
+
+        if (!howl.playing() && !this._pendingStart) {
+            this._startWhenLoaded(howl, () => this._playCurrent());
+        }
+        this.isPlaying = true;
+        console.log(`▶️ Reprise de "${this.name}"`);
+        return true;
+    }
+
+    /**
+     * Changer de version pendant une pause : pas de fondu (rien ne joue), la
+     * reprise lancera la nouvelle version à la même position.
+     * @param {string} toVersion
+     * @returns {boolean} true si la version courante est bien toVersion
+     */
+    switchVersionWhilePaused(toVersion) {
+        if (!this.currentVersion || this.isPlaying || !this.versions[toVersion]) return false;
+        if (toVersion === this.currentVersion) return true;
+
+        const position = this.getCurrentTime();
+        this._cancelPendingStart();
+        this.stopAllVersions();
+        this.currentVersion = toVersion;
+        this._resumeSeek = position;
+        return true;
+    }
+
+    /**
+     * Aller à une position de la version courante (termine un fondu en cours)
+     * @param {number} position - Position en secondes
+     */
+    seek(position) {
+        if (!this.currentVersion || !this.versions[this.currentVersion]) return;
+
+        if (this._crossfade) this._finishCrossfade();
+
+        if (this._pendingStart || this._resumeSeek !== null) {
+            // Pas encore démarrée : appliquée au démarrage / à la reprise
+            this._resumeSeek = position;
+        } else {
+            this.versions[this.currentVersion].seek(position);
         }
     }
 
@@ -241,32 +413,36 @@ export class Track {
      * Arrêter la lecture
      */
     stop() {
+        this._cancelCrossfade();
+        this._cancelPendingStart();
         this.stopAllVersions();
         this.isPlaying = false;
         this.currentVersion = null;
+        this._resumeSeek = null;
         console.log(`⏹️ Stop "${this.name}"`);
     }
 
     /**
-     * Arrêter toutes les versions
+     * Arrêter toutes les versions (y compris celles en pause)
      */
     stopAllVersions() {
         Object.values(this.versions).forEach(version => {
-            if (version.playing()) {
+            if (version.playing() || version.state() === 'loaded') {
                 version.stop();
             }
         });
     }
 
     /**
-     * Activer/désactiver le loop sur la version actuelle
+     * Activer/désactiver le loop sur *toutes* les versions : sinon, après un
+     * crossfade en mode boucle unique, la nouvelle version ne bouclait pas et
+     * la lecture s'arrêtait en silence (#23).
      * @param {boolean} loop - true pour boucler, false sinon
      */
     setLoop(loop) {
-        if (this.currentVersion && this.versions[this.currentVersion]) {
-            this.versions[this.currentVersion].loop(loop);
-            console.log(`🔁 Loop ${loop ? 'activé' : 'désactivé'} pour "${this.name}" - ${this.currentVersion}`);
-        }
+        this.loop = loop;
+        Object.values(this.versions).forEach(version => version.loop(loop));
+        console.log(`🔁 Loop ${loop ? 'activé' : 'désactivé'} pour "${this.name}"`);
     }
 
     /**
@@ -274,8 +450,11 @@ export class Track {
      * @returns {number} Position en secondes
      */
     getCurrentTime() {
+        if (this._resumeSeek !== null) return this._resumeSeek;
         if (this.currentVersion && this.versions[this.currentVersion]) {
-            return this.versions[this.currentVersion].seek() || 0;
+            // Howler renvoie le Howl lui-même (et non un nombre) tant qu'il n'est pas chargé
+            const seek = this.versions[this.currentVersion].seek();
+            return typeof seek === 'number' ? seek : 0;
         }
         return 0;
     }

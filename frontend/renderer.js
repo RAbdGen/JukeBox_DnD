@@ -11,6 +11,13 @@ import { getPreviewVolume } from './trackVolume.js';
 // ========================================
 
 const audioManager = new AudioManager();
+// Changements déclenchés par le moteur audio lui-même (fin de piste → suivante,
+// fin de playlist, fondu terminé/avorté) : l'UI doit suivre (#23)
+audioManager.on('trackChange', () => {
+    updateUI();
+    if (!audioManager.isPlaying()) stopProgressUpdate();
+});
+audioManager.on('versionChange', () => updateUI());
 let currentPlaylistId = 'default';
 let updateInterval = null;
 let volumeBeforeMute = null; // volume mémorisé pour le mute rapide (raccourci clavier) ; null = pas muté
@@ -687,28 +694,17 @@ function updateVersionButtons(currentTrack, currentVersion) {
 }
 
 function handleVersionChange(targetVersion) {
-    if (!audioManager.isPlaying()) {
-        audioManager.currentVersion = targetVersion;
-        const state = audioManager.getPlaylistState();
-        updateVersionButtons(state.currentTrack, targetVersion);
-        updateVersionDisplay(targetVersion);
-        return;
-    }
+    // Lecture → crossfade ; pause → bascule directe ; arrêt → simple choix (#23).
+    // L'affichage est anticipé ici puis resynchronisé via onVersionChange si le
+    // fondu est avorté ou enchaîné.
+    const wasPlaying = audioManager.isPlaying();
+    audioManager.switchVersion(targetVersion);
 
-    const state = audioManager.getState();
-    if (state.currentTrack && state.currentTrack.currentVersion !== targetVersion) {
-        audioManager.crossfade(targetVersion);
-        audioManager.currentVersion = targetVersion;
-
-        // UI updates will happen via confirmation, but let's force visual feedback
-        const btn = document.querySelector(`.version-btn[data-version="${targetVersion}"]`);
-        if (btn) {
-            document.querySelectorAll('.version-btn').forEach(b => b.classList.remove('active'));
-            btn.classList.add('active');
-        }
-        updateVersionDisplay(targetVersion);
-        showCrossfadeIndicator(2000);
-    }
+    const state = audioManager.getPlaylistState();
+    updateVersionButtons(state.currentTrack, state.currentVersion);
+    updateVersionDisplay(state.currentVersion);
+    updateVersionBadge(state.currentVersion);
+    if (wasPlaying) showCrossfadeIndicator(2000);
 }
 
 function updateModeButtons(mode) {

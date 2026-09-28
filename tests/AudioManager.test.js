@@ -15,13 +15,18 @@ vi.mock('howler', () => ({
             loop: vi.fn(),
             seek: vi.fn(() => 0),
             playing: vi.fn(() => false),
+            state: vi.fn(() => 'loaded'),
+            duration: vi.fn(() => 0),
+            fade: vi.fn(),
             once: vi.fn(),
+            off: vi.fn(),
             load: vi.fn(),
         };
     }),
 }));
 
 import { AudioManager } from '../backend/AudioManager.js';
+import { Track } from '../backend/Track.js';
 
 afterEach(() => {
     vi.useRealTimers();
@@ -42,14 +47,13 @@ describe('AudioManager volume handling', () => {
     });
 
     it('resumes a track normalised to zero at zero volume', () => {
-        const howl = { volume: vi.fn(), play: vi.fn() };
+        const howl = { volume: vi.fn(), play: vi.fn(), playing: vi.fn(() => false), state: vi.fn(() => 'loaded') };
         const manager = new AudioManager();
-        manager.currentTrack = {
-            defaultVolume: 0,
-            currentVersion: 'calm',
-            versions: { calm: howl },
-            isPlaying: false,
-        };
+        const track = new Track('t1', 'Track 1', { calm: 'a.mp3' });
+        track.defaultVolume = 0;
+        track.currentVersion = 'calm';
+        track.versions = { calm: howl };
+        manager.currentTrack = track;
 
         manager.resume();
 
@@ -184,5 +188,111 @@ describe('AudioManager crossfade handling', () => {
         manager.crossfade('combat', 0.5);
 
         expect(track.crossfade).toHaveBeenCalledWith('combat', 0.5, expect.any(Function));
+    });
+});
+
+describe('AudioManager — modes de boucle et switch de musique (#23)', () => {
+    const config = [
+        { id: 't1', title: 'Track 1', versions: { calm: 'a.mp3', combat: 'a2.mp3' } },
+        { id: 't2', title: 'Track 2', versions: { calm: 'b.mp3' } },
+    ];
+
+    it('applique la boucle unique à toutes les versions de la piste lancée', () => {
+        const manager = new AudioManager();
+        manager.loadPlaylist(config);
+        manager.setPlayMode('loopOne');
+
+        manager.playTrackAtIndex(0);
+
+        const track = manager.getTrack('t1');
+        expect(track.loop).toBe(true);
+        expect(track.versions.combat.loop).toHaveBeenCalledWith(true);
+    });
+
+    it('le bouton suivant change bien de piste en mode boucle unique', () => {
+        const manager = new AudioManager();
+        manager.loadPlaylist(config);
+        manager.setPlayMode('loopOne');
+        manager.playTrackAtIndex(0);
+
+        manager.nextTrack();
+
+        expect(manager.currentTrack.id).toBe('t2');
+        expect(manager.currentTrackIndex).toBe(1);
+    });
+
+    it('la fin naturelle d\'une piste en boucle unique ne change pas de piste', () => {
+        const manager = new AudioManager();
+        manager.loadPlaylist(config);
+        manager.setPlayMode('loopOne');
+        manager.playTrackAtIndex(0);
+
+        manager.onTrackEnd();
+
+        expect(manager.currentTrack.id).toBe('t1');
+    });
+
+    it('notifie l\'UI quand la fin de playlist arrête la lecture', () => {
+        const manager = new AudioManager();
+        const onTrackChange = vi.fn();
+        manager.on('trackChange', onTrackChange);
+        manager.loadPlaylist(config);
+        manager.playTrackAtIndex(1);
+        onTrackChange.mockClear();
+
+        manager.onTrackEnd();
+
+        expect(manager.isPlaying()).toBe(false);
+        expect(onTrackChange).toHaveBeenCalledOnce();
+    });
+
+    it('resynchronise la version affichée quand un fondu est avorté', () => {
+        const manager = new AudioManager();
+        const track = {
+            currentVersion: 'calm',
+            isPlaying: true,
+            crossfade: vi.fn((toVersion, durationPercent, onComplete) => onComplete(false)),
+            getState: vi.fn(() => ({ currentVersion: 'calm' })),
+        };
+        manager.currentTrack = track;
+
+        manager.switchVersion('combat');
+
+        expect(manager.currentVersion).toBe('calm');
+    });
+
+    it('enchaîner deux changements de version affiche la dernière cible', () => {
+        const manager = new AudioManager();
+        manager.loadPlaylist([{ id: 't1', title: 'Track 1', versions: { calm: 'a.mp3', combat: 'b.mp3', tension: 'c.mp3' } }]);
+        manager.playTrackAtIndex(0);
+
+        manager.switchVersion('combat');
+        manager.switchVersion('tension');
+
+        expect(manager.currentTrack.isCrossfading).toBe(true);
+        expect(manager.currentVersion).toBe('tension');
+    });
+
+    it('changer de version en pause : bascule sans fondu, reprise sur la nouvelle version', () => {
+        const manager = new AudioManager();
+        manager.loadPlaylist(config);
+        manager.playTrackAtIndex(0);
+        manager.pause();
+
+        manager.switchVersion('combat');
+
+        expect(manager.currentVersion).toBe('combat');
+        expect(manager.currentTrack.currentVersion).toBe('combat');
+        expect(manager.isPlaying()).toBe(false);
+    });
+
+    it('changer de version à l\'arrêt : mémorise seulement le choix', () => {
+        const manager = new AudioManager();
+        manager.loadPlaylist(config);
+
+        manager.switchVersion('combat');
+
+        expect(manager.currentVersion).toBe('combat');
+        expect(manager.currentTrack).toBeNull();
     });
 });
