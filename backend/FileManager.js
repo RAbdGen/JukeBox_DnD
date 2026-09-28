@@ -2,6 +2,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
 import { fileURLToPath } from 'url';
+import { uniquePaths } from './segments.js';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -83,12 +84,10 @@ export class FileManager {
     async deleteTrackFiles(track) {
         const deletedFiles = [];
 
-        if (track.localPaths) {
-            for (const [versionName, versionPath] of Object.entries(track.localPaths)) {
-                const deleted = await this.deleteAudioFile(versionPath);
-                if (deleted) {
-                    deletedFiles.push(versionName);
-                }
+        // Un fichier partagé par plusieurs versions découpées (#24) n'est supprimé qu'une fois
+        for (const filePath of uniquePaths(track.localPaths)) {
+            if (await this.deleteAudioFile(filePath)) {
+                deletedFiles.push(filePath);
             }
         }
 
@@ -188,13 +187,19 @@ export class FileManager {
     async exportTrackFiles(track, exportMusicDir) {
         const relativePaths = {};
 
+        const exported = new Map(); // localPath → filename, pour les fichiers partagés (#24)
         if (track.localPaths) {
             for (const [versionName, localPath] of Object.entries(track.localPaths)) {
+                if (exported.has(localPath)) {
+                    relativePaths[versionName] = exported.get(localPath);
+                    continue;
+                }
                 const filename = path.basename(localPath);
                 const destPath = path.join(exportMusicDir, filename);
                 try {
                     await fs.copyFile(localPath, destPath);
                     relativePaths[versionName] = filename;
+                    exported.set(localPath, filename);
                 } catch (error) {
                     console.warn(`⚠️ Impossible d'exporter ${localPath}:`, error.message);
                 }

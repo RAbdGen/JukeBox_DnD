@@ -16,6 +16,7 @@ let fileManager;
 let mainWindow;
 let t; // fonction de traduction (#22), liée une fois backend/i18n.js importé dans initManagers()
 let normalizeLanguage; // idem, liée dans initManagers()
+let segmentsModule; // backend/segments.js (#24), lié dans initManagers()
 
 // Les handlers 'dialog:*' ci-dessous n'attendent pas managersReadyPromise :
 // t peut donc être encore undefined si l'utilisateur clique extrêmement vite
@@ -46,12 +47,14 @@ async function initManagers() {
     const dbManagerPath = pathToFileURL(path.join(__dirname, '..', 'backend', 'DatabaseManager.js')).href;
     const fileManagerPath = pathToFileURL(path.join(__dirname, '..', 'backend', 'FileManager.js')).href;
     const i18nPath = pathToFileURL(path.join(__dirname, '..', 'backend', 'i18n.js')).href;
+    const segmentsPath = pathToFileURL(path.join(__dirname, '..', 'backend', 'segments.js')).href;
 
     const { DatabaseManager } = await import(dbManagerPath);
     const { FileManager } = await import(fileManagerPath);
     const { t: translate, normalizeLanguage: normalizeLang } = await import(i18nPath);
     t = (key, vars) => translate(currentLanguage, key, vars);
     normalizeLanguage = normalizeLang;
+    segmentsModule = await import(segmentsPath);
 
     const userDataPath = app.getPath('userData');
 
@@ -147,6 +150,16 @@ ipcMain.handle('dialog:openFiles', async () => {
     return result.filePaths;
 });
 
+// Lecture brute d'un fichier audio pour dessiner sa waveform (onglet Découpage, #24).
+// Limité aux extensions audio proposées par dialog:openFiles.
+const AUDIO_FILE_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.m4a', '.flac', '.aac'];
+ipcMain.handle('audio:readFile', async (event, filePath) => {
+    if (typeof filePath !== 'string' || !AUDIO_FILE_EXTENSIONS.includes(path.extname(filePath).toLowerCase())) {
+        throw new Error('Fichier audio non pris en charge');
+    }
+    return fs.readFile(filePath); // Buffer → Uint8Array côté renderer
+});
+
 ipcMain.handle('dialog:openFolder', async () => {
     const result = await dialog.showOpenDialog(mainWindow, {
         properties: ['openDirectory'],
@@ -223,6 +236,43 @@ ipcHandle('library:addTrack', async (event, trackData, selectedPlaylists) => {
     }
 });
 
+// Musique découpée (#24) : le fichier source est copié UNE fois, toutes les
+// versions découpées pointent dessus ; le fichier source n'est jamais modifié.
+ipcHandle('library:addSegmentedTrack', async (event, trackData, selectedPlaylists = []) => {
+    try {
+        const trackId = fileManager.generateTrackId();
+        const localPath = await fileManager.copyAudioFile(trackData.sourcePath, trackId, segmentsModule.SOURCE_VERSION_KEY);
+        const track = segmentsModule.buildSegmentedTrack({
+            trackId,
+            title: trackData.title,
+            sourcePath: trackData.sourcePath,
+            localPath,
+            segments: trackData.segments,
+            selectedPlaylists,
+        });
+
+        const saved = await dbManager.addTrackToLibrary(track);
+        await Promise.all(
+            selectedPlaylists.map(playlistId => dbManager.addTrackIdToPlaylist(playlistId, trackId))
+        );
+
+        console.log(`✂️ Piste découpée "${track.title}" ajoutée`);
+        return saved;
+    } catch (error) {
+        console.error('❌ Erreur addSegmentedTrack:', error);
+        throw error;
+    }
+});
+
+ipcHandle('library:updateSegments', async (event, trackId, segments, defaultVersion) => {
+    try {
+        return await dbManager.updateSegments(trackId, segments, defaultVersion);
+    } catch (error) {
+        console.error('❌ Erreur updateSegments:', error);
+        throw error;
+    }
+});
+
 ipcHandle('library:getLibrary', async () => {
     try {
         return await dbManager.getLibrary();
@@ -275,8 +325,10 @@ ipcHandle('library:removeVersion', async (event, trackId, versionName) => {
     try {
         const track = await dbManager.getTrack(trackId);
         const localPath = track?.localPaths?.[versionName];
+        // Fichier partagé par d'autres versions découpées (#24) : on le garde
+        const shared = segmentsModule.isPathSharedByOtherVersion(track, versionName);
         const removed = await dbManager.removeVersionFromTrack(trackId, versionName);
-        if (removed && localPath) {
+        if (removed && localPath && !shared) {
             await fileManager.deleteAudioFile(localPath);
         }
         return removed;

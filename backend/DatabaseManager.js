@@ -6,6 +6,7 @@ import {
     normalizeCrossfadeDurationPercent,
     normalizeCrossfadeDurationSeconds,
 } from './crossfadeDuration.js';
+import { applySegmentUpdate, sanitizeSegments } from './segments.js';
 
 /**
  * Durée de fondu d'une piste entrante (ajout / import) : secondes (#28) si
@@ -21,6 +22,22 @@ function normalizeIncomingCrossfade(track) {
         return { ...rest, crossfadeDurationPercent: normalizeCrossfadeDurationPercent(crossfadeDurationPercent) };
     }
     return { ...rest, crossfadeDurationSeconds: normalizeCrossfadeDurationSeconds(undefined) };
+}
+
+/**
+ * Piste entrante (ajout / import) : durée de fondu normalisée (#28) et
+ * segments nettoyés (#24) — un segment invalide est retiré, la version
+ * redevient « fichier entier ».
+ */
+function normalizeIncomingTrack(track) {
+    const normalized = normalizeIncomingCrossfade(track);
+    const segments = sanitizeSegments(normalized.segments, normalized.localPaths);
+    if (segments) {
+        normalized.segments = segments;
+    } else {
+        delete normalized.segments;
+    }
+    return normalized;
 }
 
 const __filename = fileURLToPath(import.meta.url);
@@ -151,7 +168,7 @@ export class DatabaseManager {
             };
         }
 
-        track = normalizeIncomingCrossfade(track);
+        track = normalizeIncomingTrack(track);
         this.db.data.library.push(track);
 
         this.updateMetadata();
@@ -272,6 +289,10 @@ export class DatabaseManager {
 
         if (track.originalPaths) delete track.originalPaths[versionName];
         if (track.localPaths) delete track.localPaths[versionName];
+        if (track.segments) {
+            delete track.segments[versionName];
+            if (Object.keys(track.segments).length === 0) delete track.segments;
+        }
 
         if (track.defaultVersion === versionName) {
             track.defaultVersion = Object.keys(track.localPaths || track.originalPaths || {})[0];
@@ -327,6 +348,31 @@ export class DatabaseManager {
 
         console.log(`🔀 Versions de "${track.title}" réordonnées`);
         return true;
+    }
+
+    /**
+     * Retouche d'une découpe (#24) : remplace les versions découpées, garde les
+     * versions « fichier entier ». Voir applySegmentUpdate (backend/segments.js).
+     * @param {string} trackId
+     * @param {Object} segments - { versionName: { start, end } }
+     * @param {string} [defaultVersion]
+     */
+    async updateSegments(trackId, segments, defaultVersion) {
+        const track = this.db.data.library.find(t => t.id === trackId);
+        if (!track) {
+            throw new Error(`Track ${trackId} introuvable`);
+        }
+
+        applySegmentUpdate(track, segments, defaultVersion);
+        if (track.metadata) {
+            track.metadata.modifiedAt = new Date().toISOString();
+        }
+
+        this.updateMetadata();
+        await this.db.write();
+
+        console.log(`✂️ Découpe de "${track.title}" mise à jour`);
+        return track;
     }
 
     // ============================================
@@ -575,7 +621,7 @@ export class DatabaseManager {
                 stats.tracksSkipped++;
                 continue;
             }
-            this.db.data.library.push(normalizeIncomingCrossfade(track));
+            this.db.data.library.push(normalizeIncomingTrack(track));
             existingTrackIds.add(track.id);
             stats.tracksAdded++;
         }

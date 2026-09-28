@@ -226,3 +226,63 @@ describe('DatabaseManager.reorderTrackVersions', () => {
         expect(manager.db.write).not.toHaveBeenCalled();
     });
 });
+
+describe('DatabaseManager — pistes découpées (#24)', () => {
+    function splitLibrary() {
+        return {
+            library: [{
+                id: 't1',
+                title: 'Forêt',
+                defaultVersion: 'combat',
+                originalPaths: { calm: '/o.mp3', combat: '/o.mp3', boss: '/ob.mp3' },
+                localPaths: { calm: '/s.mp3', combat: '/s.mp3', boss: '/b.mp3' },
+                segments: { calm: { start: 0, end: 90 }, combat: { start: 90, end: 180 } },
+            }],
+            playlists: [],
+            metadata: {},
+        };
+    }
+
+    it('garde les segments valides à l\'ajout et retire les invalides', async () => {
+        const manager = createDatabaseManager({ library: [], playlists: [], metadata: {} });
+
+        await manager.addTrackToLibrary({
+            id: 't2',
+            title: 'Neuve',
+            localPaths: { a: '/s', b: '/s' },
+            segments: { a: { start: 0, end: 5 }, b: { start: 9, end: 3 } },
+        });
+
+        expect(manager.db.data.library[0].segments).toEqual({ a: { start: 0, end: 5 } });
+    });
+
+    it('retire le segment avec la version', async () => {
+        const manager = createDatabaseManager(splitLibrary());
+
+        await manager.removeVersionFromTrack('t1', 'calm');
+
+        expect(manager.db.data.library[0].segments).toEqual({ combat: { start: 90, end: 180 } });
+    });
+
+    it('updateSegments applique la retouche et persiste', async () => {
+        const manager = createDatabaseManager(splitLibrary());
+
+        await manager.updateSegments('t1', { calme: { start: 0, end: 80 }, assaut: { start: 80, end: 180 } }, 'assaut');
+
+        const track = manager.db.data.library[0];
+        expect(Object.keys(track.localPaths)).toEqual(['calme', 'assaut', 'boss']);
+        expect(track.defaultVersion).toBe('assaut');
+        expect(manager.db.write).toHaveBeenCalledOnce();
+    });
+
+    it('nettoie les segments d\'une piste importée', async () => {
+        const manager = createDatabaseManager({ library: [], playlists: [], metadata: {} });
+
+        await manager.mergeImportedLibrary({
+            library: [{ id: 't3', title: 'Importée', localPaths: { a: '/s' }, segments: { a: { start: 'x', end: 2 } } }],
+            playlists: [],
+        });
+
+        expect(manager.db.data.library[0]).not.toHaveProperty('segments');
+    });
+});
