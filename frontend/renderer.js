@@ -3,6 +3,7 @@ import { AudioManager } from '../backend/AudioManager.js';
 import { DEFAULT_CROSSFADE_DURATION_SECONDS, legacyPercentToSeconds } from '../backend/crossfadeDuration.js';
 import { normalizeLanguage, t as translate } from '../backend/i18n.js';
 import { createPendingDeletionStore } from './pendingDeletions.js';
+import { createCutterView } from './cutterView.js';
 import { createPreviewController } from './previewController.js';
 import { createPreviewState } from './previewState.js';
 import { getPreviewVolume } from './trackVolume.js';
@@ -38,6 +39,7 @@ const pendingDeletions = createPendingDeletionStore();
 // État de travail des versions dans la modal d'édition (#15) : { name, isNew, filePath? }[].
 // Rien n'est persisté tant que "Sauvegarder" n'est pas cliqué (même logique que volume/tags).
 let editingVersions = [];
+let cutterView = null; // onglet Découpage (#24), créé au DOMContentLoaded
 
 // ========================================
 // i18n (#22) — langue courante persistée dans settings.language
@@ -266,6 +268,7 @@ async function loadPlaylist(id) {
             id: t.id,
             title: t.title,
             versions: t.localPaths || t.originalPaths, // Utiliser local si dispo
+            segments: t.segments, // versions découpées (#24)
             defaultVersion: t.defaultVersion || 'calm',
             defaultVolume: t.defaultVolume ?? 0.5,
             crossfadeDurationSeconds: t.crossfadeDurationSeconds,
@@ -571,6 +574,7 @@ function renderLibraryList(tracks) {
             <div class="track-actions">
                 <button class="preview-track-btn secondary-btn" data-id="${track.id}" title="${t('preview.play')}" aria-label="${t('preview.play')}" ${canPreview ? '' : 'disabled'}>▶</button>
                 <button class="add-to-playlist-btn secondary-btn" data-id="${track.id}" title="${t('library.addToPlaylist')}" ${currentPlaylistId ? '' : 'disabled'}>➕</button>
+                ${Object.keys(track.segments || {}).length > 0 ? `<button class="split-track-btn secondary-btn" data-id="${track.id}" title="${t('library.splitTrack')}">✂</button>` : ''}
                 <button class="edit-track-btn secondary-btn" data-id="${track.id}" title="${t('library.editTrack')}">✏️</button>
                 <button class="delete-track-btn danger-btn" data-id="${track.id}">🗑️</button>
             </div>
@@ -611,6 +615,16 @@ function renderLibraryList(tracks) {
             e.stopPropagation();
             openEditTrackModal(track);
         });
+
+        // Retouche de la découpe (#24)
+        const splitBtn = div.querySelector('.split-track-btn');
+        if (splitBtn) {
+            splitBtn.addEventListener('click', (e) => {
+                e.stopPropagation();
+                switchView('decoupage');
+                cutterView.openTrack(track);
+            });
+        }
 
         // Event delete — suppression optimiste avec possibilité d'annuler (toast)
         div.querySelector('.delete-track-btn').addEventListener('click', (e) => {
@@ -986,19 +1000,34 @@ async function toggleMute() {
 // DOM Ready
 // ========================================
 
+// Changement d'onglet ; notifie l'onglet Découpage (#24) qui ne peut dessiner son canvas qu'une fois visible
+function switchView(viewName) {
+    document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+    document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
+    const tab = document.querySelector(`.tab-btn[data-view="${viewName}"]`);
+    if (tab) tab.classList.add('active');
+    const view = document.getElementById(`${viewName}-view`);
+    if (view) view.classList.remove('hidden');
+    if (viewName === 'decoupage' && cutterView) cutterView.onShow();
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     init();
 
-    // --- Tab Switching ---
-    function switchView(viewName) {
-        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
-        document.querySelectorAll('.view').forEach(v => v.classList.add('hidden'));
-        const tab = document.querySelector(`.tab-btn[data-view="${viewName}"]`);
-        if (tab) tab.classList.add('active');
-        const view = document.getElementById(`${viewName}-view`);
-        if (view) view.classList.remove('hidden');
-    }
+    cutterView = createCutterView({
+        root: document.getElementById('decoupage-view'),
+        electronAPI: window.electronAPI,
+        t,
+        createHowl: options => new Howl(options),
+        stopLibraryPreview: () => previewState.cancel(),
+        onSaved: async () => {
+            await loadLibrary();
+            await loadPlaylists();
+            if (currentPlaylistId) await loadPlaylist(currentPlaylistId); // reconstruit la piste retouchée (#32)
+        },
+    });
 
+    // --- Tab Switching (switchView : niveau module) ---
     document.querySelectorAll('.tab-btn').forEach(btn => {
         btn.addEventListener('click', () => switchView(btn.dataset.view));
     });
@@ -1046,6 +1075,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (currentPlaylistId) loadPlaylist(currentPlaylistId);
             loadLibrary();
             updateUI();
+            cutterView?.refresh();
         });
     });
 

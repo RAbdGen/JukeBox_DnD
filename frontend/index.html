@@ -34,7 +34,7 @@
                 <div id="view-tabs">
                     <button class="tab-btn active" data-view="player" data-i18n="nav.player">Lecture</button>
                     <button class="tab-btn" data-view="library" data-i18n="nav.library">Grimoire</button>
-                    <button class="tab-btn" data-view="effets" data-i18n="nav.effects">Effets</button>
+                    <button class="tab-btn" data-view="decoupage" data-i18n="nav.split">Découpage</button>
                     <button class="tab-btn" data-view="reglages" data-i18n="nav.settings">Réglages</button>
                 </div>
 
@@ -152,13 +152,45 @@
                 </div>
 
                 <!-- ======================== -->
-                <!-- VUE EFFETS               -->
+                <!-- VUE DÉCOUPAGE (#24)      -->
                 <!-- ======================== -->
-                <div id="effets-view" class="view hidden">
-                    <div class="stub-view">
-                        <span class="stub-icon">⚡</span>
-                        <p class="stub-title" data-i18n="effects.title">Effets Sonores</p>
-                        <p class="stub-desc" data-i18n="effects.comingSoon">Fonctionnalité à venir...</p>
+                <div id="decoupage-view" class="view hidden">
+                    <div class="split-panel">
+                        <div class="split-header">
+                            <button type="button" id="split-choose-file" class="secondary-btn" data-i18n="split.chooseFile">📂 Choisir un fichier</button>
+                            <span id="split-file-name" class="split-file-name"></span>
+                        </div>
+                        <p id="split-message" class="split-message" aria-live="polite"></p>
+                        <div id="split-editor" class="split-editor hidden">
+                            <div class="split-wave-wrap">
+                                <canvas id="split-canvas" class="split-canvas" tabindex="0"></canvas>
+                            </div>
+                            <input type="range" id="split-scroll" class="split-scroll" min="0" max="0" step="0.1" value="0" data-i18n-title="split.scroll" title="Défilement" />
+                            <div class="split-toolbar">
+                                <button type="button" id="split-zoom-out" class="secondary-btn" data-i18n-title="split.zoomOut" title="Zoom arrière">－</button>
+                                <button type="button" id="split-zoom-in" class="secondary-btn" data-i18n-title="split.zoomIn" title="Zoom avant">＋</button>
+                                <button type="button" id="split-listen" class="secondary-btn"></button>
+                                <button type="button" id="split-cut" class="secondary-btn" data-i18n="split.cutHere">✂ Couper ici</button>
+                                <span id="split-time" class="split-time">0:00.0 / 0:00.0</span>
+                            </div>
+                            <h3 class="settings-title" data-i18n="split.segmentsTitle">Segments</h3>
+                            <div id="split-segments" class="split-segments"></div>
+                            <div class="split-footer">
+                                <div class="split-field">
+                                    <label for="split-title" data-i18n="split.titleLabel">Titre</label>
+                                    <input type="text" id="split-title" />
+                                </div>
+                                <div id="split-playlists-field" class="split-field">
+                                    <span class="split-label" data-i18n="split.playlistsLabel">Playlists</span>
+                                    <div id="split-playlists" class="split-playlists"></div>
+                                </div>
+                            </div>
+                            <p id="split-error" class="split-error hidden" role="alert"></p>
+                            <div class="split-actions">
+                                <button type="button" id="split-cancel" class="secondary-btn" data-i18n="split.cancel">Annuler</button>
+                                <button type="button" id="split-submit" class="primary-btn"></button>
+                            </div>
+                        </div>
                     </div>
                 </div>
 
