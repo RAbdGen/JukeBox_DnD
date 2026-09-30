@@ -23,6 +23,7 @@ frontend/               → Vanilla JS ESM, bundlé par Vite → dist/
 - Champs optionnels sur un track (ajout additif, pas de migration requise) : `tags: string[]` — toujours lire via `track.tags || []`
 - Durée de fondu d'un track (depuis #28) : `crossfadeDurationSeconds` (0,5–10 s, défaut 5 s, voir `backend/crossfadeDuration.js`). L'ancien `crossfadeDurationPercent` (#17) n'est plus écrit, seulement lu pour migrer : sa conversion exige la durée réelle du fichier (absente de `data.json`), donc elle se fait au premier chargement Howler de la piste (`Track._migrateLegacyCrossfade` → persistée via `updateTrack`, qui retire l'ancien champ) ou à l'ouverture de la modal d'édition (métadonnées audio). Même calcul que l'ancien fondu (% × durée, borné 0,5–5 s) : la durée entendue ne change pas
 - Versions découpées (depuis #24) : `segments: { version: { start, end } }` (secondes), toujours lu via `track.segments || {}`. Toutes les versions découpées pointent sur le même fichier (`music/<id>_source<ext>`) : ne supprimer un fichier que si `isPathSharedByOtherVersion` (`backend/segments.js`) est faux. Lecture par sprite Howler `segment` ; temps/durée/seek de `Track` relatifs au segment ; un fondu vers une version découpée démarre au début de son segment
+- Version de lancement (depuis #25) : `launchVersion` optionnel, lu via `resolveLaunchVersion()` (`backend/launchVersion.js`) : la version choisie si elle existe encore, sinon la première. Choisie en cliquant le libellé de version d'une ligne de playlist, ou un bouton de version du lecteur à l'arrêt. **`defaultVersion` n'est plus lu** : il vaut « calm » par défaut même sans version calm, le réutiliser changerait silencieusement la version de démarrage des pistes existantes
 - Un `Track` peut avoir plusieurs versions audio avec crossfade
 - `webSecurity: false` dans BrowserWindow pour les `file://` URLs
 - Dev : `make dev` ou `npm run dev` (Vite sur :3000 + electronmon)
@@ -99,7 +100,7 @@ Traiter dans cet ordre de priorité :
 
 3. **Scrollbar visible à droite** — Masquer la scrollbar native sur le conteneur principal tout en conservant le scroll fonctionnel. CSS : `scrollbar-width: none` (Firefox) + `::-webkit-scrollbar { display: none }` (Chromium/WebView2). À terme remplacé par une scrollbar fine stylée par le thème ([#30](https://github.com/RAbdGen/JukeBox_DnD/issues/30)).
 
-4. **Version 1 par défaut au changement de piste** — Quand on change de musique active, toujours remettre la version index 0 comme version courante dans `AudioManager.js`.
+4. **Version 1 par défaut au changement de piste** — Quand on change de musique active, remettre la version index 0 comme version courante dans `AudioManager.js`, **sauf version de lancement choisie** par l'utilisateur (#25, `track.launchVersion`, voir « Stack technique »).
 
 5. ~~**Transitions en % plutôt qu'en secondes**~~ — fait (#17), puis inversé par [#28](https://github.com/RAbdGen/JukeBox_DnD/issues/28) (fait) : la durée de fondu est désormais réglée en **secondes**.
 
@@ -166,10 +167,10 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#24 — Onglet « Découpage » à la place de « Effets » : découper une musique en versions](https://github.com/RAbdGen/JukeBox_DnD/issues/24) — voir « Découpe de piste en versions » plus haut
 - [#32 — Les versions modifiées d'une piste de la playlist active ne sont pas rechargées](https://github.com/RAbdGen/JukeBox_DnD/issues/32) — `loadPlaylist` reconstruit une piste dont les versions/fichiers/segments ont changé
 - [#27 — Contraste insuffisant des petits textes (tous thèmes)](https://github.com/RAbdGen/JukeBox_DnD/issues/27) — `--bone-faint` utilisé comme texte (~1.3:1), couleurs en dur illisibles sur « parchemin », tailles < 0.7rem ; test étendu à tous les textes
+- [#25 — Choisir la version de lancement en cliquant sur une version](https://github.com/RAbdGen/JukeBox_DnD/issues/25) — `launchVersion` par piste, libellé cliquable dans la liste + boutons du lecteur à l'arrêt
 
 **À faire (`Todo`) :**
 - [#18 — Personnalisation : synchronisation BPM entre versions (mode avancé)](https://github.com/RAbdGen/JukeBox_DnD/issues/18) — spec complète dans l'issue : BPM + décalage du premier temps par version, `Z2 = (Z1 − Y1) × (X1 / X2) + Y2`, comportement actuel conservé si rien n'est renseigné
-- [#25 — Choisir la version de lancement en cliquant sur une version](https://github.com/RAbdGen/JukeBox_DnD/issues/25)
 - [#26 — Raccourci clavier personnalisable pour changer de version](https://github.com/RAbdGen/JukeBox_DnD/issues/26)
 - [#30 — Scrollbar intégrée au thème](https://github.com/RAbdGen/JukeBox_DnD/issues/30)
 

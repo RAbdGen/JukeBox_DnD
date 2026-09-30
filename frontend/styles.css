@@ -2697,3 +2697,20 @@ footer {
     color: var(--danger-text);
     margin: 0;
 }
+
+/* ── Version de lancement cliquable dans la liste (#25) ── */
+/* Seulement ce qui distingue le bouton : police, taille et couleur viennent de
+   .playlist-track-version (une propriété raccourcie « font » ici les écraserait) */
+button.playlist-track-version {
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-decoration: underline dotted;
+    text-underline-offset: 3px;
+}
+
+button.playlist-track-version:hover,
+button.playlist-track-version:focus-visible {
+    color: var(--gold-2);
+}

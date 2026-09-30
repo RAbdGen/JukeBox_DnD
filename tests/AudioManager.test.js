@@ -297,14 +297,17 @@ describe('AudioManager — modes de boucle et switch de musique (#23)', () => {
         expect(manager.isPlaying()).toBe(false);
     });
 
-    it('changer de version à l\'arrêt : mémorise seulement le choix', () => {
+    it('changer de version à l\'arrêt : devient la version de lancement de la piste sélectionnée (#25)', () => {
         const manager = new AudioManager();
+        const onLaunch = vi.fn();
+        manager.on('launchVersionChange', onLaunch);
         manager.loadPlaylist(config);
 
         manager.switchVersion('combat');
 
-        expect(manager.currentVersion).toBe('combat');
         expect(manager.currentTrack).toBeNull();
+        expect(manager.getPlaylistState().launchVersion).toBe('combat');
+        expect(onLaunch).toHaveBeenCalledWith('t1', 'combat');
     });
 });
 
@@ -361,5 +364,62 @@ describe('AudioManager — versions modifiées dans la playlist active (#32)', (
         expect(manager.getTrack('t1')).not.toBe(oldTrack);
         expect(manager.currentTrackIndex).toBe(1);
         expect(onTrackChange).toHaveBeenCalled();
+    });
+});
+
+describe('AudioManager — version de lancement (#25)', () => {
+    const config = [
+        { id: 't1', title: 'Track 1', versions: { calm: 'a.mp3', combat: 'b.mp3' }, launchVersion: 'combat' },
+        { id: 't2', title: 'Track 2', versions: { calm: 'c.mp3', tension: 'd.mp3' }, launchVersion: 'supprimée' },
+    ];
+
+    it('démarre une piste sur sa version de lancement', () => {
+        const manager = new AudioManager();
+        manager.loadPlaylist(config);
+
+        manager.playTrackAtIndex(0);
+
+        expect(manager.currentTrack.currentVersion).toBe('combat');
+    });
+
+    it('version de lancement disparue : démarre sur la première version', () => {
+        const manager = new AudioManager();
+        manager.loadPlaylist(config);
+
+        manager.playTrackAtIndex(1);
+
+        expect(manager.currentTrack.currentVersion).toBe('calm');
+    });
+
+    it('expose la piste sélectionnée et sa version de lancement effective, même avant toute lecture', () => {
+        const manager = new AudioManager();
+        manager.loadPlaylist(config);
+
+        const state = manager.getPlaylistState();
+
+        expect(state.selectedTrack.id).toBe('t1');
+        expect(state.launchVersion).toBe('combat');
+        expect(manager.getLaunchVersion('t2')).toBe('calm');
+    });
+
+    it('setLaunchVersion change le prochain lancement sans toucher la lecture en cours', () => {
+        const manager = new AudioManager();
+        manager.loadPlaylist(config);
+        manager.playTrackAtIndex(0);
+
+        manager.setLaunchVersion('t1', 'calm');
+
+        expect(manager.currentTrack.currentVersion).toBe('combat');
+        expect(manager.getLaunchVersion('t1')).toBe('calm');
+    });
+
+    it('conserve la version de lancement au rechargement de la playlist', () => {
+        const manager = new AudioManager();
+        manager.loadPlaylist(config);
+        manager.setLaunchVersion('t2', 'tension');
+
+        manager.loadPlaylist(config.map(t => (t.id === 't2' ? { ...t, launchVersion: 'tension' } : t)));
+
+        expect(manager.getLaunchVersion('t2')).toBe('tension');
     });
 });

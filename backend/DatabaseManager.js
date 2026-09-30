@@ -199,6 +199,12 @@ export class DatabaseManager {
             );
             delete track.crossfadeDurationPercent; // Ancien format migré (#28)
         }
+        // Version de lancement (#25) : uniquement une version existante
+        if (Object.hasOwn(normalizedUpdates, 'launchVersion')
+            && !Object.hasOwn(track.localPaths || track.originalPaths || {}, normalizedUpdates.launchVersion)) {
+            delete normalizedUpdates.launchVersion;
+            delete track.launchVersion;
+        }
         Object.assign(track, normalizedUpdates);
 
         // Mettre à jour les métadonnées
@@ -300,6 +306,7 @@ export class DatabaseManager {
             delete track.segments[versionName];
             if (Object.keys(track.segments).length === 0) delete track.segments;
         }
+        if (track.launchVersion === versionName) delete track.launchVersion; // #25 : retour à la 1re version
 
         if (track.defaultVersion === versionName) {
             track.defaultVersion = Object.keys(track.localPaths || track.originalPaths || {})[0];
@@ -371,6 +378,9 @@ export class DatabaseManager {
         }
 
         applySegmentUpdate(track, segments, defaultVersion);
+        if (track.launchVersion && !Object.hasOwn(track.localPaths, track.launchVersion)) {
+            delete track.launchVersion; // version de lancement renommée ou retirée (#25)
+        }
         if (track.metadata) {
             track.metadata.modifiedAt = new Date().toISOString();
         }

@@ -1,5 +1,6 @@
 import { Howler } from 'howler';
 import { Track } from './Track.js';
+import { resolveLaunchVersion } from './launchVersion.js';
 import { trackSignature } from './segments.js';
 import {
     normalizeCrossfadeDurationPercent,
@@ -20,6 +21,7 @@ export class AudioManager {
             onVersionChange: null,
             onTimeUpdate: null,
             onCrossfadeDurationMigrated: null, // (trackId, seconds) : ancien réglage en % converti (#28)
+            onLaunchVersionChange: null, // (trackId, version) : version de lancement choisie (#25)
         };
 
         // Playlist
@@ -169,7 +171,36 @@ export class AudioManager {
             return;
         }
 
-        this.currentVersion = toVersion;
+        // À l'arrêt : la version choisie devient la version de lancement de la
+        // piste sélectionnée (#25), enregistrée par l'appelant via le callback
+        const selected = this.playlist[this.currentTrackIndex];
+        if (selected && this.setLaunchVersion(selected.id, toVersion) && this.callbacks.onLaunchVersionChange) {
+            this.callbacks.onLaunchVersionChange(selected.id, toVersion);
+        }
+    }
+
+    /**
+     * Version de lancement effective d'une piste de la playlist (#25)
+     * @param {string} trackId
+     * @returns {string|null}
+     */
+    getLaunchVersion(trackId) {
+        const track = this.tracks.get(trackId);
+        const entry = this.playlist.find(t => t.id === trackId);
+        if (!track) return null;
+        return resolveLaunchVersion(Object.keys(track.versionPaths), entry?.launchVersion);
+    }
+
+    /**
+     * Choisit la version de lancement d'une piste : ne touche pas la lecture en
+     * cours, seulement ses prochains lancements (#25)
+     * @returns {boolean} false si la version n'existe pas sur la piste
+     */
+    setLaunchVersion(trackId, version) {
+        const track = this.tracks.get(trackId);
+        if (!track || !Object.hasOwn(track.versionPaths, version)) return false;
+        this.playlist.filter(t => t.id === trackId).forEach(entry => { entry.launchVersion = version; });
+        return true;
     }
 
     /**
@@ -431,7 +462,7 @@ export class AudioManager {
         this.playlist = [];
 
         playlistConfig.forEach((trackConfig) => {
-            const { id, title, versions, segments, defaultVersion, defaultVolume, crossfadeDurationSeconds, crossfadeDurationPercent } = trackConfig;
+            const { id, title, versions, segments, launchVersion, defaultVolume, crossfadeDurationSeconds, crossfadeDurationPercent } = trackConfig;
 
             // Ne recharger (recréer les Howl) que si la piste n'est pas déjà chargée
             if (!this.tracks.has(id)) {
@@ -441,7 +472,7 @@ export class AudioManager {
             }
 
             // Ajouter à la playlist
-            this.playlist.push({ id, title, defaultVersion: defaultVersion || 'calm' });
+            this.playlist.push({ id, title, launchVersion });
 
             // Configurer le callback onEnd pour cette piste
             const track = this.tracks.get(id);
@@ -488,10 +519,10 @@ export class AudioManager {
             this.currentTrack.stop();
         }
 
-        // Réinitialiser à la première version disponible de la nouvelle piste
-        const availableVersions = Object.keys(track.versionPaths);
-        if (availableVersions.length > 0) {
-            this.currentVersion = availableVersions[0];
+        // Version de lancement choisie (#25), sinon la première version disponible
+        const launchVersion = resolveLaunchVersion(Object.keys(track.versionPaths), trackConfig.launchVersion);
+        if (launchVersion) {
+            this.currentVersion = launchVersion;
         }
 
         // Mode de boucle appliqué à toutes les versions, pas seulement à celle
@@ -595,6 +626,12 @@ export class AudioManager {
         this.nextTrack();
     }
 
+    _selectedTrackState() {
+        const entry = this.playlist[this.currentTrackIndex];
+        const track = entry && this.tracks.get(entry.id);
+        return track ? track.getState() : null;
+    }
+
     /**
      * Obtenir l'état complet de la playlist
      * @returns {Object}
@@ -607,6 +644,11 @@ export class AudioManager {
             currentVersion: this.currentVersion,
             currentTrack: this.currentTrack ? this.currentTrack.getState() : null,
             totalTracks: this.playlist.length,
+            // Piste sélectionnée (même avant toute lecture) et sa version de lancement (#25)
+            selectedTrack: this._selectedTrackState(),
+            launchVersion: this.playlist[this.currentTrackIndex]
+                ? this.getLaunchVersion(this.playlist[this.currentTrackIndex].id)
+                : null,
         };
     }
 }

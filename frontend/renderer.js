@@ -20,6 +20,8 @@ audioManager.on('trackChange', () => {
     if (!audioManager.isPlaying()) stopProgressUpdate();
 });
 audioManager.on('versionChange', () => updateUI());
+// Version de lancement choisie depuis les boutons du lecteur à l'arrêt (#25)
+audioManager.on('launchVersionChange', (trackId, version) => persistLaunchVersion(trackId, version));
 // Ancien réglage de fondu en % converti en secondes dès que la durée du fichier
 // est connue (#28) : on persiste pour que la migration n'ait lieu qu'une fois
 audioManager.on('crossfadeDurationMigrated', (trackId, seconds) => {
@@ -269,7 +271,7 @@ async function loadPlaylist(id) {
             title: t.title,
             versions: t.localPaths || t.originalPaths, // Utiliser local si dispo
             segments: t.segments, // versions découpées (#24)
-            defaultVersion: t.defaultVersion || 'calm',
+            launchVersion: t.launchVersion, // version de lancement choisie (#25)
             defaultVolume: t.defaultVolume ?? 0.5,
             crossfadeDurationSeconds: t.crossfadeDurationSeconds,
             crossfadeDurationPercent: t.crossfadeDurationPercent, // ancien format, migré au chargement (#28)
@@ -772,6 +774,12 @@ function handleVersionChange(targetVersion) {
     const wasPlaying = audioManager.isPlaying();
     audioManager.switchVersion(targetVersion);
 
+    // Pause / arrêt : affichage complet, dont la version de lancement dans la liste (#25)
+    if (!wasPlaying) {
+        updateUI();
+        return;
+    }
+
     const state = audioManager.getPlaylistState();
     updateVersionButtons(state.currentTrack, state.currentVersion);
     updateVersionDisplay(state.currentVersion);
@@ -865,11 +873,8 @@ function renderPlaylistUI() {
         const div = document.createElement('div');
         div.className = `playlist-track ${index === state.currentTrackIndex ? 'active' : ''}`;
 
-        const versionDisplayLabel = track.defaultVersion
-            ? (KNOWN_VERSION_KEYS[track.defaultVersion]
-                ? versionLabel(track.defaultVersion)
-                : track.defaultVersion.charAt(0).toUpperCase() + track.defaultVersion.slice(1))
-            : '';
+        const launchVersion = audioManager.getLaunchVersion(track.id);
+        const versionDisplayLabel = launchVersion ? displayVersionName(launchVersion) : '';
 
         const numSpan = document.createElement('span');
         numSpan.className = 'playlist-track-number';
@@ -879,9 +884,22 @@ function renderPlaylistUI() {
         titleSpan.className = 'playlist-track-title';
         titleSpan.textContent = track.title;
 
-        const versionSpan = document.createElement('span');
+        // Version de lancement (#25) : un clic passe à la version suivante et l'enregistre
+        const versionSpan = document.createElement('button');
+        versionSpan.type = 'button';
         versionSpan.className = 'playlist-track-version';
         versionSpan.textContent = versionDisplayLabel;
+        versionSpan.title = t('tracklist.launchVersion', { version: versionDisplayLabel });
+        versionSpan.addEventListener('click', (e) => {
+            e.stopPropagation(); // ne pas lancer la piste
+            const names = audioManager.getTrack(track.id)?.getState().availableVersions || [];
+            if (names.length < 2) return;
+            const next = names[(names.indexOf(launchVersion) + 1) % names.length];
+            if (audioManager.setLaunchVersion(track.id, next)) {
+                persistLaunchVersion(track.id, next);
+                updateUI();
+            }
+        });
 
         const durationSpan = document.createElement('span');
         durationSpan.className = 'playlist-track-duration';
@@ -935,8 +953,26 @@ function renderPlaylistUI() {
     });
 }
 
+/** Libellé affiché d'une version (clé traduite pour calm/combat/tension) */
+function displayVersionName(version) {
+    return KNOWN_VERSION_KEYS[version] ? versionLabel(version) : version.charAt(0).toUpperCase() + version.slice(1);
+}
+
+/** Enregistre la version de lancement d'une piste (#25) */
+function persistLaunchVersion(trackId, version) {
+    const cached = libraryCache.find(track => track.id === trackId);
+    if (cached) cached.launchVersion = version;
+    window.electronAPI.updateTrack(trackId, { launchVersion: version })
+        .catch(err => console.error('❌ Version de lancement non enregistrée:', err));
+}
+
 function updateUI() {
     const state = audioManager.getPlaylistState();
+    // À l'arrêt (ou avant toute lecture), le lecteur montre la piste sélectionnée
+    // et sa version de lancement : cliquer une version la choisit (#25)
+    const idle = !state.currentTrack || !state.currentTrack.currentVersion;
+    const shownTrack = idle ? state.selectedTrack : state.currentTrack;
+    const shownVersion = idle ? state.launchVersion : state.currentVersion;
 
     // Titre piste
     const title = state.currentTrack?.name || t('player.noTrack');
@@ -944,9 +980,9 @@ function updateUI() {
     document.querySelector('.track-number').textContent = t('player.trackCounter', { current: state.currentTrackIndex + 1, total: state.totalTracks });
 
     // Versions
-    updateVersionButtons(state.currentTrack, state.currentVersion);
-    updateVersionDisplay(state.currentVersion);
-    updateVersionBadge(state.currentVersion);
+    updateVersionButtons(shownTrack, shownVersion);
+    updateVersionDisplay(shownVersion);
+    updateVersionBadge(shownVersion);
     updatePlayBtn();
 
     // Playlist

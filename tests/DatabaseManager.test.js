@@ -320,3 +320,51 @@ describe('DatabaseManager — revue finale #24', () => {
         expect(manager.db.data.library[0]).not.toHaveProperty('segments');
     });
 });
+
+describe('DatabaseManager — version de lancement (#25)', () => {
+    const library = () => ({
+        library: [{ id: 't1', title: 'x', launchVersion: 'combat', localPaths: { calm: '/a', combat: '/b' }, originalPaths: { calm: '/a', combat: '/b' } }],
+        playlists: [],
+        metadata: {},
+    });
+
+    it('retirer la version de lancement l\'efface', async () => {
+        const manager = createDatabaseManager(library());
+
+        await manager.removeVersionFromTrack('t1', 'combat');
+
+        expect(manager.db.data.library[0]).not.toHaveProperty('launchVersion');
+    });
+
+    it('refuse une version de lancement qui n\'existe pas', async () => {
+        const manager = createDatabaseManager(library());
+
+        await manager.updateTrack('t1', { launchVersion: 'boss' });
+
+        expect(manager.db.data.library[0]).not.toHaveProperty('launchVersion');
+    });
+
+    it('enregistre une version de lancement existante', async () => {
+        const manager = createDatabaseManager(library());
+
+        await manager.updateTrack('t1', { launchVersion: 'calm' });
+
+        expect(manager.db.data.library[0].launchVersion).toBe('calm');
+    });
+
+    it('une retouche de découpe qui fait disparaître la version de lancement l\'efface', async () => {
+        const manager = createDatabaseManager({
+            library: [{
+                id: 't1', title: 'x', launchVersion: 'combat',
+                localPaths: { calm: '/s', combat: '/s' },
+                segments: { calm: { start: 0, end: 5 }, combat: { start: 5, end: 9 } },
+            }],
+            playlists: [],
+            metadata: {},
+        });
+
+        await manager.updateSegments('t1', { calme: { start: 0, end: 5 }, assaut: { start: 5, end: 9 } });
+
+        expect(manager.db.data.library[0]).not.toHaveProperty('launchVersion');
+    });
+});
