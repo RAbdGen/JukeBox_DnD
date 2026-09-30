@@ -26,6 +26,20 @@ const CUT_HIT_PX = 6;
 const NUDGE_SECONDS = 0.1;
 const ZOOM_STEP = 1.5;
 
+/**
+ * Seul le dernier chargement lancé peut appliquer son résultat : choisir un
+ * fichier (ou rouvrir une piste) pendant qu'un autre est encore en cours de
+ * décodage ne doit jamais mélanger les deux états (revue finale #24).
+ */
+export function createLatestOnly() {
+    let current = 0;
+    return {
+        start: () => ++current,
+        isCurrent: token => token === current,
+        cancel: () => { current++; },
+    };
+}
+
 const toFileUrl = path => (path.startsWith('http') || path.startsWith('file://') ? path : `file://${path}`);
 
 /**
@@ -40,6 +54,7 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
     let state = emptyState();
     let audition = null; // { howl, timer }
     let drag = null; // { index } pendant le déplacement d'un point de coupe
+    const loads = createLatestOnly();
 
     function emptyState() {
         return {
@@ -54,6 +69,7 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
             selectedCut: null,
             editingTrack: null, // piste en retouche, sinon création
             reservedNames: [], // versions « fichier entier » de la piste en retouche
+            loading: false,
             message: { key: 'split.noFile' },
             error: null,
         };
@@ -66,7 +82,7 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
         $('split-file-name').textContent = state.fileName;
         $('split-message').textContent = state.message ? t(state.message.key, state.message.vars) : '';
         $('split-editor').classList.toggle('hidden', !loaded);
-        $('split-choose-file').disabled = Boolean(state.editingTrack);
+        $('split-choose-file').disabled = Boolean(state.editingTrack) || state.loading;
         $('split-submit').textContent = t(state.editingTrack ? 'split.save' : 'split.add');
         $('split-title').readOnly = Boolean(state.editingTrack);
         $('split-playlists-field').classList.toggle('hidden', Boolean(state.editingTrack));
@@ -202,13 +218,16 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
 
     async function loadSource(sourcePath, track) {
         stopAudition();
-        state = { ...emptyState(), message: { key: 'split.loading' }, fileName: sourcePath.split(/[\\/]/).pop() };
+        const load = loads.start();
+        state = { ...emptyState(), loading: true, message: { key: 'split.loading' }, fileName: sourcePath.split(/[\\/]/).pop() };
         refresh();
 
         try {
             const bytes = await electronAPI.readAudioFile(sourcePath);
+            if (!loads.isCurrent(load)) return;
             const arrayBuffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
             const { duration, peaks } = await decodeForWaveform(arrayBuffer);
+            if (!loads.isCurrent(load)) return; // un autre chargement a pris la main
 
             state.sourcePath = sourcePath;
             state.duration = duration;
@@ -226,8 +245,11 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
             } else {
                 $('split-title').value = state.fileName.replace(/\.[^.]+$/, '');
                 await renderPlaylists();
+                if (!loads.isCurrent(load)) return;
             }
+            state.loading = false;
         } catch (error) {
+            if (!loads.isCurrent(load)) return;
             console.error('❌ Découpage : lecture du fichier impossible', error);
             state = { ...emptyState(), message: { key: 'split.loadError' } };
         }
@@ -391,6 +413,7 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
     });
 
     $('split-cancel').addEventListener('click', () => {
+        loads.cancel();
         stopAudition();
         state = emptyState();
         refresh();
