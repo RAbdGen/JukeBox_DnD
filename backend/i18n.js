@@ -101,6 +101,7 @@ const fr = {
     'split.errorTooShort': 'Un segment nommé doit durer au moins 0,5 s.',
     'split.errorCutTooClose': 'Trop près d\'un autre point de coupe (0,5 s minimum).',
     'split.errorSave': 'Erreur lors de l\'enregistrement.',
+    'split.confirmDiscard': 'La découpe en cours n\'est pas enregistrée. L\'abandonner ?',
 
     'settings.appearanceTitle': 'Apparence',
     'settings.themeLabel': "Thème de l'interface",
@@ -294,6 +295,7 @@ const en = {
     'split.errorTooShort': 'A named segment must last at least 0.5 s.',
     'split.errorCutTooClose': 'Too close to another cut (0.5 s minimum).',
     'split.errorSave': 'Error while saving.',
+    'split.confirmDiscard': 'The current split is not saved. Discard it?',
 
     'settings.appearanceTitle': 'Appearance',
     'settings.themeLabel': 'Interface theme',

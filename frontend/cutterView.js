@@ -70,6 +70,7 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
             editingTrack: null, // piste en retouche, sinon création
             reservedNames: [], // versions « fichier entier » de la piste en retouche
             loading: false,
+            dirty: false, // découpe modifiée et non enregistrée (#33)
             message: { key: 'split.noFile' },
             error: null,
         };
@@ -174,7 +175,10 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
             end.disabled = i === ranges.length - 1; // la fin du dernier segment = fin du fichier
             end.addEventListener('change', () => {
                 const value = parseTime(end.value);
-                if (value !== null) state.cuts = moveCut(state.cuts, i, value, state.duration);
+                if (value !== null) {
+                    state.cuts = moveCut(state.cuts, i, value, state.duration);
+                    state.dirty = true;
+                }
                 refresh(); // valeur invalide → revient à la précédente
             });
 
@@ -185,6 +189,7 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
             name.value = state.names[i] || ''; // propriété value : jamais d'innerHTML pour du texte utilisateur
             name.addEventListener('input', () => {
                 state.names[i] = name.value;
+                state.dirty = true;
             });
 
             const play = document.createElement('button');
@@ -205,6 +210,7 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
                 remove.addEventListener('click', () => {
                     state.names = mergeNames(state.names, i - 1);
                     state.cuts = removeCut(state.cuts, i - 1);
+                    state.dirty = true;
                     state.selectedCut = null;
                     refresh();
                 });
@@ -341,6 +347,7 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
     window.addEventListener('mousemove', event => {
         if (!drag) return;
         state.cuts = moveCut(state.cuts, drag.index, eventTime(event), state.duration);
+        state.dirty = true;
         renderSegments();
         draw();
     });
@@ -369,6 +376,7 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
         event.preventDefault();
         const delta = event.key === 'ArrowLeft' ? -NUDGE_SECONDS : NUDGE_SECONDS;
         state.cuts = moveCut(state.cuts, state.selectedCut, state.cuts[state.selectedCut] + delta, state.duration);
+        state.dirty = true;
         refresh();
     });
 
@@ -403,11 +411,16 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
             state.cuts = result.cuts;
             state.selectedCut = result.index;
             state.error = null;
+            state.dirty = true;
         }
         refresh();
     });
 
+    /** Une découpe non enregistrée ne se perd jamais sans confirmation (#33) */
+    const canDiscard = () => !state.dirty || window.confirm(t('split.confirmDiscard'));
+
     $('split-choose-file').addEventListener('click', async () => {
+        if (!canDiscard()) return;
         const [sourcePath] = await electronAPI.openFiles();
         if (sourcePath) await loadSource(sourcePath, null);
     });
@@ -457,6 +470,7 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
     return {
         /** Retouche d'une piste découpée (bouton ✂ de la bibliothèque) */
         openTrack(track) {
+            if (!canDiscard()) return;
             const segmentedName = Object.keys(track.segments || {})[0];
             const sourcePath = segmentedName && track.localPaths?.[segmentedName];
             if (sourcePath) loadSource(sourcePath, track);
@@ -465,5 +479,7 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
         onShow: draw,
         /** Changement de langue */
         refresh,
+        /** Onglet quitté ou lecture principale lancée : l'écoute ne doit pas continuer (#33) */
+        stopListening: stopAudition,
     };
 }

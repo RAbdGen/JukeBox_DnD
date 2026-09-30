@@ -22,6 +22,7 @@ const audioManager = new AudioManager();
 // Changements déclenchés par le moteur audio lui-même (fin de piste → suivante,
 // fin de playlist, fondu terminé/avorté) : l'UI doit suivre (#23)
 audioManager.on('trackChange', () => {
+    cutterView?.stopListening(); // ne jamais jouer par-dessus le lecteur principal (#33)
     updateUI();
     if (!audioManager.isPlaying()) stopProgressUpdate();
 });
@@ -1223,6 +1224,7 @@ function switchView(viewName) {
     const view = document.getElementById(`${viewName}-view`);
     if (view) view.classList.remove('hidden');
     if (viewName === 'decoupage' && cutterView) cutterView.onShow();
+    else cutterView?.stopListening(); // l'écoute du Découpage ne suit pas l'utilisateur hors de l'onglet (#33)
 }
 
 document.addEventListener('DOMContentLoaded', () => {
@@ -1346,6 +1348,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // --- Player Controls ---
     document.getElementById('play-btn').addEventListener('click', () => {
+        cutterView?.stopListening(); // ne jamais jouer par-dessus le lecteur principal (#33)
         if (!audioManager.currentTrack) {
             audioManager.playTrackAtIndex(0);
             startProgressUpdate();

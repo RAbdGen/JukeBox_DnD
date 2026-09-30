@@ -172,9 +172,12 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#26 — Raccourci clavier personnalisable pour changer de version](https://github.com/RAbdGen/JukeBox_DnD/issues/26) — version suivante + versions 1 à 3, globaux, réglables dans Réglages
 - [#30 — Scrollbar intégrée au thème](https://github.com/RAbdGen/JukeBox_DnD/issues/30) — style global via variables du thème, `scrollbar-gutter: stable`
 - [#18 — Personnalisation : synchronisation BPM entre versions (mode avancé)](https://github.com/RAbdGen/JukeBox_DnD/issues/18) — `tempo` par version, reprise calée sur les temps, section « Avancé » de la modal d'édition
+- [#33 — Découpage : l'écoute continue hors de l'onglet, et ✂ écrase une découpe non enregistrée](https://github.com/RAbdGen/JukeBox_DnD/issues/33)
+- [#34 — Pistes découpées : bornes non revalidées côté base, fichier orphelin, import qui recopie le fichier partagé](https://github.com/RAbdGen/JukeBox_DnD/issues/34)
+- [#35 — Lecture : petits écarts de position (fondu échoué, seek ≥ 1000 s, fin de segment au-delà du fichier)](https://github.com/RAbdGen/JukeBox_DnD/issues/35)
 
 **À faire (`Todo`) :**
-- (aucune)
+- [#36 — Mesurer la mémoire de l'onglet Découpage avec un fichier d'1 h (machine 8 Go)](https://github.com/RAbdGen/JukeBox_DnD/issues/36) — mesure manuelle sur la machine de l'ami avant la prochaine release
 
 ### Conventions de code
 - ESM partout sauf les fichiers `.cjs` d'Electron (ne pas toucher au module system sans raison)
