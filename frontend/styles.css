@@ -2714,3 +2714,35 @@ button.playlist-track-version:hover,
 button.playlist-track-version:focus-visible {
     color: var(--gold-2);
 }
+
+/* ── Raccourcis de version (#26) ── */
+.shortcut-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.6rem;
+    max-width: 520px;
+}
+
+.shortcut-row {
+    display: grid;
+    grid-template-columns: 1fr minmax(0, 220px);
+    align-items: center;
+    gap: 0.4rem 1rem;
+    color: var(--bone);
+}
+
+.shortcut-row .secondary-btn {
+    font-variant-numeric: tabular-nums;
+}
+
+.shortcut-row .secondary-btn.recording {
+    color: var(--gold-2);
+    border-color: var(--gold-2);
+}
+
+.shortcut-status {
+    grid-column: 1 / -1;
+    margin: 0;
+    color: var(--danger-text);
+    font-size: 0.8rem;
+}

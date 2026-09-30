@@ -17,6 +17,9 @@ let mainWindow;
 let t; // fonction de traduction (#22), liée une fois backend/i18n.js importé dans initManagers()
 let normalizeLanguage; // idem, liée dans initManagers()
 let segmentsModule; // backend/segments.js (#24), lié dans initManagers()
+let shortcutsModule; // backend/shortcuts.js (#26), lié dans initManagers()
+let versionShortcutStatus = {}; // { action: 'ok'|'off'|'invalid'|'conflict'|'unavailable' }
+let registeredVersionShortcuts = []; // combinaisons de version actuellement enregistrées
 
 // Les handlers 'dialog:*' ci-dessous n'attendent pas managersReadyPromise :
 // t peut donc être encore undefined si l'utilisateur clique extrêmement vite
@@ -48,6 +51,7 @@ async function initManagers() {
     const fileManagerPath = pathToFileURL(path.join(__dirname, '..', 'backend', 'FileManager.js')).href;
     const i18nPath = pathToFileURL(path.join(__dirname, '..', 'backend', 'i18n.js')).href;
     const segmentsPath = pathToFileURL(path.join(__dirname, '..', 'backend', 'segments.js')).href;
+    const shortcutsPath = pathToFileURL(path.join(__dirname, '..', 'backend', 'shortcuts.js')).href;
 
     const { DatabaseManager } = await import(dbManagerPath);
     const { FileManager } = await import(fileManagerPath);
@@ -55,6 +59,7 @@ async function initManagers() {
     t = (key, vars) => translate(currentLanguage, key, vars);
     normalizeLanguage = normalizeLang;
     segmentsModule = await import(segmentsPath);
+    shortcutsModule = await import(shortcutsPath);
 
     const userDataPath = app.getPath('userData');
 
@@ -66,6 +71,8 @@ async function initManagers() {
 
     const settings = await dbManager.getSettings();
     currentLanguage = normalizeLanguage(settings?.language);
+    await app.whenReady(); // globalShortcut n'est utilisable qu'une fois l'app prête
+    registerVersionShortcuts(shortcutsModule.resolveShortcuts(settings?.shortcuts));
 
     console.log('✅ Database et FileManager initialisés');
     managersReadyResolve();
@@ -129,6 +136,39 @@ function registerGlobalShortcuts() {
             console.warn(`⚠️ Impossible d'enregistrer le raccourci "${accelerator}" (déjà pris par une autre application ?)`);
         }
     }
+}
+
+/**
+ * Raccourcis globaux de changement de version (#26), personnalisables : on
+ * désenregistre les précédents puis on enregistre ceux de `config`. Un
+ * raccourci invalide, en conflit ou déjà pris par une autre application
+ * n'est pas enregistré ; son statut est renvoyé aux Réglages.
+ */
+function registerVersionShortcuts(config) {
+    registeredVersionShortcuts.forEach(accelerator => globalShortcut.unregister(accelerator));
+    registeredVersionShortcuts = [];
+
+    const issues = shortcutsModule.findShortcutIssues(config);
+    const actionMessages = { versionNext: 'version-next', version1: 'version-1', version2: 'version-2', version3: 'version-3' };
+    versionShortcutStatus = {};
+
+    for (const action of shortcutsModule.SHORTCUT_ACTIONS) {
+        const accelerator = config[action];
+        if (!accelerator) {
+            versionShortcutStatus[action] = 'off';
+        } else if (issues[action]) {
+            versionShortcutStatus[action] = issues[action];
+        } else if (globalShortcut.register(accelerator, () => {
+            if (mainWindow) mainWindow.webContents.send('shortcut:trigger', actionMessages[action]);
+        })) {
+            registeredVersionShortcuts.push(accelerator);
+            versionShortcutStatus[action] = 'ok';
+        } else {
+            console.warn(`⚠️ Raccourci "${accelerator}" indisponible (déjà pris par une autre application ?)`);
+            versionShortcutStatus[action] = 'unavailable';
+        }
+    }
+    return versionShortcutStatus;
 }
 
 // ========================================
@@ -545,6 +585,35 @@ ipcHandle('settings:get', async () => {
         console.error('❌ Erreur getSettings:', error);
         return null;
     }
+});
+
+// Raccourcis de version (#26) : lecture et modification depuis les Réglages
+ipcHandle('shortcuts:get', async () => {
+    const settings = await dbManager.getSettings();
+    return { shortcuts: shortcutsModule.resolveShortcuts(settings?.shortcuts), status: versionShortcutStatus };
+});
+
+// Pendant la capture d'une combinaison dans les Réglages, les raccourcis de
+// version enregistrés intercepteraient la frappe au niveau du système : on les
+// suspend, puis on les rétablit (annulation) ou on enregistre les nouveaux.
+ipcHandle('shortcuts:suspend', async () => {
+    registeredVersionShortcuts.forEach(accelerator => globalShortcut.unregister(accelerator));
+    registeredVersionShortcuts = [];
+});
+
+ipcHandle('shortcuts:resume', async () => {
+    const settings = await dbManager.getSettings();
+    return { shortcuts: shortcutsModule.resolveShortcuts(settings?.shortcuts), status: registerVersionShortcuts(shortcutsModule.resolveShortcuts(settings?.shortcuts)) };
+});
+
+ipcHandle('shortcuts:update', async (event, changes) => {
+    const settings = await dbManager.getSettings();
+    const shortcuts = { ...shortcutsModule.resolveShortcuts(settings?.shortcuts) };
+    for (const action of shortcutsModule.SHORTCUT_ACTIONS) {
+        if (Object.hasOwn(changes || {}, action)) shortcuts[action] = changes[action] || null;
+    }
+    await dbManager.saveSettings({ shortcuts });
+    return { shortcuts, status: registerVersionShortcuts(shortcuts) };
 });
 
 // ========================================

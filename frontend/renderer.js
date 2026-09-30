@@ -2,6 +2,12 @@ import { Howl } from 'howler';
 import { AudioManager } from '../backend/AudioManager.js';
 import { DEFAULT_CROSSFADE_DURATION_SECONDS, legacyPercentToSeconds } from '../backend/crossfadeDuration.js';
 import { normalizeLanguage, t as translate } from '../backend/i18n.js';
+import {
+    SHORTCUT_ACTIONS,
+    acceleratorFromKeyEvent,
+    formatAccelerator,
+    versionForShortcut,
+} from '../backend/shortcuts.js';
 import { createPendingDeletionStore } from './pendingDeletions.js';
 import { createCutterView } from './cutterView.js';
 import { createPreviewController } from './previewController.js';
@@ -787,6 +793,100 @@ function handleVersionChange(targetVersion) {
     if (wasPlaying) showCrossfadeIndicator(2000);
 }
 
+/**
+ * Raccourci de version (#26) : même effet qu'un clic sur le bouton de version
+ * du lecteur (fondu en lecture, bascule en pause, version de lancement à l'arrêt)
+ */
+function handleVersionShortcut(action) {
+    const state = audioManager.getPlaylistState();
+    const idle = !state.currentTrack || !state.currentTrack.currentVersion;
+    const track = idle ? state.selectedTrack : state.currentTrack;
+    const current = idle ? state.launchVersion : state.currentVersion;
+    const target = versionForShortcut(action, track?.availableVersions || [], current);
+    if (target && target !== current) handleVersionChange(target);
+}
+
+// ========================================
+// Réglages — raccourcis de version (#26)
+// ========================================
+
+let shortcutSettings = { shortcuts: {}, status: {} };
+let recordingShortcut = null; // { action, onKeyDown } pendant la capture d'une combinaison
+
+async function loadShortcutSettings() {
+    if (!window.electronAPI.getShortcuts) return;
+    shortcutSettings = await window.electronAPI.getShortcuts();
+    renderShortcutSettings();
+}
+
+function renderShortcutSettings() {
+    const list = document.getElementById('shortcut-list');
+    if (!list) return;
+    list.replaceChildren();
+
+    SHORTCUT_ACTIONS.forEach(action => {
+        const row = document.createElement('div');
+        row.className = 'shortcut-row';
+
+        const label = document.createElement('span');
+        label.textContent = t(`settings.shortcut.${action}`);
+
+        const button = document.createElement('button');
+        button.type = 'button';
+        button.className = 'secondary-btn';
+        const isRecording = recordingShortcut?.action === action;
+        button.classList.toggle('recording', isRecording);
+        button.textContent = isRecording
+            ? t('settings.shortcutRecording')
+            : formatAccelerator(shortcutSettings.shortcuts[action]) || t('settings.shortcutOff');
+        button.addEventListener('click', () => startShortcutRecording(action));
+
+        row.append(label, button);
+
+        const status = shortcutSettings.status[action];
+        if (status && status !== 'ok' && status !== 'off') {
+            const message = document.createElement('p');
+            message.className = 'shortcut-status';
+            message.textContent = t(`settings.shortcutStatus.${status}`);
+            row.append(message);
+        }
+        list.append(row);
+    });
+}
+
+async function stopShortcutRecording(changes) {
+    if (!recordingShortcut) return;
+    window.removeEventListener('keydown', recordingShortcut.onKeyDown, true);
+    recordingShortcut = null;
+    shortcutSettings = changes
+        ? await window.electronAPI.updateShortcuts(changes)
+        : await window.electronAPI.resumeShortcuts();
+    renderShortcutSettings();
+}
+
+async function startShortcutRecording(action) {
+    if (recordingShortcut) await stopShortcutRecording(null);
+
+    const onKeyDown = (event) => {
+        event.preventDefault();
+        event.stopPropagation();
+        if (event.key === 'Escape') {
+            stopShortcutRecording(null);
+        } else if (event.key === 'Backspace' || event.key === 'Delete') {
+            stopShortcutRecording({ [action]: null });
+        } else {
+            const accelerator = acceleratorFromKeyEvent(event);
+            if (accelerator) stopShortcutRecording({ [action]: accelerator }); // sinon : modificateur seul, on attend
+        }
+    };
+
+    recordingShortcut = { action, onKeyDown };
+    // Sinon la combinaison déjà enregistrée serait interceptée par le système
+    await window.electronAPI.suspendShortcuts();
+    window.addEventListener('keydown', onKeyDown, true);
+    renderShortcutSettings();
+}
+
 function updateModeButtons(mode) {
     document.querySelectorAll('.mode-btn').forEach(btn => {
         btn.classList.toggle('active', btn.dataset.mode === mode);
@@ -1049,6 +1149,7 @@ function switchView(viewName) {
 
 document.addEventListener('DOMContentLoaded', () => {
     init();
+    loadShortcutSettings();
 
     cutterView = createCutterView({
         root: document.getElementById('decoupage-view'),
@@ -1112,6 +1213,7 @@ document.addEventListener('DOMContentLoaded', () => {
             loadLibrary();
             updateUI();
             cutterView?.refresh();
+            renderShortcutSettings();
         });
     });
 
@@ -1250,6 +1352,12 @@ document.addEventListener('DOMContentLoaded', () => {
                 break;
             case 'mute':
                 toggleMute();
+                break;
+            case 'version-next':
+            case 'version-1':
+            case 'version-2':
+            case 'version-3':
+                handleVersionShortcut(action === 'version-next' ? 'versionNext' : `version${action.slice(-1)}`);
                 break;
         }
     });

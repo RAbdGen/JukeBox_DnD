@@ -90,6 +90,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
      * S'abonne aux raccourcis clavier globaux déclenchés côté main process.
      * @param {(action: 'play-pause'|'next'|'previous'|'mute') => void} callback
      */
+    /**
+     * Raccourcis de changement de version personnalisables (#26).
+     * Résolvent { shortcuts, status } (status par action : ok|off|invalid|conflict|unavailable)
+     */
+    getShortcuts: () => ipcRenderer.invoke('shortcuts:get'),
+    updateShortcuts: (changes) => ipcRenderer.invoke('shortcuts:update', changes),
+    suspendShortcuts: () => ipcRenderer.invoke('shortcuts:suspend'),
+    resumeShortcuts: () => ipcRenderer.invoke('shortcuts:resume'),
+
     onShortcut: (callback) => ipcRenderer.on('shortcut:trigger', (event, action) => callback(action)),
 });
 
