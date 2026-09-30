@@ -69,6 +69,11 @@ export class FileManager {
         }
     }
 
+    /** Copie brute (point d'observation pour les tests) */
+    _copyFile(sourcePath, destPath) {
+        return fs.copyFile(sourcePath, destPath);
+    }
+
     /**
      * Supprimer un fichier audio
      * @param {string} filePath - Chemin du fichier à supprimer
@@ -225,6 +230,7 @@ export class FileManager {
      */
     async importTrackFiles(relativePaths, importMusicDir) {
         const localPaths = {};
+        const imported = new Map(); // fichier partagé par plusieurs versions découpées : copié une fois (#34)
 
         for (const [versionName, filename] of Object.entries(relativePaths)) {
             // filename vient de jukebox-export.json, un fichier pensé pour être
@@ -242,9 +248,14 @@ export class FileManager {
 
             const sourcePath = path.join(importMusicDir, safeName);
             const destPath = path.join(this.musicDir, safeName);
+            if (imported.has(safeName)) {
+                localPaths[versionName] = imported.get(safeName);
+                continue;
+            }
             try {
-                await fs.copyFile(sourcePath, destPath);
+                await this._copyFile(sourcePath, destPath);
                 localPaths[versionName] = destPath;
+                imported.set(safeName, destPath);
             } catch (error) {
                 console.warn(`⚠️ Impossible d'importer ${safeName}:`, error.message);
             }

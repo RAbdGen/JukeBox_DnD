@@ -39,3 +39,24 @@ describe('FileManager.copyAudioFile', () => {
         await rm(dir, { recursive: true, force: true });
     });
 });
+
+describe('FileManager.importTrackFiles (#34)', () => {
+    it('ne copie qu\'une fois le fichier partagé par plusieurs versions découpées', async () => {
+        const fsp = await import('node:fs/promises');
+        const { tmpdir } = await import('node:os');
+        const { join } = await import('node:path');
+        const src = await fsp.mkdtemp(join(tmpdir(), 'jukebox-imp-src-'));
+        const dst = await fsp.mkdtemp(join(tmpdir(), 'jukebox-imp-dst-'));
+        await fsp.writeFile(join(src, 't1_source.mp3'), 'AUDIO');
+        const manager = new FileManager(dst);
+        await manager.init();
+        const copySpy = vi.spyOn(manager, '_copyFile');
+
+        const localPaths = await manager.importTrackFiles({ calm: 't1_source.mp3', combat: 't1_source.mp3' }, src);
+
+        expect(localPaths.calm).toBe(localPaths.combat);
+        expect(copySpy).toHaveBeenCalledTimes(1);
+        await fsp.rm(src, { recursive: true, force: true });
+        await fsp.rm(dst, { recursive: true, force: true });
+    });
+});

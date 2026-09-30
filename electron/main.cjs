@@ -279,9 +279,11 @@ ipcHandle('library:addTrack', async (event, trackData, selectedPlaylists) => {
 // Musique découpée (#24) : le fichier source est copié UNE fois, toutes les
 // versions découpées pointent dessus ; le fichier source n'est jamais modifié.
 ipcHandle('library:addSegmentedTrack', async (event, trackData, selectedPlaylists = []) => {
+    let localPath = null;
+    let saved = null;
     try {
         const trackId = fileManager.generateTrackId();
-        const localPath = await fileManager.copyAudioFile(trackData.sourcePath, trackId, segmentsModule.SOURCE_VERSION_KEY);
+        localPath = await fileManager.copyAudioFile(trackData.sourcePath, trackId, segmentsModule.SOURCE_VERSION_KEY);
         const track = segmentsModule.buildSegmentedTrack({
             trackId,
             title: trackData.title,
@@ -291,7 +293,7 @@ ipcHandle('library:addSegmentedTrack', async (event, trackData, selectedPlaylist
             selectedPlaylists,
         });
 
-        const saved = await dbManager.addTrackToLibrary(track);
+        saved = await dbManager.addTrackToLibrary(track);
         await Promise.all(
             selectedPlaylists.map(playlistId => dbManager.addTrackIdToPlaylist(playlistId, trackId))
         );
@@ -300,6 +302,9 @@ ipcHandle('library:addSegmentedTrack', async (event, trackData, selectedPlaylist
         return saved;
     } catch (error) {
         console.error('❌ Erreur addSegmentedTrack:', error);
+        // Piste non créée après la copie : ne pas laisser de fichier orphelin dans music/ (#34).
+        // Si la piste est enregistrée (échec sur une playlist), son fichier doit rester.
+        if (localPath && !saved) await fileManager.deleteAudioFile(localPath);
         throw error;
     }
 });

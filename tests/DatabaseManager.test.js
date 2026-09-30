@@ -415,3 +415,20 @@ describe('DatabaseManager — tempo (#18)', () => {
         expect(manager.db.data.library[0]).not.toHaveProperty('tempo');
     });
 });
+
+describe('DatabaseManager.updateSegments — bornes reçues par IPC (#34)', () => {
+    it('refuse des bornes invalides sans rien modifier', async () => {
+        const track = {
+            id: 't1', title: 'x',
+            localPaths: { calm: '/s', combat: '/s' },
+            segments: { calm: { start: 0, end: 5 }, combat: { start: 5, end: 9 } },
+        };
+        const manager = createDatabaseManager({ library: [structuredClone(track)], playlists: [], metadata: {} });
+
+        await expect(manager.updateSegments('t1', { calm: { start: 0, end: 5 }, combat: { start: 9, end: 3 } }))
+            .rejects.toThrow();
+
+        expect(manager.db.data.library[0]).toEqual(track);
+        expect(manager.db.write).not.toHaveBeenCalled();
+    });
+});

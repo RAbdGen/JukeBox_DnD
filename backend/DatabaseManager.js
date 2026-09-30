@@ -394,7 +394,14 @@ export class DatabaseManager {
             throw new Error(`Track ${trackId} introuvable`);
         }
 
-        applySegmentUpdate(track, segments, defaultVersion);
+        // Bornes reçues par IPC : toutes doivent être valides, sinon rien n'est modifié (#34)
+        const names = Object.keys(segments || {});
+        const clean = sanitizeSegments(segments, Object.fromEntries(names.map(name => [name, true])));
+        if (!clean || Object.keys(clean).length !== names.length) {
+            throw new Error(`Segments invalides pour ${trackId}`);
+        }
+
+        applySegmentUpdate(track, clean, defaultVersion);
         if (track.launchVersion && !Object.hasOwn(track.localPaths, track.launchVersion)) {
             delete track.launchVersion; // version de lancement renommée ou retirée (#25)
         }
