@@ -22,6 +22,7 @@ frontend/               → Vanilla JS ESM, bundlé par Vite → dist/
 - DB schema v2.0 : `library[]` (pistes) + `playlists[]` (IDs de tracks)
 - Champs optionnels sur un track (ajout additif, pas de migration requise) : `tags: string[]` — toujours lire via `track.tags || []`
 - Durée de fondu d'un track (depuis #28) : `crossfadeDurationSeconds` (0,5–10 s, défaut 5 s, voir `backend/crossfadeDuration.js`). L'ancien `crossfadeDurationPercent` (#17) n'est plus écrit, seulement lu pour migrer : sa conversion exige la durée réelle du fichier (absente de `data.json`), donc elle se fait au premier chargement Howler de la piste (`Track._migrateLegacyCrossfade` → persistée via `updateTrack`, qui retire l'ancien champ) ou à l'ouverture de la modal d'édition (métadonnées audio). Même calcul que l'ancien fondu (% × durée, borné 0,5–5 s) : la durée entendue ne change pas
+- Versions découpées (depuis #24) : `segments: { version: { start, end } }` (secondes), toujours lu via `track.segments || {}`. Toutes les versions découpées pointent sur le même fichier (`music/<id>_source<ext>`) : ne supprimer un fichier que si `isPathSharedByOtherVersion` (`backend/segments.js`) est faux. Lecture par sprite Howler `segment` ; temps/durée/seek de `Track` relatifs au segment ; un fondu vers une version découpée démarre au début de son segment
 - Un `Track` peut avoir plusieurs versions audio avec crossfade
 - `webSecurity: false` dans BrowserWindow pour les `file://` URLs
 - Dev : `make dev` ou `npm run dev` (Vite sur :3000 + electronmon)
@@ -101,15 +102,8 @@ Traiter dans cet ordre de priorité :
 
 ## Fonctionnalités à implémenter
 
-### Prioritaire — Découpe de piste en versions
-Permettre de prendre un fichier audio unique et de le découper en segments temporels pour créer les différentes versions d'un Track (ex : 0:00–1:30 = `calm`, 1:30–3:00 = `combat`).
-
-Suivi : [#24](https://github.com/RAbdGen/JukeBox_DnD/issues/24). Découpe **manuelle** uniquement (pas de détection auto des sections).
-
-- UI : un onglet dédié **Découpage** remplace l'onglet « Effets » (placeholder) — l'utilisateur y ajoute un fichier, le découpe bout par bout avec une waveform simplifiée / timeline à marqueurs déplaçables, puis l'ajoute à la bibliothèque comme une musique à plusieurs versions
-- Backend : stocker les segments comme `{ version: "combat", start: 90, end: 180 }` dans le schema DB
-- Lecture : utiliser `Howl` avec `sprite` pour lire uniquement le segment défini
-- Ne pas modifier/couper le fichier source sur le disque — tout est géré en mémoire/metadata
+### Découpe de piste en versions — fait (#24)
+Onglet **Découpage** (à la place d'« Effets ») : un fichier, découpé à la main sur une waveform zoomable, devient une musique à plusieurs versions ; retouche via le bouton ✂ de la bibliothèque. Design : `docs/superpowers/specs/2026-09-28-decoupage-design.md`. Stockage : objet `segments` indexé par version (voir « Stack technique »), pas un tableau. Le fichier source n'est jamais modifié.
 
 ### À venir (backlog, pas de spec complète)
 
@@ -164,9 +158,10 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#28 — Durée de fondu en secondes plutôt qu'en pourcentage](https://github.com/RAbdGen/JukeBox_DnD/issues/28) — `crossfadeDurationSeconds`, migration exacte différée (voir « Champs optionnels sur un track »)
 - [#29 — Le mute reprend la durée de fondu de la piste active](https://github.com/RAbdGen/JukeBox_DnD/issues/29) — 300 ms si aucune piste active
 - [#31 — Renommer le mode de lecture « Normal » → « Une fois » / « Once »](https://github.com/RAbdGen/JukeBox_DnD/issues/31)
+- [#24 — Onglet « Découpage » à la place de « Effets » : découper une musique en versions](https://github.com/RAbdGen/JukeBox_DnD/issues/24) — voir « Découpe de piste en versions » plus haut
+- [#32 — Les versions modifiées d'une piste de la playlist active ne sont pas rechargées](https://github.com/RAbdGen/JukeBox_DnD/issues/32) — `loadPlaylist` reconstruit une piste dont les versions/fichiers/segments ont changé
 
 **À faire (`Todo`) :**
-- [#24 — Onglet « Découpage » à la place de « Effets » : découper une musique en versions](https://github.com/RAbdGen/JukeBox_DnD/issues/24) — priorité haute, voir « Découpe de piste en versions » plus haut
 - [#18 — Personnalisation : synchronisation BPM entre versions (mode avancé)](https://github.com/RAbdGen/JukeBox_DnD/issues/18) — spec complète dans l'issue : BPM + décalage du premier temps par version, `Z2 = (Z1 − Y1) × (X1 / X2) + Y2`, comportement actuel conservé si rien n'est renseigné
 - [#25 — Choisir la version de lancement en cliquant sur une version](https://github.com/RAbdGen/JukeBox_DnD/issues/25)
 - [#26 — Raccourci clavier personnalisable pour changer de version](https://github.com/RAbdGen/JukeBox_DnD/issues/26)
@@ -220,5 +215,6 @@ npm run build      # Vite d'abord, puis electron-builder
 - Howler.js est le seul moteur audio, ne pas le remplacer — il gère bien les sprites et le crossfade
 - **Crossfade et actions concurrentes (depuis #23)** — un fondu en cours est un état explicite de `Track` (`_crossfade` : timers + écouteur de chargement), jamais des `setTimeout` orphelins. Règles : nouveau changement de version → le fondu en cours est terminé immédiatement puis on enchaîne ; pause / seek → terminé immédiatement, l'action s'applique à la version cible ; stop / autre piste / `play()` → annulé, rien ne redémarre. Toute nouvelle action de lecture doit choisir explicitement l'un de ces trois comportements
 - **Boucle unique** : le mode `loopOne` est porté par `Track.loop` et appliqué à *toutes* les versions (`Track.setLoop()`), sinon la version atteinte par crossfade ne boucle pas et la lecture s'arrête en silence. `nextTrack()` change toujours de piste (action explicite) ; seule la fin naturelle (`onTrackEnd`) respecte la boucle unique. Seule la fin de la version *active* déclenche `onEndCallback` (pas celle de la version sortante d'un fondu)
+- **Howler — seek après play** : `stop()` puis `play()` recycle le son (`reset()`, position 0) ; un `seek()` fait avant `play()` est perdu. Toujours `const id = howl.play(…); howl.seek(position, id)`. Getter : `howl.seek()` sans argument (un id périmé serait pris pour une position)
 - Reprise : passer par `Track.resume()`, jamais `howl.play()` direct — sur un Howl qui joue déjà, `play()` sans id crée une seconde instance superposée
 - Le fichier `améliorations.txt` est hors git intentionnellement, son contenu est désormais intégré dans ce CLAUDE.md
