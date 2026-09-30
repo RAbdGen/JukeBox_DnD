@@ -16,3 +16,26 @@ describe('FileManager.deleteTrackFiles', () => {
         expect(manager.deleteAudioFile).toHaveBeenCalledWith('/m/t1_boss.mp3');
     });
 });
+
+describe('FileManager.copyAudioFile', () => {
+    it('n\'écrase jamais un fichier encore utilisé par une autre version (#24)', async () => {
+        const { mkdtemp, writeFile, readFile, rm } = await import('node:fs/promises');
+        const { tmpdir } = await import('node:os');
+        const { join } = await import('node:path');
+        const dir = await mkdtemp(join(tmpdir(), 'jukebox-fm-'));
+        const manager = new FileManager(dir);
+        await manager.init();
+        const split = join(dir, 'source-a.mp3');
+        const other = join(dir, 'source-b.mp3');
+        await writeFile(split, 'AAA');
+        await writeFile(other, 'BBB');
+
+        const shared = await manager.copyAudioFile(split, 't1', 'source');
+        const added = await manager.copyAudioFile(other, 't1', 'source', [shared]);
+
+        expect(added).not.toBe(shared);
+        expect(await readFile(shared, 'utf8')).toBe('AAA');
+        expect(await readFile(added, 'utf8')).toBe('BBB');
+        await rm(dir, { recursive: true, force: true });
+    });
+});

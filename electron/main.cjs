@@ -313,7 +313,13 @@ ipcHandle('library:deleteTrack', async (event, trackId) => {
 
 ipcHandle('library:addVersion', async (event, trackId, versionName, filePath) => {
     try {
-        const localPath = await fileManager.copyAudioFile(filePath, trackId, versionName);
+        // Fichiers des autres versions (dont le fichier partagé d'une piste découpée,
+        // #24) : jamais écrasés, même par une version nommée « source »
+        const track = await dbManager.getTrack(trackId);
+        const reservedPaths = Object.entries(track?.localPaths || {})
+            .filter(([name]) => name !== versionName)
+            .map(([, localPath]) => localPath);
+        const localPath = await fileManager.copyAudioFile(filePath, trackId, versionName, reservedPaths);
         return await dbManager.addVersionToTrack(trackId, versionName, filePath, localPath);
     } catch (error) {
         console.error('❌ Erreur addVersion:', error);

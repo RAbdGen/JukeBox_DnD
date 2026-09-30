@@ -36,9 +36,10 @@ export class FileManager {
      * @param {string} sourcePath - Chemin du fichier original
      * @param {string} trackId - ID de la piste
      * @param {string} versionName - Nom de la version (calm, combat, etc.)
+     * @param {string[]} [reservedPaths] - Chemins encore utilisés par d'autres versions : jamais écrasés
      * @returns {Promise<string>} Chemin local du fichier copié
      */
-    async copyAudioFile(sourcePath, trackId, versionName) {
+    async copyAudioFile(sourcePath, trackId, versionName, reservedPaths = []) {
         try {
             // Vérifier que le fichier source existe
             await fs.access(sourcePath);
@@ -46,8 +47,14 @@ export class FileManager {
             // Obtenir l'extension
             const ext = path.extname(sourcePath);
 
-            // Créer le nom du fichier de destination
-            const filename = `${trackId}_${versionName}${ext}`;
+            // Créer le nom du fichier de destination. Ne jamais écraser un fichier
+            // encore utilisé par une autre version (ex : fichier partagé d'une piste
+            // découpée, #24) — comparaison sans casse pour Windows.
+            const reserved = new Set(reservedPaths.map(p => p.toLowerCase()));
+            let filename = `${trackId}_${versionName}${ext}`;
+            for (let n = 2; reserved.has(path.join(this.musicDir, filename).toLowerCase()); n++) {
+                filename = `${trackId}_${versionName}_${n}${ext}`;
+            }
             const destPath = path.join(this.musicDir, filename);
 
             // Copier le fichier
