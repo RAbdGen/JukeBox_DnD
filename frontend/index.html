@@ -397,6 +397,12 @@
                     <label data-i18n="modal.editTrack.tagsLabel">Tags</label>
                     <input type="text" id="edit-track-tags" data-i18n-placeholder="modal.editTrack.tagsPlaceholder" placeholder="forêt, ambiance, jour" />
                 </div>
+
+                <details class="form-group tempo-advanced" id="edit-tempo-group">
+                    <summary data-i18n="modal.editTrack.advancedSummary">Avancé — synchronisation BPM</summary>
+                    <p class="settings-description" data-i18n="modal.editTrack.tempoHelp">BPM et décalage du premier temps de chaque version : un changement entre deux versions renseignées reprend sur le même temps. Laissez vide pour garder le comportement par défaut.</p>
+                    <div id="edit-tempo-list" class="tempo-list"></div>
+                </details>
             </div>
 
             <div class="modal-footer">

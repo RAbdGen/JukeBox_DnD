@@ -423,3 +423,17 @@ describe('AudioManager — version de lancement (#25)', () => {
         expect(manager.getLaunchVersion('t2')).toBe('tension');
     });
 });
+
+describe('AudioManager — tempo (#18)', () => {
+    it('transmet le tempo à la piste, sans la reconstruire quand il change', () => {
+        const manager = new AudioManager();
+        const base = { id: 't1', title: 'T', versions: { calm: 'a.mp3', combat: 'b.mp3' } };
+        manager.loadPlaylist([{ ...base, tempo: { calm: { bpm: 120, offsetMs: 0 } } }]);
+        const track = manager.getTrack('t1');
+
+        manager.loadPlaylist([{ ...base, tempo: { calm: { bpm: 90, offsetMs: 0 } } }]);
+
+        expect(manager.getTrack('t1')).toBe(track);
+        expect(track.tempo).toEqual({ calm: { bpm: 90, offsetMs: 0 } });
+    });
+});

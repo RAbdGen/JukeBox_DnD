@@ -1275,7 +1275,8 @@ main {
     text-transform: uppercase;
 }
 
-.form-group input[type="text"] {
+.form-group input[type="text"],
+.form-group input[type="number"] {
     width: 100%;
     padding: 12px 14px;
     border-radius: 4px;
@@ -2727,4 +2728,34 @@ button.playlist-track-version:focus-visible {
     margin: 0;
     color: var(--danger-text);
     font-size: 0.8rem;
+}
+
+/* ── Synchronisation BPM, modal d'édition (#18) ── */
+.tempo-advanced summary {
+    cursor: pointer;
+    color: var(--gold-3);
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    letter-spacing: .12em;
+}
+
+.tempo-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.4rem;
+}
+
+.tempo-row {
+    display: grid;
+    grid-template-columns: 1fr 7rem 7rem;
+    align-items: center;
+    gap: 0.5rem;
+    color: var(--bone);
+}
+
+.tempo-row input { width: 100%; }
+
+.tempo-header {
+    color: var(--bone-dim);
+    font-size: 0.75rem;
 }

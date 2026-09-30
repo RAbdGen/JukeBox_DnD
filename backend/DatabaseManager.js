@@ -7,6 +7,7 @@ import {
     normalizeCrossfadeDurationSeconds,
 } from './crossfadeDuration.js';
 import { applySegmentUpdate, sanitizeSegments } from './segments.js';
+import { sanitizeTempo } from './tempo.js';
 
 /**
  * Durée de fondu d'une piste entrante (ajout / import) : secondes (#28) si
@@ -24,6 +25,16 @@ function normalizeIncomingCrossfade(track) {
     return { ...rest, crossfadeDurationSeconds: normalizeCrossfadeDurationSeconds(undefined) };
 }
 
+/** Tempo nettoyé (#18) pour les versions de la piste ; retiré s'il n'en reste rien */
+function setTempo(track, tempo) {
+    const clean = sanitizeTempo(tempo, Object.keys(track.localPaths || track.originalPaths || {}));
+    if (clean) {
+        track.tempo = clean;
+    } else {
+        delete track.tempo;
+    }
+}
+
 /**
  * Piste entrante (ajout / import) : durée de fondu normalisée (#28) et
  * segments nettoyés (#24) — un segment invalide est retiré, la version
@@ -37,6 +48,7 @@ function normalizeIncomingTrack(track) {
     } else {
         delete normalized.segments;
     }
+    setTempo(normalized, normalized.tempo);
     return normalized;
 }
 
@@ -205,7 +217,11 @@ export class DatabaseManager {
             delete normalizedUpdates.launchVersion;
             delete track.launchVersion;
         }
+        const hasTempo = Object.hasOwn(normalizedUpdates, 'tempo');
+        const tempo = normalizedUpdates.tempo;
+        delete normalizedUpdates.tempo;
         Object.assign(track, normalizedUpdates);
+        if (hasTempo) setTempo(track, tempo); // synchronisation BPM (#18)
 
         // Mettre à jour les métadonnées
         if (track.metadata) {
@@ -307,6 +323,7 @@ export class DatabaseManager {
             if (Object.keys(track.segments).length === 0) delete track.segments;
         }
         if (track.launchVersion === versionName) delete track.launchVersion; // #25 : retour à la 1re version
+        if (track.tempo) setTempo(track, track.tempo); // #18 : tempo de la version retirée
 
         if (track.defaultVersion === versionName) {
             track.defaultVersion = Object.keys(track.localPaths || track.originalPaths || {})[0];
@@ -381,6 +398,7 @@ export class DatabaseManager {
         if (track.launchVersion && !Object.hasOwn(track.localPaths, track.launchVersion)) {
             delete track.launchVersion; // version de lancement renommée ou retirée (#25)
         }
+        if (track.tempo) setTempo(track, track.tempo); // tempo des versions renommées/retirées (#18)
         if (track.metadata) {
             track.metadata.modifiedAt = new Date().toISOString();
         }

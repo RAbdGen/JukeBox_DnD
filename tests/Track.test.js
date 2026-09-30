@@ -381,3 +381,52 @@ describe('Track — versions découpées (#24)', () => {
         expect(track.versions.combat).toBe(combat);
     });
 });
+
+describe('Track — synchronisation BPM (#18)', () => {
+    it('fondu entre versions fichier entier : reprise calée sur les temps', () => {
+        const track = createTrack();
+        track.tempo = { calm: { bpm: 120, offsetMs: 500 }, combat: { bpm: 60, offsetMs: 1000 } };
+        track.play('calm');
+        track.versions.calm.seek(10.5);
+
+        track.crossfade('combat', 1);
+
+        expect(track.versions.combat.seek()).toBeCloseTo(21);
+    });
+
+    it('prime sur « début du segment » quand les deux versions découpées ont un tempo', () => {
+        const track = createSplitTrack();
+        track.tempo = { calm: { bpm: 120, offsetMs: 0 }, combat: { bpm: 60, offsetMs: 0 } };
+        track.play('calm');
+        track.versions.calm.seek(10);
+
+        track.crossfade('combat', 1);
+        vi.runAllTimers();
+
+        expect(track.getCurrentTime()).toBeCloseTo(20);
+        expect(track.versions.combat.seek()).toBeCloseTo(110);
+    });
+
+    it('changement de version en pause : même calcul', () => {
+        const track = createTrack();
+        track.tempo = { calm: { bpm: 120, offsetMs: 500 }, combat: { bpm: 60, offsetMs: 1000 } };
+        track.play('calm');
+        track.versions.calm.seek(10.5);
+        track.pause();
+
+        track.switchVersionWhilePaused('combat');
+
+        expect(track.getCurrentTime()).toBeCloseTo(21);
+    });
+
+    it('sans tempo sur la cible : comportement par défaut (même timecode)', () => {
+        const track = createTrack();
+        track.tempo = { calm: { bpm: 120, offsetMs: 500 } };
+        track.play('calm');
+        track.versions.calm.seek(10.5);
+
+        track.crossfade('combat', 1);
+
+        expect(track.versions.combat.seek()).toBe(10.5);
+    });
+});

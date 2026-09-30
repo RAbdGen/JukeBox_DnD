@@ -462,7 +462,7 @@ export class AudioManager {
         this.playlist = [];
 
         playlistConfig.forEach((trackConfig) => {
-            const { id, title, versions, segments, launchVersion, defaultVolume, crossfadeDurationSeconds, crossfadeDurationPercent } = trackConfig;
+            const { id, title, versions, segments, launchVersion, tempo, defaultVolume, crossfadeDurationSeconds, crossfadeDurationPercent } = trackConfig;
 
             // Ne recharger (recréer les Howl) que si la piste n'est pas déjà chargée
             if (!this.tracks.has(id)) {
@@ -484,6 +484,7 @@ export class AudioManager {
                     track.defaultVolume = defaultVolume;
                 }
                 this._applyCrossfadeConfig(track, crossfadeDurationSeconds, crossfadeDurationPercent);
+                track.tempo = tempo || {}; // synchronisation BPM (#18), sans reconstruire la piste
             }
         });
 

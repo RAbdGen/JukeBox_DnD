@@ -24,6 +24,7 @@ frontend/               → Vanilla JS ESM, bundlé par Vite → dist/
 - Durée de fondu d'un track (depuis #28) : `crossfadeDurationSeconds` (0,5–10 s, défaut 5 s, voir `backend/crossfadeDuration.js`). L'ancien `crossfadeDurationPercent` (#17) n'est plus écrit, seulement lu pour migrer : sa conversion exige la durée réelle du fichier (absente de `data.json`), donc elle se fait au premier chargement Howler de la piste (`Track._migrateLegacyCrossfade` → persistée via `updateTrack`, qui retire l'ancien champ) ou à l'ouverture de la modal d'édition (métadonnées audio). Même calcul que l'ancien fondu (% × durée, borné 0,5–5 s) : la durée entendue ne change pas
 - Versions découpées (depuis #24) : `segments: { version: { start, end } }` (secondes), toujours lu via `track.segments || {}`. Toutes les versions découpées pointent sur le même fichier (`music/<id>_source<ext>`) : ne supprimer un fichier que si `isPathSharedByOtherVersion` (`backend/segments.js`) est faux. Lecture par sprite Howler `segment` ; temps/durée/seek de `Track` relatifs au segment ; un fondu vers une version découpée démarre au début de son segment
 - Version de lancement (depuis #25) : `launchVersion` optionnel, lu via `resolveLaunchVersion()` (`backend/launchVersion.js`) : la version choisie si elle existe encore, sinon la première. Choisie en cliquant le libellé de version d'une ligne de playlist, ou un bouton de version du lecteur à l'arrêt. **`defaultVersion` n'est plus lu** : il vaut « calm » par défaut même sans version calm, le réutiliser changerait silencieusement la version de démarrage des pistes existantes
+- Synchronisation BPM (depuis #18) : `tempo: { version: { bpm, offsetMs } }` optionnel, réglé dans la section « Avancé » de la modal d'édition, nettoyé par `sanitizeTempo()` (`backend/tempo.js`). Si les deux versions d'un changement en ont un, la reprise vaut `Z2 = (Z1 − Y1) × (X1 / X2) + Y2` (`beatSyncedPosition()`), ce qui prime sur « début du segment » (#24) et « même timecode ». Point d'entrée unique : `Track._startPositionFor()` (fondu, pause, fondu terminé avant chargement). Le tempo ne fait pas partie de la signature de piste : le changer ne recharge rien
 - Un `Track` peut avoir plusieurs versions audio avec crossfade
 - `webSecurity: false` dans BrowserWindow pour les `file://` URLs
 - Dev : `make dev` ou `npm run dev` (Vite sur :3000 + electronmon)
@@ -170,9 +171,10 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#25 — Choisir la version de lancement en cliquant sur une version](https://github.com/RAbdGen/JukeBox_DnD/issues/25) — `launchVersion` par piste, libellé cliquable dans la liste + boutons du lecteur à l'arrêt
 - [#26 — Raccourci clavier personnalisable pour changer de version](https://github.com/RAbdGen/JukeBox_DnD/issues/26) — version suivante + versions 1 à 3, globaux, réglables dans Réglages
 - [#30 — Scrollbar intégrée au thème](https://github.com/RAbdGen/JukeBox_DnD/issues/30) — style global via variables du thème, `scrollbar-gutter: stable`
+- [#18 — Personnalisation : synchronisation BPM entre versions (mode avancé)](https://github.com/RAbdGen/JukeBox_DnD/issues/18) — `tempo` par version, reprise calée sur les temps, section « Avancé » de la modal d'édition
 
 **À faire (`Todo`) :**
-- [#18 — Personnalisation : synchronisation BPM entre versions (mode avancé)](https://github.com/RAbdGen/JukeBox_DnD/issues/18) — spec complète dans l'issue : BPM + décalage du premier temps par version, `Z2 = (Z1 − Y1) × (X1 / X2) + Y2`, comportement actuel conservé si rien n'est renseigné
+- (aucune)
 
 ### Conventions de code
 - ESM partout sauf les fichiers `.cjs` d'Electron (ne pas toucher au module system sans raison)

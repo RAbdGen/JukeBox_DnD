@@ -368,3 +368,50 @@ describe('DatabaseManager — version de lancement (#25)', () => {
         expect(manager.db.data.library[0]).not.toHaveProperty('launchVersion');
     });
 });
+
+describe('DatabaseManager — tempo (#18)', () => {
+    const library = () => ({
+        library: [{
+            id: 't1', title: 'x',
+            localPaths: { calm: '/a', combat: '/b' }, originalPaths: { calm: '/a', combat: '/b' },
+            tempo: { calm: { bpm: 120, offsetMs: 0 }, combat: { bpm: 90, offsetMs: 100 } },
+        }],
+        playlists: [],
+        metadata: {},
+    });
+
+    it('nettoie le tempo enregistré depuis la modal', async () => {
+        const manager = createDatabaseManager(library());
+
+        await manager.updateTrack('t1', { tempo: { calm: { bpm: '100', offsetMs: '' }, combat: { bpm: 1000 }, boss: { bpm: 120 } } });
+
+        expect(manager.db.data.library[0].tempo).toEqual({ calm: { bpm: 100, offsetMs: 0 } });
+    });
+
+    it('un tempo vide retire le champ', async () => {
+        const manager = createDatabaseManager(library());
+
+        await manager.updateTrack('t1', { tempo: {} });
+
+        expect(manager.db.data.library[0]).not.toHaveProperty('tempo');
+    });
+
+    it('retirer une version retire son tempo', async () => {
+        const manager = createDatabaseManager(library());
+
+        await manager.removeVersionFromTrack('t1', 'combat');
+
+        expect(manager.db.data.library[0].tempo).toEqual({ calm: { bpm: 120, offsetMs: 0 } });
+    });
+
+    it('nettoie le tempo d\'une piste importée', async () => {
+        const manager = createDatabaseManager({ library: [], playlists: [], metadata: {} });
+
+        await manager.mergeImportedLibrary({
+            library: [{ id: 't9', title: 'i', localPaths: { calm: '/a' }, tempo: { calm: { bpm: 'x' } } }],
+            playlists: [],
+        });
+
+        expect(manager.db.data.library[0]).not.toHaveProperty('tempo');
+    });
+});

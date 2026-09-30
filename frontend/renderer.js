@@ -47,6 +47,8 @@ const pendingDeletions = createPendingDeletionStore();
 // État de travail des versions dans la modal d'édition (#15) : { name, isNew, filePath? }[].
 // Rien n'est persisté tant que "Sauvegarder" n'est pas cliqué (même logique que volume/tags).
 let editingVersions = [];
+// Tempo en cours d'édition (#18) : { versionName: { bpm: string, offsetMs: string } }
+let editingTempo = {};
 let cutterView = null; // onglet Découpage (#24), créé au DOMContentLoaded
 
 // ========================================
@@ -277,6 +279,7 @@ async function loadPlaylist(id) {
             title: t.title,
             versions: t.localPaths || t.originalPaths, // Utiliser local si dispo
             segments: t.segments, // versions découpées (#24)
+            tempo: t.tempo, // synchronisation BPM (#18)
             launchVersion: t.launchVersion, // version de lancement choisie (#25)
             defaultVolume: t.defaultVolume ?? 0.5,
             crossfadeDurationSeconds: t.crossfadeDurationSeconds,
@@ -376,6 +379,10 @@ function openEditTrackModal(track) {
 
     const versionNames = Object.keys(track.localPaths || track.originalPaths || {});
     editingVersions = versionNames.map(name => ({ name, isNew: false }));
+    editingTempo = Object.fromEntries(Object.entries(track.tempo || {}).map(([name, { bpm, offsetMs }]) => (
+        [name, { bpm: String(bpm), offsetMs: String(offsetMs) }]
+    )));
+    document.getElementById('edit-tempo-group').open = Object.keys(editingTempo).length > 0;
     renderEditVersionList();
 
     document.getElementById('delete-track-btn').classList.add('hidden');
@@ -403,7 +410,78 @@ function removeEditingVersion(index) {
  * boutons ↑/↓/✕ par ligne (même pattern que le réordonnancement de
  * playlist, #14) : rien n'est persisté ici, seul "Sauvegarder" écrit.
  */
+/**
+ * Synchronisation BPM (#18) : une ligne BPM + décalage par version de la
+ * modal, dans l'ordre et avec les noms de la liste de versions en cours d'édition
+ */
+function renderTempoList() {
+    const container = document.getElementById('edit-tempo-list');
+    container.replaceChildren();
+
+    // En-têtes de colonnes : un texte indicatif trop long serait tronqué dans le champ
+    const header = document.createElement('div');
+    header.className = 'tempo-row tempo-header';
+    const [blank, bpmHeader, offsetHeader] = [0, 1, 2].map(() => document.createElement('span'));
+    bpmHeader.textContent = t('modal.editTrack.tempoBpm');
+    offsetHeader.textContent = t('modal.editTrack.tempoOffset');
+    header.append(blank, bpmHeader, offsetHeader);
+    container.append(header);
+
+    editingVersions.forEach(({ name }) => {
+        const values = editingTempo[name] || { bpm: '', offsetMs: '' };
+        editingTempo[name] = values;
+
+        const row = document.createElement('div');
+        row.className = 'tempo-row';
+
+        const label = document.createElement('span');
+        label.className = 'tempo-row-name';
+        label.textContent = name; // texte utilisateur : jamais d'innerHTML
+
+        const field = (key, labelKey, min, max, step, placeholder) => {
+            const input = document.createElement('input');
+            input.type = 'number';
+            input.min = String(min);
+            if (max !== null) input.max = String(max);
+            input.step = String(step);
+            input.value = values[key];
+            input.placeholder = placeholder;
+            input.title = t(labelKey);
+            input.setAttribute('aria-label', `${name} — ${t(labelKey)}`);
+            input.addEventListener('input', () => { values[key] = input.value; });
+            return input;
+        };
+
+        row.append(
+            label,
+            field('bpm', 'modal.editTrack.tempoBpm', 20, 400, 'any', '120'),
+            field('offsetMs', 'modal.editTrack.tempoOffset', 0, null, 1, '0'),
+        );
+        container.append(row);
+    });
+}
+
+/**
+ * Tempo à enregistrer (#18), ou { error } pour la première version invalide.
+ * Une ligne entièrement vide = pas de synchronisation pour cette version.
+ */
+function collectEditingTempo(versionNames) {
+    const tempo = {};
+    for (const name of versionNames) {
+        const { bpm = '', offsetMs = '' } = editingTempo[name] || {};
+        if (bpm.trim() === '' && offsetMs.trim() === '') continue;
+        const bpmValue = Number(bpm);
+        const offsetValue = offsetMs.trim() === '' ? 0 : Number(offsetMs);
+        if (bpm.trim() === '' || !(bpmValue >= 20 && bpmValue <= 400) || !(offsetValue >= 0)) {
+            return { error: name };
+        }
+        tempo[name] = { bpm: bpmValue, offsetMs: offsetValue };
+    }
+    return { tempo };
+}
+
 function renderEditVersionList() {
+    renderTempoList();
     const container = document.getElementById('edit-version-list');
     container.replaceChildren();
 
@@ -1552,6 +1630,12 @@ document.addEventListener('DOMContentLoaded', () => {
 
         const originalTrack = libraryCache.find(t => t.id === trackId);
         const originalNames = Object.keys(originalTrack?.localPaths || originalTrack?.originalPaths || {});
+
+        const tempoResult = collectEditingTempo(editingVersions.map(v => v.name));
+        if (tempoResult.error) {
+            alert(t('modal.editTrack.tempoInvalid', { name: tempoResult.error }));
+            return;
+        }
         const finalNames = editingVersions.map(v => v.name);
         const removedNames = originalNames.filter(name => !finalNames.includes(name));
         const newVersions = editingVersions.filter(v => v.isNew);
@@ -1570,7 +1654,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 await window.electronAPI.reorderVersions(trackId, finalNames);
             }
 
-            const updates = { defaultVolume: volume, crossfadeDurationSeconds, tags };
+            const updates = { defaultVolume: volume, crossfadeDurationSeconds, tags, tempo: tempoResult.tempo };
             if (originalTrack?.defaultVersion && removedNames.includes(originalTrack.defaultVersion)) {
                 updates.defaultVersion = finalNames[0];
             }

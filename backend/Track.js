@@ -5,6 +5,7 @@ import {
     normalizeCrossfadeDurationSeconds,
 } from './crossfadeDuration.js';
 import { trackSignature } from './segments.js';
+import { beatSyncedPosition } from './tempo.js';
 
 // Nom du sprite Howler d'une version découpée (#24)
 const SPRITE_NAME = 'segment';
@@ -51,6 +52,8 @@ export class Track {
         this._soundIds = {};
         // Version mise en pause (son reprenable par son id)
         this._pausedVersion = null;
+        // Synchronisation BPM (#18) : { versionName: { bpm, offsetMs } }, appliqué par AudioManager
+        this.tempo = {};
     }
 
     get isCrossfading() {
@@ -73,6 +76,23 @@ export class Track {
     _toAbsolute(versionName, position) {
         const segment = this._segmentOf(versionName);
         return segment ? segment.start + position : position;
+    }
+
+    /**
+     * Position (relative) où reprendre `toVersion` quand on quitte `fromVersion`
+     * à `position` : calée sur les temps si les deux versions ont un tempo (#18),
+     * sinon début du segment pour une cible découpée (#24), sinon même timecode.
+     */
+    _startPositionFor(fromVersion, toVersion, position) {
+        const synced = beatSyncedPosition({
+            from: this.tempo[fromVersion],
+            to: this.tempo[toVersion],
+            position,
+            targetDuration: this._versionDuration(toVersion),
+            loop: this.loop,
+        });
+        if (synced !== null) return synced;
+        return this._segmentOf(toVersion) ? 0 : position;
     }
 
     /** Lance un nouveau son (le sprite du segment pour une version découpée) */
@@ -327,11 +347,12 @@ export class Track {
             toVersionHowl.volume(0); // Force le volume à 0
             const playId = this._startSound(toVersion);
 
-            // 5. Position : une cible découpée démarre au début de son segment (#24), une
-            // cible « fichier entier » au même timecode. Toujours APRÈS play() : stop() puis
-            // play() recycle le son (reset) et perd un seek fait avant.
-            if (!this._segmentOf(toVersion)) {
-                toVersionHowl.seek(currentSeek, playId);
+            // 5. Position (tempo #18, sinon début du segment #24, sinon même timecode).
+            // Toujours APRÈS play() : stop() puis play() recycle le son (reset) et perd
+            // un seek fait avant.
+            const startPosition = this._startPositionFor(cf.fromVersion, toVersion, currentSeek);
+            if (startPosition > 0) {
+                toVersionHowl.seek(this._toAbsolute(toVersion, startPosition), playId);
             }
             console.log(`▶️ Piste "${toVersion}" lancée (ID: ${playId})`);
 
@@ -395,7 +416,7 @@ export class Track {
             toHowl.volume(this.defaultVolume); // Interrompt un fade-in éventuellement en cours
         } else {
             toHowl.off('load', cf.loadListener);
-            this._resumeSeek = this._segmentOf(cf.toVersion) ? 0 : cf.currentSeek;
+            this._resumeSeek = this._startPositionFor(cf.fromVersion, cf.toVersion, cf.currentSeek);
             this._startWhenLoaded(toHowl, () => this._playCurrent());
         }
 
@@ -490,12 +511,13 @@ export class Track {
         if (!this.currentVersion || this.isPlaying || !this.versions[toVersion]) return false;
         if (toVersion === this.currentVersion) return true;
 
+        const fromVersion = this.currentVersion;
         const position = this.getCurrentTime();
         this._cancelPendingStart();
         this.stopAllVersions();
         this.currentVersion = toVersion;
-        // Cible découpée : début de son segment (#24) ; sinon même position
-        this._resumeSeek = this._segmentOf(toVersion) ? 0 : position;
+        // Tempo (#18), sinon début du segment (#24), sinon même position
+        this._resumeSeek = this._startPositionFor(fromVersion, toVersion, position);
         return true;
     }
 
