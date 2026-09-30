@@ -65,6 +65,11 @@ L'application est utilisée dans une ambiance tamisée, en soirée, pendant une 
 
 Toute nouvelle palette doit garantir `--bone-dim` et `--gold-2` >= 4.5:1 (WCAG AA) contre `--ink-2` (le fond le plus clair où ils apparaissent réellement — cartes/panneaux) — c'est le pire cas, passer ce seuil garantit le reste. Vérifier par calcul (pas à l'oeil) ; `tests/theme-contrast.test.js` revérifie automatiquement les 8 thèmes existants à partir de `styles.css`, à étendre si une palette est ajoutée. Penser aussi à redéfinir `--ink-dark/warm/mid/top` (vignettage) et `color-scheme` dans le nouveau bloc — oubliés une fois, ça fait hériter du vignettage de "nuit" à la place du sien.
 
+**Tous les textes (depuis #27)** : `tests/theme-contrast.test.js` vérifie aussi *chaque* couleur de texte de `styles.css`, composée sur son fond, à >= 4.5:1 dans les 8 thèmes, et une taille minimale de 0.7rem (glyphes décoratifs `::before`/`::after` et contrôles `:disabled` exemptés). Conséquences :
+- **Jamais de couleur de texte en dur** dans une règle : passer par une variable, redéfinie par thème si besoin (`--calm-*`, `--combat-*`, `--tension-*`, `--danger-*` existent déjà, avec des variantes claires dans « parchemin »)
+- **`--bone-faint` (12 % d'opacité) est réservé au décor** (bordures, séparateurs, contrôles désactivés) — jamais comme couleur de texte : ~1.3:1. Texte secondaire = `--bone-dim`
+- Un texte sur fond propre (bouton, pastille) se mesure contre ce fond : l'ajouter à la liste `withOwnBackground` du test
+
 ### Système d'internationalisation (depuis #22)
 Français/anglais, fichiers maison (pas de lib i18n) dans `backend/i18n.js` — un seul module partagé par le renderer (`import`) et le processus main (`import()` dynamique dans `initManagers()`, comme `DatabaseManager`/`FileManager`). Le nom de l'app change avec la langue (`app.name` : "Jukebox JDR" / "Jukebox RPG"), pas juste le contenu.
 
@@ -160,12 +165,12 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#31 — Renommer le mode de lecture « Normal » → « Une fois » / « Once »](https://github.com/RAbdGen/JukeBox_DnD/issues/31)
 - [#24 — Onglet « Découpage » à la place de « Effets » : découper une musique en versions](https://github.com/RAbdGen/JukeBox_DnD/issues/24) — voir « Découpe de piste en versions » plus haut
 - [#32 — Les versions modifiées d'une piste de la playlist active ne sont pas rechargées](https://github.com/RAbdGen/JukeBox_DnD/issues/32) — `loadPlaylist` reconstruit une piste dont les versions/fichiers/segments ont changé
+- [#27 — Contraste insuffisant des petits textes (tous thèmes)](https://github.com/RAbdGen/JukeBox_DnD/issues/27) — `--bone-faint` utilisé comme texte (~1.3:1), couleurs en dur illisibles sur « parchemin », tailles < 0.7rem ; test étendu à tous les textes
 
 **À faire (`Todo`) :**
 - [#18 — Personnalisation : synchronisation BPM entre versions (mode avancé)](https://github.com/RAbdGen/JukeBox_DnD/issues/18) — spec complète dans l'issue : BPM + décalage du premier temps par version, `Z2 = (Z1 − Y1) × (X1 / X2) + Y2`, comportement actuel conservé si rien n'est renseigné
 - [#25 — Choisir la version de lancement en cliquant sur une version](https://github.com/RAbdGen/JukeBox_DnD/issues/25)
 - [#26 — Raccourci clavier personnalisable pour changer de version](https://github.com/RAbdGen/JukeBox_DnD/issues/26)
-- [#27 — Contraste insuffisant des petits textes (tous thèmes)](https://github.com/RAbdGen/JukeBox_DnD/issues/27) — suite de #19
 - [#30 — Scrollbar intégrée au thème](https://github.com/RAbdGen/JukeBox_DnD/issues/30)
 
 ### Conventions de code

@@ -51,6 +51,27 @@
     --text-light:     var(--bone);
     --text-muted:     var(--bone-dim);
     --border-stone:   var(--ink-3);
+
+    /* ── Couleurs sémantiques (#27) : versions et danger, redéfinies par
+       « parchemin » — jamais de couleur de texte en dur dans les règles ── */
+    --calm-text:           #7aaac8;
+    --calm-text-hover:     #9ac0da;
+    --calm-text-active:    #b0d4ea;
+    --calm-bg:             rgba(22, 40, 64, 0.7);
+    --calm-bg-active:      rgba(30, 74, 122, 0.75);
+    --combat-text:         #c07070;
+    --combat-text-hover:   #d08888;
+    --combat-text-active:  #f0a0a0;
+    --combat-bg:           rgba(42, 10, 10, 0.7);
+    --combat-bg-active:    rgba(140, 34, 34, 0.75);
+    --tension-text:        #c89050;
+    --tension-text-hover:  #d8a870;
+    --tension-text-active: #f0c070;
+    --tension-bg:          rgba(58, 36, 0, 0.7);
+    --tension-bg-active:   rgba(107, 60, 0, 0.75);
+    --danger-text:         #c87070;
+    --danger-text-hover:   #e09090;
+    --danger-bg:           rgba(107, 20, 20, 0.3);
 }
 
 html {
@@ -326,11 +347,11 @@ main::-webkit-scrollbar {
 }
 
 .danger-icon {
-    color: #c87070;
+    color: var(--danger-text);
 }
 
 .danger-icon:hover {
-    color: #e08080;
+    color: var(--danger-text-hover);
 }
 
 /* Current Track Indicator */
@@ -424,8 +445,8 @@ main::-webkit-scrollbar {
 /* Noms de classe stables (indépendants de la langue affichée, #22) :
    le libellé vient de i18n, mais la classe reste "stopped"/"playing"/"paused" */
 .status.stopped {
-    background: rgba(107, 20, 20, 0.3);
-    color: #c87070;
+    background: var(--danger-bg);
+    color: var(--danger-text);
     border: 1px solid rgba(107, 20, 20, 0.6);
 }
 
@@ -497,12 +518,12 @@ main::-webkit-scrollbar {
 .version-btn[data-version="calm"] {
     background: linear-gradient(180deg, #1a2f45 0%, #0f1e2e 100%);
     border: 1px solid #1e3a5a;
-    color: #7aaac8;
+    color: var(--calm-text);
 }
 
 .version-btn[data-version="calm"]:hover {
     border-color: #2a5580;
-    color: #9ac0da;
+    color: var(--calm-text-hover);
     box-shadow:
         inset 0 1px 0 rgba(100, 160, 220, 0.06),
         inset 0 0 0 1px rgba(0, 0, 0, 0.6),
@@ -513,7 +534,7 @@ main::-webkit-scrollbar {
 .version-btn[data-version="calm"].active {
     background: linear-gradient(180deg, #1e4a7a 0%, #162840 100%);
     border: 1px solid #2a6090;
-    color: #b0d4ea;
+    color: var(--calm-text-active);
     box-shadow:
         inset 0 1px 0 rgba(100, 180, 240, 0.08),
         inset 0 0 0 1px rgba(0, 0, 0, 0.7),
@@ -526,12 +547,12 @@ main::-webkit-scrollbar {
 .version-btn[data-version="tension"] {
     background: linear-gradient(180deg, #3a2400 0%, #241600 100%);
     border: 1px solid #5a3800;
-    color: #c89050;
+    color: var(--tension-text);
 }
 
 .version-btn[data-version="tension"]:hover {
     border-color: #7a4e00;
-    color: #d8a870;
+    color: var(--tension-text-hover);
     box-shadow:
         inset 0 1px 0 rgba(220, 170, 80, 0.06),
         inset 0 0 0 1px rgba(0, 0, 0, 0.6),
@@ -542,7 +563,7 @@ main::-webkit-scrollbar {
 .version-btn[data-version="tension"].active {
     background: linear-gradient(180deg, #6b3c00 0%, #3a2000 100%);
     border: 1px solid #9a5800;
-    color: #f0c070;
+    color: var(--tension-text-active);
     box-shadow:
         inset 0 1px 0 rgba(240, 180, 80, 0.08),
         inset 0 0 0 1px rgba(0, 0, 0, 0.7),
@@ -555,12 +576,12 @@ main::-webkit-scrollbar {
 .version-btn[data-version="combat"] {
     background: linear-gradient(180deg, #2a0a0a 0%, #1a0505 100%);
     border: 1px solid #4a1212;
-    color: #c07070;
+    color: var(--combat-text);
 }
 
 .version-btn[data-version="combat"]:hover {
     border-color: #6a1818;
-    color: #d08888;
+    color: var(--combat-text-hover);
     box-shadow:
         inset 0 1px 0 rgba(220, 100, 100, 0.06),
         inset 0 0 0 1px rgba(0, 0, 0, 0.6),
@@ -571,7 +592,7 @@ main::-webkit-scrollbar {
 .version-btn[data-version="combat"].active {
     background: linear-gradient(180deg, #8c2222 0%, #5a1212 100%);
     border: 1px solid #aa3030;
-    color: #f0a0a0;
+    color: var(--combat-text-active);
     box-shadow:
         inset 0 1px 0 rgba(240, 120, 120, 0.08),
         inset 0 0 0 1px rgba(0, 0, 0, 0.7),
@@ -974,7 +995,7 @@ main::-webkit-scrollbar {
     padding: 2px 9px;
     border-radius: 12px;
     font-family: 'Cinzel', serif;
-    font-size: 0.65rem;
+    font-size: 0.7rem;
     letter-spacing: .06em;
     text-transform: uppercase;
 }
@@ -1039,9 +1060,9 @@ main::-webkit-scrollbar {
 }
 
 .danger-btn {
-    background: rgba(107, 20, 20, 0.25);
+    background: var(--danger-bg);
     border: 1px solid #6b1414;
-    color: #c87070;
+    color: var(--danger-text);
     padding: 8px 14px;
     border-radius: 4px;
     cursor: pointer;
@@ -1059,7 +1080,7 @@ main::-webkit-scrollbar {
 .danger-btn-small {
     background: none;
     border: none;
-    color: #c87070;
+    color: var(--danger-text);
     font-size: 1.2rem;
     cursor: pointer;
     padding: 0 5px;
@@ -1067,7 +1088,7 @@ main::-webkit-scrollbar {
 }
 
 .danger-btn-small:hover {
-    color: #e09090;
+    color: var(--danger-text-hover);
     transform: scale(1.1);
 }
 
@@ -1096,7 +1117,7 @@ main::-webkit-scrollbar {
 .track-details {
     display: block;
     font-size: 0.78rem;
-    color: var(--bone-faint);
+    color: var(--bone-dim);
     margin-top: 4px;
     font-family: 'JetBrains Mono', ui-monospace, monospace;
     letter-spacing: .04em;
@@ -1516,7 +1537,7 @@ main::-webkit-scrollbar {
 .empty-message {
     font-family: 'IM Fell English', serif;
     font-style: italic;
-    color: var(--bone-faint);
+    color: var(--bone-dim);
     text-align: center;
     padding: 2rem 1rem;
     border-top: 1px solid var(--ink-3);
@@ -1534,7 +1555,7 @@ footer {
     text-align: center;
     font-family: 'Cinzel', serif;
     font-size: 0.72rem;
-    color: var(--bone-faint);
+    color: var(--bone-dim);
     background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.5) 100%);
     border-top: 1px solid var(--ink-3);
     letter-spacing: .18em;
@@ -1607,9 +1628,9 @@ header {
 .breadcrumb-btn {
     background: none;
     border: none;
-    color: var(--bone-faint);
+    color: var(--bone-dim);
     font-family: 'Cinzel', serif;
-    font-size: 0.6rem;
+    font-size: 0.7rem;
     letter-spacing: .18em;
     text-transform: uppercase;
     cursor: pointer;
@@ -1641,10 +1662,10 @@ header {
 
 .playlist-meta {
     font-family: 'Cinzel', serif;
-    font-size: 0.58rem;
+    font-size: 0.7rem;
     letter-spacing: .22em;
     text-transform: uppercase;
-    color: var(--bone-faint);
+    color: var(--bone-dim);
 }
 
 .playlist-name-display {
@@ -1753,15 +1774,15 @@ header {
 
 .incantation-label {
     font-family: 'Cinzel', serif;
-    font-size: 0.55rem;
+    font-size: 0.7rem;
     letter-spacing: .2em;
     text-transform: uppercase;
-    color: var(--bone-faint);
+    color: var(--bone-dim);
 }
 
 .version-badge {
     font-family: 'Cinzel', serif;
-    font-size: 0.6rem;
+    font-size: 0.7rem;
     letter-spacing: .18em;
     text-transform: uppercase;
     color: var(--gold-3);
@@ -1796,7 +1817,7 @@ header {
     letter-spacing: .04em;
     text-transform: none;
     font-weight: 400;
-    color: var(--bone-faint);
+    color: var(--bone-dim);
     margin-bottom: 0;
 }
 
@@ -1819,7 +1840,7 @@ header {
 .player-card .version-btn {
     padding: 4px 11px 4px 8px;
     min-width: unset;
-    font-size: 0.58rem;
+    font-size: 0.7rem;
     letter-spacing: .14em;
     border-radius: 20px;
     display: inline-flex;
@@ -1837,43 +1858,43 @@ header {
 
 /* Per-version dot color (calm) */
 .player-card .version-btn[data-version="calm"] {
-    background: rgba(22, 40, 64, 0.7);
+    background: var(--calm-bg);
     border-color: #1e3a5a;
-    color: #7aaac8;
+    color: var(--calm-text);
 }
-.player-card .version-btn[data-version="calm"]::before { color: #7aaac8; }
+.player-card .version-btn[data-version="calm"]::before { color: var(--calm-text); }
 .player-card .version-btn[data-version="calm"].active {
-    background: rgba(30, 74, 122, 0.75);
+    background: var(--calm-bg-active);
     border-color: #2a6090;
-    color: #b0d4ea;
+    color: var(--calm-text-active);
     animation: none;
 }
 
 /* combat */
 .player-card .version-btn[data-version="combat"] {
-    background: rgba(42, 10, 10, 0.7);
+    background: var(--combat-bg);
     border-color: #4a1212;
-    color: #c07070;
+    color: var(--combat-text);
 }
-.player-card .version-btn[data-version="combat"]::before { color: #c07070; }
+.player-card .version-btn[data-version="combat"]::before { color: var(--combat-text); }
 .player-card .version-btn[data-version="combat"].active {
-    background: rgba(140, 34, 34, 0.75);
+    background: var(--combat-bg-active);
     border-color: #aa3030;
-    color: #f0a0a0;
+    color: var(--combat-text-active);
     animation: none;
 }
 
 /* tension */
 .player-card .version-btn[data-version="tension"] {
-    background: rgba(58, 36, 0, 0.7);
+    background: var(--tension-bg);
     border-color: #5a3800;
-    color: #c89050;
+    color: var(--tension-text);
 }
-.player-card .version-btn[data-version="tension"]::before { color: #c89050; }
+.player-card .version-btn[data-version="tension"]::before { color: var(--tension-text); }
 .player-card .version-btn[data-version="tension"].active {
-    background: rgba(107, 60, 0, 0.75);
+    background: var(--tension-bg-active);
     border-color: #9a5800;
-    color: #f0c070;
+    color: var(--tension-text-active);
     animation: none;
 }
 
@@ -1913,7 +1934,7 @@ header {
 }
 
 .player-card .time-display {
-    font-size: 0.68rem;
+    font-size: 0.7rem;
     margin-bottom: 0;
 }
 
@@ -1983,7 +2004,7 @@ header {
 }
 
 .player-footer-controls #volume-control label {
-    font-size: 0.58rem;
+    font-size: 0.7rem;
     white-space: nowrap;
     min-width: auto;
 }
@@ -2023,10 +2044,10 @@ header {
 
 .tracklist-header {
     font-family: 'Cinzel', serif;
-    font-size: 0.6rem;
+    font-size: 0.7rem;
     letter-spacing: .22em;
     text-transform: uppercase;
-    color: var(--bone-faint);
+    color: var(--bone-dim);
     padding: 0.6rem 1rem;
     border-bottom: 1px solid var(--ink-3);
     background: linear-gradient(180deg, var(--ink-2) 0%, var(--ink-0) 100%);
@@ -2091,8 +2112,8 @@ header {
 
 .tracklist-panel .playlist-track-number {
     width: auto;
-    font-size: 0.68rem;
-    color: var(--bone-faint);
+    font-size: 0.7rem;
+    color: var(--bone-dim);
     font-family: 'JetBrains Mono', ui-monospace, monospace;
 }
 
@@ -2109,10 +2130,10 @@ header {
 
 .playlist-track-version {
     font-family: 'Cinzel', serif;
-    font-size: 0.52rem;
+    font-size: 0.7rem;
     letter-spacing: .12em;
     text-transform: uppercase;
-    color: var(--bone-faint);
+    color: var(--bone-dim);
     white-space: nowrap;
 }
 
@@ -2122,8 +2143,8 @@ header {
 
 .playlist-track-duration {
     font-family: 'JetBrains Mono', ui-monospace, monospace;
-    font-size: 0.65rem;
-    color: var(--bone-faint);
+    font-size: 0.7rem;
+    color: var(--bone-dim);
     min-width: 30px;
     text-align: right;
 }
@@ -2157,7 +2178,7 @@ header {
     font-family: 'IM Fell English', serif;
     font-style: italic;
     font-size: 0.9rem;
-    color: var(--bone-faint);
+    color: var(--bone-dim);
 }
 
 /* ── Footer ── */
@@ -2315,6 +2336,28 @@ footer {
     --bone:       #292114;
     --bone-dim:   #69593f;
     --bone-faint: rgba(41, 33, 20, 0.12);
+
+    /* #27 : sur fond clair, les fonds translucides sombres des boutons de
+       version deviennent des gris moyens illisibles → teintes claires opaques
+       et texte foncé (>= 5,4:1) */
+    --calm-text:           #23456a;
+    --calm-text-hover:     #1b3754;
+    --calm-text-active:    #23456a;
+    --calm-bg:             #cfdbe6;
+    --calm-bg-active:      #b3c8dc;
+    --combat-text:         #7a2424;
+    --combat-text-hover:   #5f1a1a;
+    --combat-text-active:  #7a2424;
+    --combat-bg:           #ecd2ce;
+    --combat-bg-active:    #e0b6b0;
+    --tension-text:        #6a4209;
+    --tension-text-hover:  #523306;
+    --tension-text-active: #6a4209;
+    --tension-bg:          #eddcc0;
+    --tension-bg-active:   #e3c89c;
+    --danger-text:         #8a2a2a;
+    --danger-text-hover:   #6e1f1f;
+    --danger-bg:           rgba(138, 42, 42, 0.12);
 }
 
 /* ============================================
@@ -2339,10 +2382,10 @@ footer {
 
 .settings-label {
     font-family: 'Cinzel', serif;
-    font-size: 0.65rem;
+    font-size: 0.7rem;
     letter-spacing: .18em;
     text-transform: uppercase;
-    color: var(--bone-faint);
+    color: var(--bone-dim);
     margin-bottom: 1rem;
 }
 
@@ -2391,7 +2434,7 @@ footer {
     gap: 0.7rem;
     transition: all 0.2s ease;
     font-family: 'Cinzel', serif;
-    font-size: 0.65rem;
+    font-size: 0.7rem;
     letter-spacing: .14em;
     text-transform: uppercase;
     color: var(--bone-dim);
@@ -2651,6 +2694,6 @@ footer {
 }
 
 .split-error {
-    color: var(--red-fire);
+    color: var(--danger-text);
     margin: 0;
 }

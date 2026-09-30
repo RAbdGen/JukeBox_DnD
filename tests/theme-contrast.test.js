@@ -74,3 +74,110 @@ describe('Contraste WCAG AA des thèmes (#19)', () => {
         }
     });
 });
+
+// ── #27 : tous les textes, pas seulement bone-dim / gold-2 ──────────────────
+
+function parseColor(value) {
+    const v = value.trim();
+    if (/^#[0-9a-fA-F]{6}$/.test(v)) return [...hexToRgb(v), 1];
+    const m = v.match(/^rgba?\(([^)]+)\)$/);
+    if (!m) return null;
+    const [r, g, b, a = 1] = m[1].split(',').map(Number);
+    return [r, g, b, a];
+}
+
+function composite(fg, bg) {
+    return [0, 1, 2].map(i => fg[i] * fg[3] + bg[i] * (1 - fg[3]));
+}
+
+/** Valeur d'une variable pour un thème : bloc du thème, sinon :root ; suit les var() en chaîne */
+function resolveVar(themeSelector, name, depth = 0) {
+    const pattern = new RegExp(`--${name}:\\s*([^;]+);`);
+    const value = (extractBlocks(themeSelector).match(pattern) || extractBlocks(':root').match(pattern))?.[1];
+    if (!value) throw new Error(`--${name} introuvable`);
+    const ref = value.trim().match(/^var\(--([\w-]+)\)$/);
+    return ref && depth < 5 ? resolveVar(themeSelector, ref[1], depth + 1) : value.trim();
+}
+
+function resolveColor(themeSelector, value) {
+    const ref = value.trim().match(/^var\(--([\w-]+)\)$/);
+    return parseColor(ref ? resolveVar(themeSelector, ref[1]) : value);
+}
+
+/** Règles CSS simples (y compris celles imbriquées dans un @media) */
+function cssRules() {
+    const rules = [];
+    const re = /([^{}]+)\{([^{}]*)\}/g;
+    let m;
+    while ((m = re.exec(css))) {
+        const selector = m[1].trim().split('\n').pop().trim();
+        if (!selector.startsWith('@') && !selector.startsWith('--')) rules.push({ selector, body: m[2] });
+    }
+    return rules;
+}
+
+const DECORATIVE = /::?before|::?after|\.ornament-gem|\.stub-icon|:disabled/; // glyphes décoratifs ; contrôles désactivés exemptés par WCAG
+const declaration = (body, prop) => body.match(new RegExp(`(?:^|[;\\s{])${prop}:\\s*([^;]+);`))?.[1].trim();
+
+describe('Contraste de tous les textes (#27)', () => {
+    const rules = cssRules();
+
+    it('aucune couleur de texte en dur (hors glyphes décoratifs) : tout passe par les variables du thème', () => {
+        const hardcoded = rules
+            .filter(({ selector, body }) => !DECORATIVE.test(selector) && /^#/.test(declaration(body, 'color') || ''))
+            .map(({ selector }) => selector);
+        expect(hardcoded).toEqual([]);
+    });
+
+    for (const [name, selector] of Object.entries(themeSelectors)) {
+        it(`${name} : textes posés sur les panneaux >= 4.5:1 contre ink-2`, () => {
+            const ink2 = parseColor(resolveVar(selector, 'ink-2'));
+            const failures = [];
+            for (const rule of rules) {
+                const color = declaration(rule.body, 'color');
+                const background = declaration(rule.body, 'background') || declaration(rule.body, 'background-color');
+                if (!color || DECORATIVE.test(rule.selector)) continue;
+                if (background && background !== 'none' && background !== 'transparent') continue; // fond propre : testé plus bas
+                if (/var\(--ink-0\)/.test(color)) continue; // texte sombre sur bouton doré
+                const fg = resolveColor(selector, color);
+                if (!fg) continue; // inherit, currentColor…
+                const ratio = contrast(composite(fg, ink2), ink2);
+                if (ratio < 4.5) failures.push(`${rule.selector} (${color}) ${ratio.toFixed(2)}`);
+            }
+            expect(failures).toEqual([]);
+        });
+
+        it(`${name} : boutons de version, statut arrêté et bouton danger >= 4.5:1 contre leur propre fond`, () => {
+            const ink2 = parseColor(resolveVar(selector, 'ink-2'));
+            const withOwnBackground = [
+                '.player-card .version-btn[data-version="calm"]',
+                '.player-card .version-btn[data-version="calm"].active',
+                '.player-card .version-btn[data-version="combat"]',
+                '.player-card .version-btn[data-version="combat"].active',
+                '.player-card .version-btn[data-version="tension"]',
+                '.player-card .version-btn[data-version="tension"].active',
+                '.status.stopped',
+                '.danger-btn',
+            ];
+            const failures = [];
+            for (const target of withOwnBackground) {
+                const rule = rules.find(r => r.selector === target);
+                if (!rule) throw new Error(`règle introuvable : ${target}`);
+                const fg = resolveColor(selector, declaration(rule.body, 'color'));
+                const bg = composite(resolveColor(selector, declaration(rule.body, 'background')), ink2);
+                const ratio = contrast(composite(fg, bg), bg);
+                if (ratio < 4.5) failures.push(`${target} ${ratio.toFixed(2)}`);
+            }
+            expect(failures).toEqual([]);
+        });
+    }
+
+    it('aucun texte sous 0.7rem (hors glyphes décoratifs)', () => {
+        const tooSmall = rules
+            .filter(({ selector }) => !DECORATIVE.test(selector))
+            .map(({ selector, body }) => ({ selector, size: declaration(body, 'font-size') }))
+            .filter(({ size }) => size && /^[\d.]+rem$/.test(size) && parseFloat(size) < 0.7)
+            .map(({ selector, size }) => `${selector} ${size}`);
+        expect(tooSmall).toEqual([]);
+    });
+});
