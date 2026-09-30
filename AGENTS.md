@@ -83,7 +83,7 @@ Français/anglais, fichiers maison (pas de lib i18n) dans `backend/i18n.js` — 
 - `tests/i18n.test.js` vérifie que les deux dictionnaires ont exactement le même jeu de clés (parité fr/en) — à garder au vert : une clé oubliée dans une langue retombe silencieusement sur l'autre plutôt que de planter, donc seul ce test l'attrape.
 
 ### Règles UI à respecter
-- Scrollbar custom ou masquée (le bug de scrollbar visible à droite doit être réglé)
+- Scrollbars (depuis #30) : un seul style global dans `styles.css` (`scrollbar-width: thin` + `scrollbar-color` via `--scroll-thumb`/`--scroll-thumb-hover`/`--scroll-track`), jamais masquées ; toute zone `overflow: auto` déclare `scrollbar-gutter: stable` (pas de saut de mise en page). Pas de `::-webkit-scrollbar` : ignoré par le Chromium d'Electron dès que `scrollbar-color` est défini. Vérifié par `tests/scrollbar.test.js`
 - Inputs avec labels clairs et taille de texte lisible (bug de l'input trop petit pour nom de version/musique)
 - Popup d'ajout de musique modale propre, pas inline
 - Pas de layout qui "saute" quand une modal s'ouvre
@@ -98,7 +98,7 @@ Traiter dans cet ordre de priorité :
 
 2. **Input trop petit** — Les champs nom de version et nom de musique ont une taille inadaptée. Revoir le sizing CSS de tous les `<input>` dans les modals et formulaires inline.
 
-3. **Scrollbar visible à droite** — Masquer la scrollbar native sur le conteneur principal tout en conservant le scroll fonctionnel. CSS : `scrollbar-width: none` (Firefox) + `::-webkit-scrollbar { display: none }` (Chromium/WebView2). À terme remplacé par une scrollbar fine stylée par le thème ([#30](https://github.com/RAbdGen/JukeBox_DnD/issues/30)).
+3. ~~**Scrollbar visible à droite**~~ — remplacé par [#30](https://github.com/RAbdGen/JukeBox_DnD/issues/30) (fait) : scrollbars fines stylées par le thème, plus jamais masquées.
 
 4. **Version 1 par défaut au changement de piste** — Quand on change de musique active, remettre la version index 0 comme version courante dans `AudioManager.js`, **sauf version de lancement choisie** par l'utilisateur (#25, `track.launchVersion`, voir « Stack technique »).
 
@@ -169,10 +169,10 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#27 — Contraste insuffisant des petits textes (tous thèmes)](https://github.com/RAbdGen/JukeBox_DnD/issues/27) — `--bone-faint` utilisé comme texte (~1.3:1), couleurs en dur illisibles sur « parchemin », tailles < 0.7rem ; test étendu à tous les textes
 - [#25 — Choisir la version de lancement en cliquant sur une version](https://github.com/RAbdGen/JukeBox_DnD/issues/25) — `launchVersion` par piste, libellé cliquable dans la liste + boutons du lecteur à l'arrêt
 - [#26 — Raccourci clavier personnalisable pour changer de version](https://github.com/RAbdGen/JukeBox_DnD/issues/26) — version suivante + versions 1 à 3, globaux, réglables dans Réglages
+- [#30 — Scrollbar intégrée au thème](https://github.com/RAbdGen/JukeBox_DnD/issues/30) — style global via variables du thème, `scrollbar-gutter: stable`
 
 **À faire (`Todo`) :**
 - [#18 — Personnalisation : synchronisation BPM entre versions (mode avancé)](https://github.com/RAbdGen/JukeBox_DnD/issues/18) — spec complète dans l'issue : BPM + décalage du premier temps par version, `Z2 = (Z1 − Y1) × (X1 / X2) + Y2`, comportement actuel conservé si rien n'est renseigné
-- [#30 — Scrollbar intégrée au thème](https://github.com/RAbdGen/JukeBox_DnD/issues/30)
 
 ### Conventions de code
 - ESM partout sauf les fichiers `.cjs` d'Electron (ne pas toucher au module system sans raison)
