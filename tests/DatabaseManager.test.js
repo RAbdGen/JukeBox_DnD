@@ -286,3 +286,37 @@ describe('DatabaseManager — pistes découpées (#24)', () => {
         expect(manager.db.data.library[0]).not.toHaveProperty('segments');
     });
 });
+
+describe('DatabaseManager — revue finale #24', () => {
+    it('remplacer une version découpée par un vrai fichier retire son segment', async () => {
+        const manager = createDatabaseManager({
+            library: [{
+                id: 't1',
+                title: 'Forêt',
+                localPaths: { calm: '/s.mp3', combat: '/s.mp3' },
+                originalPaths: { calm: '/o.mp3', combat: '/o.mp3' },
+                segments: { calm: { start: 0, end: 90 }, combat: { start: 90, end: 180 } },
+            }],
+            playlists: [],
+            metadata: {},
+        });
+
+        await manager.addVersionToTrack('t1', 'calm', '/nouveau.mp3', '/m/t1_calm.mp3');
+
+        const track = manager.db.data.library[0];
+        expect(track.localPaths.calm).toBe('/m/t1_calm.mp3');
+        expect(track.segments).toEqual({ combat: { start: 90, end: 180 } });
+    });
+
+    it('la dernière version découpée remplacée : plus de segments du tout', async () => {
+        const manager = createDatabaseManager({
+            library: [{ id: 't1', title: 'x', localPaths: { calm: '/s.mp3' }, segments: { calm: { start: 0, end: 9 } } }],
+            playlists: [],
+            metadata: {},
+        });
+
+        await manager.addVersionToTrack('t1', 'calm', '/n.mp3', '/m/n.mp3');
+
+        expect(manager.db.data.library[0]).not.toHaveProperty('segments');
+    });
+});

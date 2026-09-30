@@ -248,6 +248,13 @@ export class DatabaseManager {
         track.originalPaths[versionName] = originalPath;
         track.localPaths[versionName] = localPath;
 
+        // Un vrai fichier remplace une version découpée du même nom (modal #15) :
+        // son segment ne doit plus s'appliquer au nouveau fichier (#24)
+        if (track.segments) {
+            delete track.segments[versionName];
+            if (Object.keys(track.segments).length === 0) delete track.segments;
+        }
+
         // Mettre à jour metadata
         if (track.metadata) {
             track.metadata.modifiedAt = new Date().toISOString();
