@@ -66,7 +66,10 @@ const { FakeHowl, instances } = vi.hoisted(() => {
             return this;
         }
         fade(from, to) { this._volume = to; }
-        seek(value) {
+        seek(value, id) {
+            // Comme Howler : un argument unique égal à l'id d'un son vivant est lu
+            // comme « donne-moi la position de ce son » (getter), pas comme un seek
+            if (typeof value === 'number' && arguments.length === 1 && value === this._soundId) return this._seek;
             if (typeof value === 'number') { this._seek = value; return this; }
             return this._seek;
         }
@@ -428,5 +431,46 @@ describe('Track — synchronisation BPM (#18)', () => {
         track.crossfade('combat', 1);
 
         expect(track.versions.combat.seek()).toBe(10.5);
+    });
+});
+
+describe('Track — écarts de position (#35)', () => {
+    it('fondu échoué : la version d\'origine reprend à sa position, pas au début', () => {
+        const track = createTrack();
+        track.play('calm');
+        track.versions.calm.seek(40);
+        track.versions.combat.play = vi.fn(() => 99); // la cible ne démarre pas
+
+        track.crossfade('combat', 1);
+        track.versions.calm.stop(); // l'origine s'est arrêtée entre-temps
+        vi.advanceTimersByTime(60);
+
+        expect(track.versions.calm.playing()).toBe(true);
+        expect(track.versions.calm.seek()).toBe(40);
+    });
+
+    it('seek vers une position égale à l\'id du son : bien appliqué (pas pris pour un getter)', () => {
+        const track = createTrack();
+        track.play('calm'); // FakeHowl : premier son = id 1
+
+        track.seek(1);
+        track.versions.calm.seek(55); // puis on vérifie qu'un seek arbitraire marche toujours
+        track.seek(1);
+
+        expect(track.getCurrentTime()).toBe(1);
+    });
+
+    it('segment dont la fin dépasse le fichier réel : durée et sprite bornés au chargement', () => {
+        const track = new Track('t3', 'VBR', { calm: 'src.mp3', combat: 'src.mp3' }, {
+            calm: { start: 0, end: 90 },
+            combat: { start: 90, end: 250 }, // le fichier ne fait que 180 s
+        });
+        track.loadVersions();
+
+        track.versions.combat.opts.onload();
+        track.play('combat');
+
+        expect(track.getDuration()).toBe(90);
+        expect(track.versions.combat._sprite.segment).toEqual([90000, 90000]);
     });
 });

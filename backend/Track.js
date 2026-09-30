@@ -60,6 +60,24 @@ export class Track {
         return this._crossfade !== null;
     }
 
+    /**
+     * Fin de segment au-delà du fichier réel (MP3 VBR, fichier remplacé) : on la
+     * borne dès que la durée est connue, sinon la durée annoncée est trop longue et
+     * le minuteur du sprite laisse un silence avant la piste suivante (#35).
+     */
+    _clampSegmentToFile(versionName) {
+        const segment = this._segmentOf(versionName);
+        const howl = this.versions[versionName];
+        const fileDuration = howl ? howl.duration() : 0;
+        if (!segment || !(fileDuration > 0) || segment.end <= fileDuration) return;
+
+        const end = Math.max(segment.start, fileDuration);
+        this.segments = { ...this.segments, [versionName]: { start: segment.start, end } }; // copie : la config reste intacte
+        // Howler 2.2 n'expose pas de mise à jour de sprite : on corrige sa table
+        // interne, lue à chaque play(sprite)
+        howl._sprite[SPRITE_NAME] = [segment.start * 1000, (end - segment.start) * 1000];
+    }
+
     _segmentOf(versionName) {
         return this.segments[versionName] || null;
     }
@@ -139,6 +157,7 @@ export class Track {
                 ...(segment ? { sprite: { [SPRITE_NAME]: [segment.start * 1000, (segment.end - segment.start) * 1000] } } : {}),
                 onload: () => {
                     console.log(`✅ Version "${versionName}" de "${this.name}" chargée`);
+                    this._clampSegmentToFile(versionName);
                     this._migrateLegacyCrossfade(this._versionDuration(versionName));
                 },
                 onloaderror: (id, error) => {
@@ -366,7 +385,9 @@ export class Track {
                     // Restaurer l'ancienne version pour éviter un silence total
                     fromVersion.volume(fromVolume);
                     if (!fromVersion.playing()) {
-                        this._startSound(cf.fromVersion);
+                        // Reprendre à la position du switch, pas au début (#35)
+                        const restoredId = this._startSound(cf.fromVersion);
+                        fromVersion.seek(this._toAbsolute(cf.fromVersion, currentSeek), restoredId);
                     }
 
                     complete(false);
@@ -534,7 +555,12 @@ export class Track {
             // Pas encore démarrée : appliquée au démarrage / à la reprise
             this._resumeSeek = position;
         } else {
-            this.versions[this.currentVersion].seek(this._toAbsolute(this.currentVersion, position));
+            // Toujours avec l'id : un argument unique égal à l'id d'un son vivant serait
+            // lu par Howler comme un getter et la position ignorée (#35)
+            this.versions[this.currentVersion].seek(
+                this._toAbsolute(this.currentVersion, position),
+                this._soundIds[this.currentVersion],
+            );
         }
     }
 
