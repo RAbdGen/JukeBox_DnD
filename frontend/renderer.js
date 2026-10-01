@@ -12,6 +12,7 @@ import { createPendingDeletionStore } from './pendingDeletions.js';
 import { createCutterView } from './cutterView.js';
 import { createPreviewController } from './previewController.js';
 import { createPreviewState } from './previewState.js';
+import { initTooltips, setTooltip } from './tooltip.js';
 import { getPreviewVolume } from './trackVolume.js';
 
 // ========================================
@@ -64,7 +65,7 @@ function t(key, vars) {
 
 /**
  * Applique la traduction courante à tout le HTML statique tagué
- * (data-i18n / data-i18n-placeholder / data-i18n-title), puis met à jour
+ * (data-i18n / data-i18n-placeholder / data-i18n-tooltip), puis met à jour
  * les quelques éléments qui mélangent texte traduit et données dynamiques
  * (nom de l'app, footer) et ne peuvent pas passer par un simple attribut.
  */
@@ -78,9 +79,10 @@ function applyTranslations() {
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         el.placeholder = t(el.dataset.i18nPlaceholder);
     });
-    document.querySelectorAll('[data-i18n-title]').forEach(el => {
-        el.title = t(el.dataset.i18nTitle);
-        if (el.hasAttribute('aria-label')) el.setAttribute('aria-label', el.title);
+    document.querySelectorAll('[data-i18n-tooltip]').forEach(el => {
+        const text = t(el.dataset.i18nTooltip);
+        setTooltip(el, text);
+        if (el.hasAttribute('aria-label')) el.setAttribute('aria-label', text);
     });
 
     const footer = document.getElementById('app-footer');
@@ -447,7 +449,7 @@ function renderTempoList() {
             input.step = String(step);
             input.value = values[key];
             input.placeholder = placeholder;
-            input.title = t(labelKey);
+            setTooltip(input, t(labelKey));
             input.setAttribute('aria-label', `${name} — ${t(labelKey)}`);
             input.addEventListener('input', () => { values[key] = input.value; });
             return input;
@@ -500,7 +502,7 @@ function renderEditVersionList() {
         const upBtn = document.createElement('button');
         upBtn.type = 'button';
         upBtn.className = 'icon-btn';
-        upBtn.title = t('tracklist.moveUp');
+        setTooltip(upBtn, t('tracklist.moveUp'));
         upBtn.textContent = '↑';
         upBtn.disabled = index === 0;
         upBtn.addEventListener('click', () => swapEditingVersions(index, index - 1));
@@ -508,7 +510,7 @@ function renderEditVersionList() {
         const downBtn = document.createElement('button');
         downBtn.type = 'button';
         downBtn.className = 'icon-btn';
-        downBtn.title = t('tracklist.moveDown');
+        setTooltip(downBtn, t('tracklist.moveDown'));
         downBtn.textContent = '↓';
         downBtn.disabled = index === editingVersions.length - 1;
         downBtn.addEventListener('click', () => swapEditingVersions(index, index + 1));
@@ -516,7 +518,7 @@ function renderEditVersionList() {
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
         removeBtn.className = 'icon-btn danger-icon';
-        removeBtn.title = t('modal.editTrack.removeVersion');
+        setTooltip(removeBtn, t('modal.editTrack.removeVersion'));
         removeBtn.textContent = '✕';
         removeBtn.disabled = editingVersions.length <= 1;
         removeBtn.addEventListener('click', () => removeEditingVersion(index));
@@ -568,7 +570,7 @@ function showAddVersionRow() {
     const confirmBtn = document.createElement('button');
     confirmBtn.type = 'button';
     confirmBtn.className = 'icon-btn';
-    confirmBtn.title = t('modal.editTrack.confirm');
+    setTooltip(confirmBtn, t('modal.editTrack.confirm'));
     confirmBtn.textContent = '✓';
     confirmBtn.addEventListener('click', () => {
         const name = nameInput.value.trim();
@@ -591,7 +593,7 @@ function showAddVersionRow() {
     const cancelBtn = document.createElement('button');
     cancelBtn.type = 'button';
     cancelBtn.className = 'icon-btn danger-icon';
-    cancelBtn.title = t('modal.editTrack.cancel');
+    setTooltip(cancelBtn, t('modal.editTrack.cancel'));
     cancelBtn.textContent = '✕';
     cancelBtn.addEventListener('click', () => row.remove());
 
@@ -617,6 +619,7 @@ const previewController = createPreviewController({
     getSource: getPreviewSource,
     getVolume: getPreviewVolume,
     t, // référence stable : lit currentLanguage à chaque appel, donc suit les changements de langue
+    setTooltip,
 });
 
 const previewState = createPreviewState({
@@ -659,10 +662,10 @@ function renderLibraryList(tracks) {
                 <span class="track-details">${t('library.versionsCount', { versions: versionsCount, playlists: playlistsCount })}</span>
             </div>
             <div class="track-actions">
-                <button class="preview-track-btn secondary-btn" data-id="${track.id}" title="${t('preview.play')}" aria-label="${t('preview.play')}" ${canPreview ? '' : 'disabled'}>▶</button>
-                <button class="add-to-playlist-btn secondary-btn" data-id="${track.id}" title="${t('library.addToPlaylist')}" ${currentPlaylistId ? '' : 'disabled'}>➕</button>
-                ${Object.keys(track.segments || {}).length > 0 ? `<button class="split-track-btn secondary-btn" data-id="${track.id}" title="${t('library.splitTrack')}">✂</button>` : ''}
-                <button class="edit-track-btn secondary-btn" data-id="${track.id}" title="${t('library.editTrack')}">✏️</button>
+                <button class="preview-track-btn secondary-btn" data-id="${track.id}" data-tooltip="${t('preview.play')}" aria-label="${t('preview.play')}" ${canPreview ? '' : 'disabled'}>▶</button>
+                <button class="add-to-playlist-btn secondary-btn" data-id="${track.id}" data-tooltip="${t('library.addToPlaylist')}" aria-label="${t('library.addToPlaylist')}" ${currentPlaylistId ? '' : 'disabled'}>➕</button>
+                ${Object.keys(track.segments || {}).length > 0 ? `<button class="split-track-btn secondary-btn" data-id="${track.id}" data-tooltip="${t('library.splitTrack')}" aria-label="${t('library.splitTrack')}">✂</button>` : ''}
+                <button class="edit-track-btn secondary-btn" data-id="${track.id}" data-tooltip="${t('library.editTrack')}" aria-label="${t('library.editTrack')}">✏️</button>
                 <button class="delete-track-btn danger-btn" data-id="${track.id}">🗑️</button>
             </div>
         `;
@@ -1068,7 +1071,7 @@ function renderPlaylistUI() {
         versionSpan.type = 'button';
         versionSpan.className = 'playlist-track-version';
         versionSpan.textContent = versionDisplayLabel;
-        versionSpan.title = t('tracklist.launchVersion', { version: versionDisplayLabel });
+        setTooltip(versionSpan, t('tracklist.launchVersion', { version: versionDisplayLabel }));
         versionSpan.addEventListener('click', (e) => {
             e.stopPropagation(); // ne pas lancer la piste
             const names = audioManager.getTrack(track.id)?.getState().availableVersions || [];
@@ -1090,7 +1093,7 @@ function renderPlaylistUI() {
         const upBtn = document.createElement('button');
         upBtn.type = 'button';
         upBtn.className = 'icon-btn';
-        upBtn.title = t('tracklist.moveUp');
+        setTooltip(upBtn, t('tracklist.moveUp'));
         upBtn.textContent = '↑';
         upBtn.disabled = index === 0;
         upBtn.addEventListener('click', (e) => {
@@ -1101,7 +1104,7 @@ function renderPlaylistUI() {
         const downBtn = document.createElement('button');
         downBtn.type = 'button';
         downBtn.className = 'icon-btn';
-        downBtn.title = t('tracklist.moveDown');
+        setTooltip(downBtn, t('tracklist.moveDown'));
         downBtn.textContent = '↓';
         downBtn.disabled = index === state.playlist.length - 1;
         downBtn.addEventListener('click', (e) => {
@@ -1112,7 +1115,7 @@ function renderPlaylistUI() {
         const removeBtn = document.createElement('button');
         removeBtn.type = 'button';
         removeBtn.className = 'icon-btn danger-icon';
-        removeBtn.title = t('tracklist.removeFromPlaylist');
+        setTooltip(removeBtn, t('tracklist.removeFromPlaylist'));
         removeBtn.textContent = '✕';
         removeBtn.addEventListener('click', (e) => {
             e.stopPropagation();
@@ -1228,6 +1231,7 @@ function switchView(viewName) {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    initTooltips(); // #38 : avant init(), qui pose déjà des tooltips
     init();
     loadShortcutSettings();
 

@@ -1,0 +1,57 @@
+/* ============================================
+   Tooltips thémés (#38) — remplacent les title natifs
+   Un seul élément #app-tooltip, positionné par frontend/tooltip.js
+   ============================================ */
+
+.tooltip {
+    position: fixed;
+    top: 0;
+    left: 0;
+    z-index: 2000; /* au-dessus des modals et des toasts */
+    max-width: 260px;
+    padding: 6px 10px;
+    background: var(--ink-1);
+    color: var(--bone);
+    border: 1px solid var(--gold-1);
+    border-radius: 4px;
+    box-shadow: 0 6px 18px rgba(0, 0, 0, 0.45);
+    font-family: 'IM Fell English', Georgia, serif;
+    font-size: 0.8rem;
+    line-height: 1.35;
+    text-align: center;
+    text-wrap: balance;
+    pointer-events: none;
+    animation: tooltip-in var(--duration-fast) ease-out;
+}
+
+.tooltip[hidden] {
+    display: none;
+}
+
+/* Flèche : carré tourné, mêmes fond et bordure que la bulle */
+.tooltip-arrow {
+    position: absolute;
+    width: 8px;
+    height: 8px;
+    margin-left: -4px;
+    background: var(--ink-1);
+    border: 1px solid var(--gold-1);
+    transform: rotate(45deg);
+}
+
+.tooltip[data-side="top"] .tooltip-arrow {
+    bottom: -5px;
+    border-top: none;
+    border-left: none;
+}
+
+.tooltip[data-side="bottom"] .tooltip-arrow {
+    top: -5px;
+    border-bottom: none;
+    border-right: none;
+}
+
+@keyframes tooltip-in {
+    from { opacity: 0; transform: scale(0.97); }
+    to   { opacity: 1; transform: scale(1); }
+}

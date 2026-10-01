@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { createPreviewController } from '../frontend/previewController.js';
 
 function createButton() {
-    return { textContent: '▶', title: 'Préécouter', ariaLabel: 'Préécouter' };
+    return { textContent: '▶', dataset: { tooltip: 'Préécouter' }, ariaLabel: 'Préécouter' };
 }
 
 function createHowlFactory() {
@@ -39,7 +39,7 @@ describe('createPreviewController', () => {
         expect(howls[0].play).toHaveBeenCalledOnce();
         expect(button).toMatchObject({
             textContent: '⏸',
-            title: 'Arrêter le preview',
+            dataset: { tooltip: 'Arrêter le preview' },
             ariaLabel: 'Arrêter le preview',
         });
 
@@ -48,7 +48,7 @@ describe('createPreviewController', () => {
         expect(howls[0].unload).toHaveBeenCalledOnce();
         expect(button).toMatchObject({
             textContent: '▶',
-            title: 'Préécouter',
+            dataset: { tooltip: 'Préécouter' },
             ariaLabel: 'Préécouter',
         });
     });
@@ -83,6 +83,17 @@ describe('createPreviewController', () => {
         preview.toggle({ id: 'forest' }, button);
 
         expect(t).toHaveBeenCalledWith('preview.stop');
-        expect(button.title).toBe('Stop preview');
+        expect(button.dataset.tooltip).toBe('Stop preview');
+    });
+
+    it('passes the label through an injected setTooltip (#38)', () => {
+        const { createHowl } = createHowlFactory();
+        const setTooltip = vi.fn();
+        const preview = createPreviewController({ createHowl, getSource: () => 'file:///forest.mp3', getVolume: () => 1, setTooltip });
+        const button = createButton();
+
+        preview.toggle({ id: 'forest' }, button);
+
+        expect(setTooltip).toHaveBeenCalledWith(button, 'Arrêter le preview');
     });
 });

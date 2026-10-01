@@ -17,5 +17,6 @@
 @import './styles/themes.css';     /* 8 palettes [data-theme] */
 @import './styles/settings.css';   /* réglages, sélecteur de thème */
 @import './styles/toast.css';      /* toasts (annulation) */
+@import './styles/tooltip.css';    /* tooltips thémés (#38) */
 @import './styles/cutter.css';     /* onglet Découpage (#24) */
 @import './styles/versions.css';   /* version de lancement (#25), raccourcis (#26), BPM (#18) */

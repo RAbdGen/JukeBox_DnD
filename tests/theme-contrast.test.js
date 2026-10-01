@@ -159,6 +159,7 @@ describe('Contraste de tous les textes (#27)', () => {
                 '.player-card .version-btn[data-version="tension"].active',
                 '.status.stopped',
                 '.danger-btn',
+                '.tooltip', // #38 : bulle sur son propre fond
             ];
             const failures = [];
             for (const target of withOwnBackground) {

@@ -58,11 +58,11 @@
                         <div class="playlist-info-bar" style="position:relative">
                             <div class="playlist-meta-group">
                                 <span class="playlist-meta" id="playlist-meta-text">Liste de lecture · 0 pistes</span>
-                                <button id="playlist-name-display" class="playlist-name-display" data-i18n-title="controls.changePlaylist" title="Changer de playlist">—</button>
+                                <button id="playlist-name-display" class="playlist-name-display" data-i18n-tooltip="controls.changePlaylist" data-tooltip="Changer de playlist">—</button>
                             </div>
                             <div class="playlist-actions">
-                                <button id="create-playlist-btn" class="icon-btn" data-i18n-title="controls.createPlaylist" title="Créer une playlist">＋</button>
-                                <button id="delete-playlist-btn" class="icon-btn danger-icon" data-i18n-title="controls.deletePlaylist" title="Supprimer la playlist">🗑</button>
+                                <button id="create-playlist-btn" class="icon-btn" data-i18n-tooltip="controls.createPlaylist" data-tooltip="Créer une playlist">＋</button>
+                                <button id="delete-playlist-btn" class="icon-btn danger-icon" data-i18n-tooltip="controls.deletePlaylist" data-tooltip="Supprimer la playlist">🗑</button>
                             </div>
                             <div id="playlist-dropdown" class="playlist-dropdown hidden"></div>
                         </div>
@@ -98,10 +98,10 @@
                             </div>
 
                             <div id="player-controls">
-                                <button id="prev-btn" class="ctrl-btn" data-i18n-title="controls.prevTrack" title="Piste précédente">⏮</button>
-                                <button id="stop-btn" class="ctrl-btn" data-i18n-title="controls.stop" title="Arrêter">■</button>
-                                <button id="play-btn" class="ctrl-btn ctrl-play" data-i18n-title="controls.playPause" title="Lecture / Pause">▶</button>
-                                <button id="next-btn" class="ctrl-btn" data-i18n-title="controls.nextTrack" title="Piste suivante">⏭</button>
+                                <button id="prev-btn" class="ctrl-btn" data-i18n-tooltip="controls.prevTrack" data-tooltip="Piste précédente">⏮</button>
+                                <button id="stop-btn" class="ctrl-btn" data-i18n-tooltip="controls.stop" data-tooltip="Arrêter">■</button>
+                                <button id="play-btn" class="ctrl-btn ctrl-play" data-i18n-tooltip="controls.playPause" data-tooltip="Lecture / Pause">▶</button>
+                                <button id="next-btn" class="ctrl-btn" data-i18n-tooltip="controls.nextTrack" data-tooltip="Piste suivante">⏭</button>
                             </div>
 
                             <div class="player-footer-controls">
@@ -112,9 +112,9 @@
                                 </div>
                                 <div id="play-mode-selector">
                                     <div class="mode-buttons">
-                                        <button class="mode-btn active" data-mode="noLoop" data-i18n-title="controls.modeNormal" title="Une fois">↩</button>
-                                        <button class="mode-btn" data-mode="loopOne" data-i18n-title="controls.modeLoopOne" title="Boucle une piste">↻</button>
-                                        <button class="mode-btn" data-mode="loopAll" data-i18n-title="controls.modeLoopAll" title="Tout répéter">⟳</button>
+                                        <button class="mode-btn active" data-mode="noLoop" data-i18n-tooltip="controls.modeNormal" data-tooltip="Une fois">↩</button>
+                                        <button class="mode-btn" data-mode="loopOne" data-i18n-tooltip="controls.modeLoopOne" data-tooltip="Boucle une piste">↻</button>
+                                        <button class="mode-btn" data-mode="loopAll" data-i18n-tooltip="controls.modeLoopAll" data-tooltip="Tout répéter">⟳</button>
                                     </div>
                                 </div>
                             </div>
@@ -165,10 +165,10 @@
                             <div class="split-wave-wrap">
                                 <canvas id="split-canvas" class="split-canvas" tabindex="0"></canvas>
                             </div>
-                            <input type="range" id="split-scroll" class="split-scroll" min="0" max="0" step="0.1" value="0" data-i18n-title="split.scroll" title="Défilement" />
+                            <input type="range" id="split-scroll" class="split-scroll" min="0" max="0" step="0.1" value="0" data-i18n-tooltip="split.scroll" data-tooltip="Défilement" />
                             <div class="split-toolbar">
-                                <button type="button" id="split-zoom-out" class="secondary-btn" data-i18n-title="split.zoomOut" title="Zoom arrière">－</button>
-                                <button type="button" id="split-zoom-in" class="secondary-btn" data-i18n-title="split.zoomIn" title="Zoom avant">＋</button>
+                                <button type="button" id="split-zoom-out" class="secondary-btn" data-i18n-tooltip="split.zoomOut" data-tooltip="Zoom arrière">－</button>
+                                <button type="button" id="split-zoom-in" class="secondary-btn" data-i18n-tooltip="split.zoomIn" data-tooltip="Zoom avant">＋</button>
                                 <button type="button" id="split-listen" class="secondary-btn"></button>
                                 <button type="button" id="split-cut" class="secondary-btn" data-i18n="split.cutHere">✂ Couper ici</button>
                                 <span id="split-time" class="split-time">0:00.0 / 0:00.0</span>

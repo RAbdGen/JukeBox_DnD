@@ -5,12 +5,18 @@
  * @param {(key: string) => string} [deps.t] - Fonction de traduction (#22),
  *   appelée avec 'preview.play'/'preview.stop'. Par défaut : libellés en
  *   français, pour rester utilisable sans changement côté appelant.
+ * @param {(button: object, text: string) => void} [deps.setTooltip] - Pose le
+ *   tooltip thémé (#38) ; par défaut data-tooltip + aria-label, sans DOM.
  */
 export function createPreviewController({
     createHowl,
     getSource,
     getVolume,
     t = key => (key === 'preview.stop' ? 'Arrêter le preview' : 'Préécouter'),
+    setTooltip = (button, text) => {
+        button.dataset.tooltip = text;
+        button.ariaLabel = text;
+    },
 }) {
     let activeHowl = null;
     let activeTrackId = null;
@@ -18,8 +24,7 @@ export function createPreviewController({
 
     const setButtonState = (button, isActive) => {
         button.textContent = isActive ? '⏸' : '▶';
-        button.title = isActive ? t('preview.stop') : t('preview.play');
-        button.ariaLabel = button.title;
+        setTooltip(button, isActive ? t('preview.stop') : t('preview.play'));
     };
 
     const stop = () => {

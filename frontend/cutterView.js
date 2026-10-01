@@ -21,6 +21,7 @@ import {
     xToTime,
     zoomView,
 } from './waveform.js';
+import { setTooltip } from './tooltip.js';
 
 const CUT_HIT_PX = 6;
 const NUDGE_SECONDS = 0.1;
@@ -171,7 +172,7 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
             end.type = 'text';
             end.className = 'split-end';
             end.value = formatTime(range.end);
-            end.title = t('split.segmentEnd');
+            setTooltip(end, t('split.segmentEnd'));
             end.disabled = i === ranges.length - 1; // la fin du dernier segment = fin du fichier
             end.addEventListener('change', () => {
                 const value = parseTime(end.value);
@@ -196,7 +197,7 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
             play.type = 'button';
             play.className = 'secondary-btn';
             play.textContent = '▶';
-            play.title = t('split.playSegment');
+            setTooltip(play, t('split.playSegment'));
             play.addEventListener('click', () => startAudition(range.start, range.end));
 
             row.append(index, start, arrow, end, name, play);
@@ -206,7 +207,7 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
                 remove.type = 'button';
                 remove.className = 'danger-btn-small';
                 remove.textContent = '✕';
-                remove.title = t('split.removeCut');
+                setTooltip(remove, t('split.removeCut'));
                 remove.addEventListener('click', () => {
                     state.names = mergeNames(state.names, i - 1);
                     state.cuts = removeCut(state.cuts, i - 1);
