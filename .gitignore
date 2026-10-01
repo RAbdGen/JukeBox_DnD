@@ -22,3 +22,7 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+# Outils d'agents propres à la machine (skills, serveurs MCP)
+.claude/
+.mcp.json

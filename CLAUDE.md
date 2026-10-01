@@ -28,6 +28,7 @@ frontend/               → Vanilla JS ESM, bundlé par Vite → dist/
 - Un `Track` peut avoir plusieurs versions audio avec crossfade
 - `webSecurity: false` dans BrowserWindow pour les `file://` URLs
 - Dev : `make dev` ou `npm run dev` (Vite sur :3000 + electronmon)
+- Node **24** LTS, fixé par `mise.toml` (et `node-version` de `.github/workflows/release.yml`, à garder alignés). Pas Node 26 : `extract-zip` (installeur d'Electron) s'y arrête en silence, `node_modules/electron/dist` reste incomplet et `npm run dev` échoue avec « Electron failed to install correctly »
 
 ---
 
