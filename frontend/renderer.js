@@ -15,6 +15,7 @@ import { createPreviewState } from './previewState.js';
 import { initTooltips, setTooltip } from './tooltip.js';
 import { initRangeFill } from './rangeFill.js';
 import { createProgressSlider } from './progressSlider.js';
+import { createListbox } from './listbox.js';
 import { getPreviewVolume } from './trackVolume.js';
 
 // ========================================
@@ -43,7 +44,9 @@ audioManager.on('crossfadeDurationMigrated', (trackId, seconds) => {
     window.electronAPI.updateTrack(trackId, { crossfadeDurationSeconds: seconds })
         .catch(err => console.error('❌ Migration de la durée de fondu:', err));
 });
-let currentPlaylistId = 'default';
+let currentPlaylistId = 'default'; // seule source de la playlist sélectionnée (#40)
+let playlistsCache = []; // dernières playlists affichées (noms pour le toast d'undo, menu)
+let playlistMenu = null; // liste déroulante accessible (#40), créée au DOMContentLoaded
 let updateInterval = null;
 let volumeBeforeMute = null; // volume mémorisé pour le mute rapide (raccourci clavier) ; null = pas muté
 let libraryCache = []; // dernière bibliothèque chargée, pour filtrer la recherche sans re-fetch IPC
@@ -209,37 +212,15 @@ async function init() {
 
 // Peuple le sélecteur à partir de données déjà chargées (sans IPC)
 function populatePlaylists(playlists) {
-    const select = document.getElementById('playlist-select');
-    const currentSelection = select.value;
+    playlistsCache = playlists;
 
-    select.replaceChildren();
-    const defaultOpt = document.createElement('option');
-    defaultOpt.value = '';
-    defaultOpt.textContent = t('playlist.defaultOption');
-    select.appendChild(defaultOpt);
-
-    playlists.forEach(p => {
-        const option = document.createElement('option');
-        option.value = p.id;
-        option.textContent = t('playlist.optionLabel', { name: p.name, count: p.trackIds.length });
-        option.dataset.name = p.name; // nom pur, sans le compteur de pistes (utilisé par ex. dans le toast d'undo)
-        select.appendChild(option);
-    });
-
-    if (playlists.length > 0) {
-        if (currentSelection && playlists.find(p => p.id === currentSelection)) {
-            select.value = currentSelection;
-        } else if (playlists.find(p => p.id === 'default')) {
-            select.value = 'default';
-            currentPlaylistId = 'default';
-        } else {
-            select.value = playlists[0].id;
-            currentPlaylistId = playlists[0].id;
-        }
+    // Garde la sélection si elle existe encore, sinon « default », sinon la première
+    if (playlists.length > 0 && !playlists.some(p => p.id === currentPlaylistId)) {
+        currentPlaylistId = playlists.some(p => p.id === 'default') ? 'default' : playlists[0].id;
     }
 
     // Mettre à jour l'affichage visible
-    const selectedId = select.value;
+    const selectedId = currentPlaylistId;
     const selectedPlaylist = playlists.find(p => p.id === selectedId);
     if (selectedPlaylist) {
         const nameDisplay = document.getElementById('playlist-name-display');
@@ -248,23 +229,31 @@ function populatePlaylists(playlists) {
         if (metaText) metaText.textContent = t('player.playlistMeta', { count: selectedPlaylist.trackIds.length });
     }
 
-    // Peupler le dropdown de sélection
+    // Peupler le menu (entrées role="option", choix géré par createListbox)
     const dropdown = document.getElementById('playlist-dropdown');
     if (dropdown) {
         dropdown.replaceChildren();
         playlists.forEach(p => {
             const btn = document.createElement('button');
-            btn.className = `playlist-dropdown-item${p.id === selectedId ? ' active' : ''}`;
+            btn.type = 'button';
+            btn.className = 'playlist-dropdown-item';
+            btn.setAttribute('role', 'option');
+            btn.tabIndex = -1;
+            btn.dataset.id = p.id;
             btn.textContent = p.name;
-            btn.addEventListener('click', () => {
-                dropdown.classList.add('hidden');
-                document.getElementById('playlist-select').value = p.id;
-                loadPlaylist(p.id);
-                window.electronAPI.saveSettings({ lastPlaylistId: p.id });
-            });
             dropdown.appendChild(btn);
         });
+        markActivePlaylist(selectedId);
     }
+}
+
+// Entrée active du menu repérée par id, jamais par nom (deux playlists peuvent être homonymes)
+function markActivePlaylist(id) {
+    document.querySelectorAll('.playlist-dropdown-item').forEach(item => {
+        const active = item.dataset.id === id;
+        item.classList.toggle('active', active);
+        item.setAttribute('aria-selected', String(active));
+    });
 }
 
 async function loadPlaylists() {
@@ -301,10 +290,7 @@ async function loadPlaylist(id) {
         if (nameDisplay) nameDisplay.textContent = playlistData.name;
         if (metaText) metaText.textContent = t('player.playlistMeta', { count: playlistData.tracks.length });
 
-        // Mettre à jour l'item actif dans le dropdown
-        document.querySelectorAll('.playlist-dropdown-item').forEach(item => {
-            item.classList.toggle('active', item.textContent === playlistData.name);
-        });
+        markActivePlaylist(id);
 
         updateUI();
         console.log(`✅ Playlist "${playlistData.name}" chargée`);
@@ -1259,15 +1245,14 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // --- Playlist dropdown toggle ---
-    document.getElementById('playlist-name-display').addEventListener('click', (e) => {
-        e.stopPropagation();
-        const dropdown = document.getElementById('playlist-dropdown');
-        dropdown.classList.toggle('hidden');
-    });
-
-    document.addEventListener('click', () => {
-        document.getElementById('playlist-dropdown')?.classList.add('hidden');
+    // --- Menu des playlists (#40 : clavier + ARIA, voir listbox.js) ---
+    playlistMenu = createListbox({
+        button: document.getElementById('playlist-name-display'),
+        list: document.getElementById('playlist-dropdown'),
+        onSelect: id => {
+            loadPlaylist(id);
+            window.electronAPI.saveSettings({ lastPlaylistId: id });
+        },
     });
 
     // --- Theme Selector ---
@@ -1336,15 +1321,6 @@ document.addEventListener('DOMContentLoaded', () => {
         } catch (err) {
             console.error(err);
             statusEl.textContent = t('import.error');
-        }
-    });
-
-    // --- Playlist Select ---
-    document.getElementById('playlist-select').addEventListener('change', (e) => {
-        const id = e.target.value;
-        if (id) {
-            loadPlaylist(id);
-            window.electronAPI.saveSettings({ lastPlaylistId: id });
         }
     });
 
@@ -1705,7 +1681,6 @@ document.addEventListener('DOMContentLoaded', () => {
         if (name) {
             const playlist = await window.electronAPI.createPlaylist(name);
             await loadPlaylists();
-            document.getElementById('playlist-select').value = playlist.id;
             loadPlaylist(playlist.id); // Switch to new
             document.body.style.overflow = '';
             createPlaylistModal.classList.add('hidden');
@@ -1714,22 +1689,19 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Delete Playlist — suppression optimiste avec possibilité d'annuler (toast)
     document.getElementById('delete-playlist-btn').addEventListener('click', () => {
-        const select = document.getElementById('playlist-select');
-        const playlistId = select.value;
+        const playlistId = currentPlaylistId;
         if (!playlistId) return;
 
-        const playlistName = select.selectedOptions[0]?.dataset.name || t('playlist.fallbackName');
-        const wasCurrent = currentPlaylistId === playlistId;
+        const playlistName = playlistsCache.find(p => p.id === playlistId)?.name || t('playlist.fallbackName');
         pendingDeletions.markPlaylist(playlistId);
 
-        // Retirer l'option de la liste tout de suite (rien n'est encore supprimé côté DB)
-        const option = Array.from(select.options).find(opt => opt.value === playlistId);
-        if (option) option.remove();
-        select.value = '';
+        // Retirer l'entrée du menu tout de suite (rien n'est encore supprimé côté DB)
+        playlistsCache = playlistsCache.filter(p => p.id !== playlistId);
+        document.querySelector(`.playlist-dropdown-item[data-id="${CSS.escape(playlistId)}"]`)?.remove();
         currentPlaylistId = null;
 
         // Si plus de playlist, vider l'UI
-        if (select.options.length <= 1) { // Juste l'option par défaut
+        if (playlistsCache.length === 0) {
             document.getElementById('playlist-tracks').innerHTML = `<p class="empty-message">${t('tracklist.emptyNoPlaylist')}</p>`;
             audioManager.stop();
             updateUI();
@@ -1747,12 +1719,9 @@ document.addEventListener('DOMContentLoaded', () => {
             onUndo: async () => {
                 // Rien n'a été supprimé côté DB : un rechargement restaure tout
                 pendingDeletions.undoPlaylist(playlistId);
+                currentPlaylistId = playlistId; // la playlist supprimée était forcément la sélectionnée
                 await loadPlaylists();
-                select.value = playlistId;
-                if (wasCurrent) {
-                    currentPlaylistId = playlistId;
-                    await loadPlaylist(playlistId);
-                }
+                await loadPlaylist(playlistId);
             },
         });
     });

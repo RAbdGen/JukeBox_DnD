@@ -30,10 +30,6 @@ header {
 }
 
 /* ── Hidden select (kept for JS) ── */
-.hidden-select {
-    display: none !important;
-}
-
 /* ── Container: remove min-height constraint for 2-col layout ── */
 .container {
     min-height: unset;
@@ -118,16 +114,24 @@ header {
     box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
     z-index: 200;
     overflow: hidden;
+    transform-origin: top left;
+    animation: dropdown-in var(--duration-fast) ease-out;
 }
 
 .playlist-dropdown.hidden {
     display: none;
 }
 
+@keyframes dropdown-in {
+    from { opacity: 0; transform: scale(0.97) translateY(-4px); }
+    to   { opacity: 1; transform: none; }
+}
+
 .playlist-dropdown-item {
     display: block;
     width: 100%;
-    padding: 9px 14px;
+    padding: 9px 14px 9px 30px; /* place du ✓ de la playlist courante */
+    position: relative;
     background: none;
     border: none;
     color: var(--bone-dim);
@@ -146,14 +150,30 @@ header {
     border-bottom: none;
 }
 
-.playlist-dropdown-item:hover {
+.playlist-dropdown-item:hover,
+.playlist-dropdown-item:focus-visible {
     background: var(--ink-2);
     color: var(--bone);
+    outline: none;
 }
 
 .playlist-dropdown-item.active {
     color: var(--gold-3);
     background: linear-gradient(90deg, rgba(201, 168, 76, 0.08) 0%, transparent 100%);
+}
+
+.playlist-dropdown-item.active:hover,
+.playlist-dropdown-item.active:focus-visible {
+    background: var(--ink-2); /* le focus clavier reste visible sur la courante */
+}
+
+/* ✓ devant la playlist courante (#40), comme le Select de shadcn */
+.playlist-dropdown-item.active::before {
+    content: '✓';
+    position: absolute;
+    left: 12px;
+    color: var(--gold-3);
+    font-style: normal;
 }
 
 .playlist-actions {

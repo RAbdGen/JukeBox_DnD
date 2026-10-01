@@ -190,8 +190,6 @@ const fr = {
     'toast.trackDeleted': 'Piste "{title}" supprimée.',
     'toast.playlistDeleted': 'Playlist "{name}" supprimée.',
 
-    'playlist.defaultOption': '-- Choisir une playlist --',
-    'playlist.optionLabel': '{name} ({count} pistes)',
     'playlist.fallbackName': 'la playlist',
 
     'export.inProgress': 'Export en cours…',
@@ -386,8 +384,6 @@ const en = {
     'toast.trackDeleted': 'Track "{title}" deleted.',
     'toast.playlistDeleted': 'Playlist "{name}" deleted.',
 
-    'playlist.defaultOption': '-- Choose a playlist --',
-    'playlist.optionLabel': '{name} ({count} tracks)',
     'playlist.fallbackName': 'the playlist',
 
     'export.inProgress': 'Exporting…',
