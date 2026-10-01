@@ -87,6 +87,7 @@ Français/anglais, fichiers maison (pas de lib i18n) dans `backend/i18n.js` — 
 - `tests/i18n.test.js` vérifie que les deux dictionnaires ont exactement le même jeu de clés (parité fr/en) — à garder au vert : une clé oubliée dans une langue retombe silencieusement sur l'autre plutôt que de planter, donc seul ce test l'attrape.
 
 ### Règles UI à respecter
+- Modals (depuis #41) : `<dialog class="modal" aria-labelledby>` ouvertes par `openModal()` / fermées par `closeModal()` (`frontend/modal.js`), jamais par la classe `hidden` ni `body.style.overflow`. Le navigateur gère l'arrière-plan inerte, Échap et `aria-modal` ; le premier champ porte `autofocus`. **Pas de fermeture au clic sur le fond** (perte de réglages en session). Si la fermeture déclenche un rechargement qui recrée le bouton d'origine, passer `closeModal(d, { restoreFocusAfter: promesse })`. Le tooltip se déplace dans la modal ouverte (couche supérieure). Vérifié par `tests/modals.test.js`
 - Menu des playlists (depuis #40) : `currentPlaylistId` est la **seule** source de la playlist sélectionnée (plus de `<select>` caché), `playlistsCache` donne les noms. Liste accessible via `createListbox()` (`frontend/listbox.js`, modèle Select shadcn/Radix) : `aria-expanded`, `listbox`/`option`, ↑/↓/Début/Fin, recherche par lettre, Entrée/Espace, Échap/Tab. Entrée active repérée par `data-id`, jamais par nom (`markActivePlaylist()`)
 - Curseurs (depuis #39) : un seul style `input[type="range"]` dans `frontend/styles/sliders.css` (vérifié par `tests/sliders.test.js`). La partie remplie suit `--fill`, tenu à jour par `initRangeFill()` (`frontend/rangeFill.js`) : saisie, `.value =` posé par le code (setter remplacé sur chaque curseur) et changement de min/max. `@property --fill` doit garder `inherits: true`, sinon la piste reste vide. La progression est un curseur (`frontend/progressSlider.js`) : un seul seek au relâchement, clavier ←/→ 5 s, PgPréc/PgSuiv 30 s, Début/Fin
 - Tooltips (depuis #38) : jamais de `title` natif (bulle système grise qui ignore le thème). HTML statique : `data-tooltip` + `data-i18n-tooltip` ; JS : `setTooltip(el, texte)` (`frontend/tooltip.js`), qui pose aussi `aria-label` sur un élément sans lettre ni chiffre visible (⏮, ✕…). Un seul `#app-tooltip` piloté par délégation : 500 ms au survol, immédiat dans les 300 ms après une fermeture et au focus clavier. Logique pure (placement, minuterie) dans `frontend/tooltipPosition.js` ; `tests/tooltip.test.js` refuse tout retour de `title`
@@ -94,7 +95,7 @@ Français/anglais, fichiers maison (pas de lib i18n) dans `backend/i18n.js` — 
 - CSS découpé (depuis la passe « motion ») : `frontend/styles.css` ne contient que des `@import` vers `frontend/styles/*.css`, regroupés par Vite. **L'ordre des `@import` est l'ordre de la cascade.** Chaque fichier reste < 40 000 octets (limite au-delà de laquelle transitions-agent ignore un fichier en silence), vérifié par `tests/styles-split.test.js`. Les tests qui lisent le CSS passent par `readStyles()` (`tests/helpers/readStyles.js`), jamais par `readFileSync('styles.css')`
 - Scrollbars (depuis #30) : un seul style global dans `frontend/styles/base.css` (`scrollbar-width: thin` + `scrollbar-color` via `--scroll-thumb`/`--scroll-thumb-hover`/`--scroll-track`), jamais masquées ; toute zone `overflow: auto` déclare `scrollbar-gutter: stable` (pas de saut de mise en page). Pas de `::-webkit-scrollbar` : ignoré par le Chromium d'Electron dès que `scrollbar-color` est défini. Vérifié par `tests/scrollbar.test.js`
 - Inputs avec labels clairs et taille de texte lisible (bug de l'input trop petit pour nom de version/musique)
-- Popup d'ajout de musique modale propre, pas inline
+- Popup d'ajout de musique modale propre, pas inline (`<dialog>`, voir « Modals »)
 - Pas de layout qui "saute" quand une modal s'ouvre
 
 ---
@@ -187,6 +188,7 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#38 — Tooltips thémés à la place des title natifs](https://github.com/RAbdGen/JukeBox_DnD/issues/38) — modèle du Tooltip shadcn/Radix, en vanilla
 - [#39 — Curseurs thémés + barre de progression manipulable](https://github.com/RAbdGen/JukeBox_DnD/issues/39) — modèle du Slider shadcn, glisser/clavier sur la progression
 - [#40 — Liste des playlists accessible + source unique de la playlist sélectionnée](https://github.com/RAbdGen/JukeBox_DnD/issues/40) — corrige au passage la restauration de la dernière playlist au démarrage
+- [#41 — Modals accessibles (dialog natif)](https://github.com/RAbdGen/JukeBox_DnD/issues/41) — modèle du Dialog shadcn/Radix, sans fermeture au clic sur le fond
 
 **À faire (`Todo`) :**
 - [#36 — Mesurer la mémoire de l'onglet Découpage avec un fichier d'1 h (machine 8 Go)](https://github.com/RAbdGen/JukeBox_DnD/issues/36) — mesure manuelle sur la machine de l'ami avant la prochaine release

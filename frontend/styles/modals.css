@@ -41,22 +41,47 @@
     50% { opacity: 1; transform: scale(1.12); }
 }
 
+/* <dialog class="modal"> ouvert par showModal() (#41) : on neutralise le
+   style par défaut du navigateur pour garder la mise en page d'avant
+   (boîte plein écran qui centre .modal-content), le fond passe par ::backdrop */
 .modal {
     position: fixed;
-    top: 0;
-    left: 0;
+    inset: 0;
     width: 100%;
     height: 100%;
-    background: rgba(0, 0, 0, 0.85);
+    max-width: none;
+    max-height: none;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: transparent;
+    color: inherit;
+    overflow: visible;
+}
+
+.modal[open] {
     display: flex;
     align-items: center;
     justify-content: center;
-    z-index: 1000;
+}
+
+.modal::backdrop {
+    background: rgba(0, 0, 0, 0.85);
     backdrop-filter: blur(6px);
 }
 
-.modal.hidden {
-    display: none;
+.modal[open] .modal-content {
+    animation: modal-in var(--duration-base) ease-out;
+}
+
+@keyframes modal-in {
+    from { opacity: 0; transform: scale(0.97); }
+    to   { opacity: 1; transform: none; }
+}
+
+/* Défilement de la page bloqué tant qu'une modal est ouverte (modal.js) */
+body.modal-open {
+    overflow: hidden;
 }
 
 /* .hidden n'a pas de règle générique dans ce projet : chaque type d'élément

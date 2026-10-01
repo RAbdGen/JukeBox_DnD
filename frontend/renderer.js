@@ -16,6 +16,7 @@ import { initTooltips, setTooltip } from './tooltip.js';
 import { initRangeFill } from './rangeFill.js';
 import { createProgressSlider } from './progressSlider.js';
 import { createListbox } from './listbox.js';
+import { closeModal, initModals, openModal } from './modal.js';
 import { getPreviewVolume } from './trackVolume.js';
 
 // ========================================
@@ -379,8 +380,7 @@ function openEditTrackModal(track) {
 
     document.getElementById('delete-track-btn').classList.add('hidden');
 
-    document.body.style.overflow = 'hidden';
-    modal.classList.remove('hidden');
+    openModal(modal);
 }
 
 /**
@@ -1216,6 +1216,7 @@ function switchView(viewName) {
 document.addEventListener('DOMContentLoaded', () => {
     initTooltips(); // #38 : avant init(), qui pose déjà des tooltips
     initRangeFill(); // #39 : avant init(), qui règle déjà le volume
+    initModals(); // #41
     init();
     loadShortcutSettings();
 
@@ -1447,16 +1448,12 @@ document.addEventListener('DOMContentLoaded', () => {
             </label>
         `).join('');
 
-        document.body.style.overflow = 'hidden';
-        addTrackModal.classList.remove('hidden');
+        openModal(addTrackModal);
     });
 
     // Close Modals
     document.querySelectorAll('.close-modal-btn, #cancel-add-track, .cancel-modal-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.modal').forEach(m => m.classList.add('hidden'));
-            document.body.style.overflow = '';
-        });
+        btn.addEventListener('click', () => closeModal(btn.closest('dialog.modal')));
     });
 
     // Add version row
@@ -1558,8 +1555,7 @@ document.addEventListener('DOMContentLoaded', () => {
             document.getElementById('confirm-add-track').textContent = t('modal.addTrack.submitting');
             await window.electronAPI.addTrack(trackData, selectedPlaylists);
 
-            document.body.style.overflow = '';
-            addTrackModal.classList.add('hidden');
+            closeModal(addTrackModal);
             document.getElementById('confirm-add-track').textContent = t('modal.addTrack.submitBtn');
 
             // Reload UI
@@ -1637,12 +1633,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        document.body.style.overflow = '';
-        document.getElementById('edit-track-modal').classList.add('hidden');
-
         // Recharger pour que les Track en mémoire reprennent le nouveau defaultVolume/versions
-        await loadLibrary();
-        if (currentPlaylistId) await loadPlaylist(currentPlaylistId);
+        const reload = (async () => {
+            await loadLibrary();
+            if (currentPlaylistId) await loadPlaylist(currentPlaylistId);
+        })();
+        // Le ✏️ d'origine est recréé par loadLibrary : le focus attend le rechargement (#41)
+        closeModal(document.getElementById('edit-track-modal'), { restoreFocusAfter: reload });
+        await reload;
     });
 
     // ========================================
@@ -1653,8 +1651,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Button from Player view
     document.getElementById('create-playlist-btn').addEventListener('click', () => {
-        document.body.style.overflow = 'hidden';
-        createPlaylistModal.classList.remove('hidden');
+        openModal(createPlaylistModal);
     });
 
     // Inline button from Add Track view
@@ -1682,8 +1679,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const playlist = await window.electronAPI.createPlaylist(name);
             await loadPlaylists();
             loadPlaylist(playlist.id); // Switch to new
-            document.body.style.overflow = '';
-            createPlaylistModal.classList.add('hidden');
+            closeModal(createPlaylistModal);
         }
     });
 

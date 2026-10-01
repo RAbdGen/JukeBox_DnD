@@ -32,6 +32,11 @@ function show(element) {
     const text = element.dataset.tooltip;
     if (!text || !element.isConnected) return;
 
+    // Une modal ouverte par showModal() passe au-dessus de tout et rend le reste
+    // inerte (#41) : la bulle doit vivre dans la modal pour y être visible
+    const host = element.closest('dialog[open]') ?? document.body;
+    if (tip.parentNode !== host) host.append(tip);
+
     tipText.textContent = text;
     tip.hidden = false;
     const { width, height } = tip.getBoundingClientRect();

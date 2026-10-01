@@ -275,17 +275,17 @@
     <!-- ======================== -->
     <!-- MODAL AJOUT DE PISTE     -->
     <!-- ======================== -->
-    <div id="add-track-modal" class="modal hidden">
+    <dialog id="add-track-modal" class="modal" aria-labelledby="add-track-heading">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 data-i18n="modal.addTrack.title">Ajouter une musique</h2>
-                <button class="close-modal-btn">&times;</button>
+                <h2 id="add-track-heading" data-i18n="modal.addTrack.title">Ajouter une musique</h2>
+                <button type="button" class="close-modal-btn" data-i18n-tooltip="modal.close" data-tooltip="Fermer" aria-label="Fermer">&times;</button>
             </div>
 
             <div class="modal-body">
                 <div class="form-group">
                     <label data-i18n="modal.addTrack.titleLabel">Titre de la piste *</label>
-                    <input type="text" id="new-track-title" data-i18n-placeholder="modal.addTrack.titlePlaceholder" placeholder="Ex: Taverne Médiévale" required />
+                    <input type="text" id="new-track-title" autofocus data-i18n-placeholder="modal.addTrack.titlePlaceholder" placeholder="Ex: Taverne Médiévale" required />
                 </div>
 
                 <div class="form-group">
@@ -324,22 +324,22 @@
                 <button type="button" id="confirm-add-track" class="primary-btn" data-i18n="modal.addTrack.submitBtn">Ajouter la piste</button>
             </div>
         </div>
-    </div>
+    </dialog>
 
     <!-- ======================== -->
     <!-- MODAL CRÉATION PLAYLIST  -->
     <!-- ======================== -->
-    <div id="create-playlist-modal" class="modal hidden">
+    <dialog id="create-playlist-modal" class="modal" aria-labelledby="create-playlist-heading">
         <div class="modal-content modal-small">
             <div class="modal-header">
-                <h2 data-i18n="modal.createPlaylist.title">Nouvelle Playlist</h2>
-                <button class="close-modal-btn">&times;</button>
+                <h2 id="create-playlist-heading" data-i18n="modal.createPlaylist.title">Nouvelle Playlist</h2>
+                <button type="button" class="close-modal-btn" data-i18n-tooltip="modal.close" data-tooltip="Fermer" aria-label="Fermer">&times;</button>
             </div>
 
             <div class="modal-body">
                 <div class="form-group">
                     <label data-i18n="modal.createPlaylist.nameLabel">Nom de la playlist</label>
-                    <input type="text" id="playlist-name-input" data-i18n-placeholder="modal.createPlaylist.namePlaceholder" placeholder="Ex: Ambiance Donjon" />
+                    <input type="text" id="playlist-name-input" autofocus data-i18n-placeholder="modal.createPlaylist.namePlaceholder" placeholder="Ex: Ambiance Donjon" />
                 </div>
             </div>
 
@@ -348,16 +348,16 @@
                 <button type="button" id="confirm-create-playlist" class="primary-btn" data-i18n="modal.addTrack.createBtn">Créer</button>
             </div>
         </div>
-    </div>
+    </dialog>
 
     <!-- ======================== -->
     <!-- MODAL ÉDITION PISTE      -->
     <!-- ======================== -->
-    <div id="edit-track-modal" class="modal hidden">
+    <dialog id="edit-track-modal" class="modal" aria-labelledby="edit-track-heading">
         <div class="modal-content">
             <div class="modal-header">
-                <h2 data-i18n="modal.editTrack.title">Modifier la piste</h2>
-                <button class="close-modal-btn">&times;</button>
+                <h2 id="edit-track-heading" data-i18n="modal.editTrack.title">Modifier la piste</h2>
+                <button type="button" class="close-modal-btn" data-i18n-tooltip="modal.close" data-tooltip="Fermer" aria-label="Fermer">&times;</button>
             </div>
 
             <div class="modal-body">
@@ -365,7 +365,7 @@
 
                 <div class="form-group">
                     <label data-i18n="modal.editTrack.titleLabel">Titre</label>
-                    <input type="text" id="edit-track-title" />
+                    <input type="text" id="edit-track-title" autofocus />
                 </div>
 
                 <div class="form-group" id="edit-versions-group">
@@ -408,7 +408,7 @@
                 <button type="button" id="save-track-edits" class="primary-btn" data-i18n="modal.editTrack.saveBtn">Sauvegarder</button>
             </div>
         </div>
-    </div>
+    </dialog>
 
     <div id="toast-container"></div>
 
