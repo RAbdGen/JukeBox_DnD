@@ -28,7 +28,9 @@ frontend/               → Vanilla JS ESM, bundlé par Vite → dist/
 - Un `Track` peut avoir plusieurs versions audio avec crossfade
 - `webSecurity: false` dans BrowserWindow pour les `file://` URLs
 - Dev : `make dev` ou `npm run dev` (Vite sur :3000 + electronmon)
-- Node **24** LTS, fixé par `mise.toml` (et `node-version` de `.github/workflows/release.yml`, à garder alignés). Pas Node 26 : `extract-zip` (installeur d'Electron) s'y arrête en silence, `node_modules/electron/dist` reste incomplet et `npm run dev` échoue avec « Electron failed to install correctly »
+- Electron **44** (depuis #37). Le binaire n'est plus téléchargé à `npm install` mais au premier `require('electron')` (lancement de `npm run dev`) ; à la main : `npx install-electron --no`
+- Node **24** LTS, fixé par `mise.toml` (et `node-version` de `.github/workflows/release.yml`, à garder alignés). Electron 44 exige Node >= 22.12. Electron 37 ne s'installait pas sous Node 26 (`extract-zip`, electron/electron#51619), corrigé depuis la mise à jour
+- Dialogues natifs : depuis Electron 43, sans `defaultPath` ils s'ouvrent toujours sur Téléchargements. Toujours passer par `showOpenDialog()` de `electron/main.cjs`, qui retient le dernier dossier choisi pendant la session
 
 ---
 
@@ -176,10 +178,10 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#33 — Découpage : l'écoute continue hors de l'onglet, et ✂ écrase une découpe non enregistrée](https://github.com/RAbdGen/JukeBox_DnD/issues/33)
 - [#34 — Pistes découpées : bornes non revalidées côté base, fichier orphelin, import qui recopie le fichier partagé](https://github.com/RAbdGen/JukeBox_DnD/issues/34)
 - [#35 — Lecture : petits écarts de position (fondu échoué, seek ≥ 1000 s, fin de segment au-delà du fichier)](https://github.com/RAbdGen/JukeBox_DnD/issues/35)
+- [#37 — Mettre à jour Electron 37 → version supportée (≥ 40)](https://github.com/RAbdGen/JukeBox_DnD/issues/37) — Electron 44, dialogues qui retiennent le dernier dossier
 
 **À faire (`Todo`) :**
 - [#36 — Mesurer la mémoire de l'onglet Découpage avec un fichier d'1 h (machine 8 Go)](https://github.com/RAbdGen/JukeBox_DnD/issues/36) — mesure manuelle sur la machine de l'ami avant la prochaine release
-- [#37 — Mettre à jour Electron 37 → version supportée (≥ 40)](https://github.com/RAbdGen/JukeBox_DnD/issues/37) — corrige en amont l'installeur cassé sous Node 26 (electron/electron#51619) ; permettra de revoir le verrouillage Node 24
 
 ### Conventions de code
 - ESM partout sauf les fichiers `.cjs` d'Electron (ne pas toucher au module system sans raison)

@@ -175,8 +175,22 @@ function registerVersionShortcuts(config) {
 // IPC HANDLERS - Dialogues (pas besoin des managers)
 // ========================================
 
+// Depuis Electron 43, sans defaultPath les dialogues s'ouvrent toujours sur
+// Téléchargements : l'OS ne retient plus le dernier dossier visité. On le
+// retient nous-mêmes, partagé par tous les dialogues, le temps de la session.
+let lastDialogPath;
+
+async function showOpenDialog(options) {
+    const result = await dialog.showOpenDialog(mainWindow, { defaultPath: lastDialogPath, ...options });
+    if (!result.canceled && result.filePaths.length > 0) {
+        const picked = result.filePaths[0];
+        lastDialogPath = options.properties.includes('openDirectory') ? picked : path.dirname(picked);
+    }
+    return result;
+}
+
 ipcMain.handle('dialog:openFiles', async () => {
-    const result = await dialog.showOpenDialog(mainWindow, {
+    const result = await showOpenDialog({
         properties: ['openFile', 'multiSelections'],
         filters: [
             { name: 'Audio', extensions: ['mp3', 'wav', 'ogg', 'm4a', 'flac', 'aac'] }
@@ -201,7 +215,7 @@ ipcMain.handle('audio:readFile', async (event, filePath) => {
 });
 
 ipcMain.handle('dialog:openFolder', async () => {
-    const result = await dialog.showOpenDialog(mainWindow, {
+    const result = await showOpenDialog({
         properties: ['openDirectory'],
         title: dt('dialog.selectMusicFolder', 'Sélectionner un dossier de musique')
     });
@@ -401,7 +415,7 @@ ipcHandle('library:reorderVersions', async (event, trackId, orderedVersionNames)
 // Export : dossier destination → jukebox-export.json + music/ (copie des
 // fichiers avec des chemins relatifs, portables entre machines/OS)
 ipcHandle('library:exportLibrary', async () => {
-    const result = await dialog.showOpenDialog(mainWindow, {
+    const result = await showOpenDialog({
         properties: ['openDirectory', 'createDirectory'],
         title: t('dialog.selectExportDestination'),
     });
@@ -445,7 +459,7 @@ ipcHandle('library:exportLibrary', async () => {
 // Import : dossier exporté (jukebox-export.json + music/) → fusion dans
 // la DB locale, sans jamais rien remplacer (voir mergeImportedLibrary)
 ipcHandle('library:importLibrary', async () => {
-    const result = await dialog.showOpenDialog(mainWindow, {
+    const result = await showOpenDialog({
         properties: ['openDirectory'],
         title: t('dialog.selectImportFolder'),
     });
