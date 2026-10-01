@@ -1,14 +1,15 @@
 import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
+import { readStyles } from './helpers/readStyles.js';
 
 // Vérifie que chaque thème (#19) respecte WCAG AA (>= 4.5:1) pour le texte
 // secondaire (--bone-dim) et l'accent (--gold-2) contre --ink-2, le fond le
 // plus clair sur lequel ils apparaissent réellement (cartes/panneaux) —
 // c'est le pire cas : s'il passe là, il passe aussi contre --ink-0/--ink-1.
-// Lit directement frontend/styles.css pour garder ce garde-fou vivant si
+// Lit tout le CSS (styles.css et ses @import) pour garder ce garde-fou vivant si
 // les couleurs sont retouchées plus tard.
 
-const css = readFileSync(new URL('../frontend/styles.css', import.meta.url), 'utf-8');
+const css = readStyles();
 
 function srgbToLinear(c) {
     c /= 255;

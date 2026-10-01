@@ -1,0 +1,185 @@
+/* ============================================
+   Library View
+   ============================================ */
+
+.library-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    padding-bottom: 1rem;
+    border-bottom: 1px solid var(--ink-3);
+}
+
+.library-header h3 {
+    font-family: 'IM Fell English', serif;
+    font-size: 1.4rem;
+    font-weight: 400;
+    color: var(--gold-3);
+}
+
+.library-search-input {
+    display: block;
+    width: 100%;
+    padding: 10px 14px;
+    margin-bottom: 1rem;
+    border-radius: 4px;
+    border: 1px solid var(--ink-3);
+    background: var(--ink-0);
+    color: var(--bone);
+    font-family: 'IM Fell English', serif;
+    font-size: 0.95rem;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8);
+    transition: all 0.2s ease;
+}
+
+.library-search-input:focus {
+    border-color: var(--gold-2);
+    outline: none;
+    box-shadow:
+        inset 0 1px 2px rgba(0, 0, 0, 0.8),
+        0 0 0 1px var(--gold-2),
+        0 0 10px var(--gold-glow);
+}
+
+.track-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-top: 6px;
+}
+
+.tag-pill {
+    background: rgba(201, 168, 76, 0.1);
+    border: 1px solid var(--gold-1);
+    color: var(--gold-3);
+    padding: 2px 9px;
+    border-radius: 12px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: .06em;
+    text-transform: uppercase;
+}
+
+.primary-btn {
+    background: linear-gradient(180deg, var(--gold-4) 0%, var(--gold-3) 55%, var(--gold-1) 100%);
+    border: 1px solid var(--gold-2);
+    color: var(--ink-0);
+    padding: 11px 22px;
+    border-radius: 4px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: .18em;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.12),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.4),
+        0 0 14px -4px var(--gold-glow);
+}
+
+.primary-btn:hover {
+    background: linear-gradient(180deg, #fff8e0 0%, var(--gold-4) 55%, var(--gold-2) 100%);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.18),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.3),
+        0 0 20px -4px var(--gold-glow);
+}
+
+.secondary-btn {
+    background: linear-gradient(180deg, var(--ink-2) 0%, var(--ink-1) 100%);
+    border: 1px solid var(--ink-3);
+    color: var(--bone-dim);
+    padding: 10px 18px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    transition: all 0.2s ease;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.04),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+
+.secondary-btn:hover {
+    border-color: var(--gold-2);
+    color: var(--bone);
+}
+
+.secondary-btn:disabled {
+    opacity: 0.35;
+    cursor: not-allowed;
+}
+
+.secondary-btn:disabled:hover {
+    border-color: var(--ink-3);
+    color: var(--bone-dim);
+}
+
+.danger-btn {
+    background: var(--danger-bg);
+    border: 1px solid #6b1414;
+    color: var(--danger-text);
+    padding: 8px 14px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    letter-spacing: .1em;
+}
+
+.danger-btn:hover {
+    background: rgba(107, 20, 20, 0.45);
+    box-shadow: 0 0 10px rgba(107, 20, 20, 0.4);
+}
+
+.danger-btn-small {
+    background: none;
+    border: none;
+    color: var(--danger-text);
+    font-size: 1.2rem;
+    cursor: pointer;
+    padding: 0 5px;
+    transition: all 0.2s ease;
+}
+
+.danger-btn-small:hover {
+    color: var(--danger-text-hover);
+    transform: scale(1.1);
+}
+
+.library-track {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--ink-0);
+    padding: 1rem;
+    border-radius: 4px;
+    margin-bottom: 0.5rem;
+    border: 1px solid var(--ink-3);
+    border-left: 2px solid var(--ink-3);
+    transition: border-left-color 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+    box-shadow: inset 0 1px 0 rgba(255, 220, 170, 0.02);
+}
+
+.library-track:hover {
+    border-left-color: var(--gold-3);
+    background: var(--ink-1);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.04),
+        inset 2px 0 0 var(--gold-3);
+}
+
+.track-details {
+    display: block;
+    font-size: 0.78rem;
+    color: var(--bone-dim);
+    margin-top: 4px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    letter-spacing: .04em;
+}

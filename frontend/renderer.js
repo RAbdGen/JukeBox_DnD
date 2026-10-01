@@ -780,7 +780,7 @@ async function loadLibrary() {
 /**
  * @param {'playing'|'paused'|'stopped'} statusKey - Clé stable, indépendante
  *   de la langue affichée (#22) : le nom de classe CSS en dépend
- *   directement (voir .status.playing/.paused/.stopped dans styles.css),
+ *   directement (voir .status.playing/.paused/.stopped dans styles/player.css),
  *   donc il ne doit jamais être dérivé du texte traduit.
  */
 function updateStatus(statusKey) {

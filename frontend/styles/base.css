@@ -1,0 +1,279 @@
+/* ============================================
+   JukeBox DnD — DA "Grimoire Sonore"
+   ============================================ */
+
+:root {
+    /* ── Backgrounds — "Nuit" (default) ── */
+    --ink-0:   #0b0b09;
+    --ink-1:   #141310;
+    --ink-2:   #1f1d19;
+    --ink-3:   #2d2b24;
+    --ink-4:   #3e3a32;
+
+    /* ── Ink gradient stops (replace hardcoded values) ── */
+    --ink-dark:  #060504;
+    --ink-warm:  #100f0c;
+    --ink-mid:   #171512;
+    --ink-top:   #1b1915;
+
+    /* ── Or — 4 niveaux ── */
+    --gold-1:  #645017;
+    --gold-2:  #a2822b;
+    --gold-3:  #cda842;
+    --gold-4:  #dfc272;
+    --gold-glow: rgba(205, 168, 66, 0.15);
+
+    /* ── Texte / Parchemin ──
+       bone-dim/bone-faint sont des couleurs pleines (pas de rgba semi-
+       transparent) : vérifiées >= 4.6:1 (WCAG AA) contre --ink-2, le fond
+       le plus clair sur lequel elles apparaissent (cartes, panneaux) — voir
+       #19. Toutes les palettes [data-theme] ci-dessous suivent la même règle. */
+    --bone:       #eeeadd;
+    --bone-dim:   #93855e;
+    --bone-faint: rgba(238, 234, 221, 0.12);
+
+    /* ── Sémantique (boutons de version, statuts) ── */
+    --red-blood:      #6b1414;
+    --red-fire:       #8c2222;
+    --blue-calm:      #162840;
+    --blue-magic:     #1e5280;
+    --orange-tension: #3a2000;
+    --orange-ember:   #6b3c00;
+
+    /* ── Aliases legacy (tous les var() existants restent valides) ── */
+    --bg-dark:        var(--ink-0);
+    --bg-stone:       var(--ink-1);
+    --bg-leather:     var(--ink-2);
+    --gold-primary:   var(--gold-3);
+    --gold-secondary: var(--gold-4);
+    --text-light:     var(--bone);
+    --text-muted:     var(--bone-dim);
+    --border-stone:   var(--ink-3);
+
+    /* ── Couleurs sémantiques (#27) : versions et danger, redéfinies par
+       « parchemin » — jamais de couleur de texte en dur dans les règles ── */
+    --calm-text:           #7aaac8;
+    --calm-text-hover:     #9ac0da;
+    --calm-text-active:    #b0d4ea;
+    --calm-bg:             rgba(22, 40, 64, 0.7);
+    --calm-bg-active:      rgba(30, 74, 122, 0.75);
+    --combat-text:         #c07070;
+    --combat-text-hover:   #d08888;
+    --combat-text-active:  #f0a0a0;
+    --combat-bg:           rgba(42, 10, 10, 0.7);
+    --combat-bg-active:    rgba(140, 34, 34, 0.75);
+    --tension-text:        #c89050;
+    --tension-text-hover:  #d8a870;
+    --tension-text-active: #f0c070;
+    --tension-bg:          rgba(58, 36, 0, 0.7);
+    --tension-bg-active:   rgba(107, 60, 0, 0.75);
+    --danger-text:         #c87070;
+    --danger-text-hover:   #e09090;
+    --danger-bg:           rgba(107, 20, 20, 0.3);
+
+    /* ── Scrollbars (#30) : fines, discrètes, dorées au survol de la zone ── */
+    --scroll-thumb:        var(--ink-4);
+    --scroll-thumb-hover:  var(--gold-1);
+    --scroll-track:        transparent;
+}
+
+/* Style unique pour toutes les zones qui défilent (Chromium d'Electron >= 121 :
+   propriétés standard ; les pseudo-éléments WebKit seraient ignorés) */
+* {
+    scrollbar-width: thin;
+    scrollbar-color: var(--scroll-thumb) var(--scroll-track);
+}
+
+*:hover {
+    scrollbar-color: var(--scroll-thumb-hover) var(--scroll-track);
+}
+
+html {
+    scrollbar-gutter: stable;
+    color-scheme: dark;
+}
+
+[data-theme="parchemin"] {
+    color-scheme: light;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'IM Fell English', 'Iowan Old Style', Georgia, serif;
+    background: var(--ink-0);
+    background-image:
+        radial-gradient(ellipse 120% 80% at 50% -10%, var(--ink-top) 0%, var(--ink-0) 55%, var(--ink-dark) 100%),
+        linear-gradient(180deg, var(--ink-0) 0%, var(--ink-1) 50%, var(--ink-0) 100%);
+    color: var(--bone);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* Grain — texture organique */
+body::before {
+    content: '';
+    position: fixed;
+    inset: 0;
+    pointer-events: none;
+    z-index: 9999;
+    opacity: 0.045;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.75' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='300' height='300' filter='url(%23n)'/%3E%3C/svg%3E");
+    background-repeat: repeat;
+    background-size: 300px 300px;
+}
+
+#app {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+}
+
+/* ============================================
+   Header
+   ============================================ */
+
+header {
+    background: linear-gradient(180deg, var(--ink-warm) 0%, var(--ink-0) 100%);
+    padding: 1.5rem;
+    text-align: center;
+    box-shadow:
+        0 4px 24px rgba(0, 0, 0, 0.8),
+        inset 0 1px 0 rgba(255, 220, 170, 0.05),
+        inset 0 -1px 0 rgba(255, 220, 170, 0.04);
+    border-bottom: 1px solid var(--ink-3);
+    position: relative;
+}
+
+header::before,
+header::after {
+    content: '✦';
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    font-size: 1.2rem;
+    color: var(--gold-2);
+    opacity: 0.4;
+}
+
+header::before { left: 2rem; }
+header::after  { right: 2rem; }
+
+header h1 {
+    font-family: 'IM Fell English', serif;
+    font-size: 2.8rem;
+    font-weight: 400;
+    font-style: italic;
+    background: linear-gradient(180deg, var(--gold-4) 0%, var(--gold-3) 55%, var(--gold-1) 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    margin-bottom: 0.5rem;
+    letter-spacing: 2px;
+    filter: drop-shadow(0 0 12px var(--gold-glow));
+}
+
+.subtitle {
+    font-family: 'Cinzel', serif;
+    font-size: 0.85rem;
+    color: var(--bone-dim);
+    margin-top: 0.5rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+}
+
+/* Titres de section */
+#version-switcher h3,
+#playlist-tracks-container h3,
+.library-header h3,
+.modal-header h2 {
+    font-family: 'IM Fell English', serif;
+    font-weight: 400;
+}
+
+/* ============================================
+   Main Container
+   ============================================ */
+
+main {
+    flex: 1;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+    padding: 2rem;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+}
+
+.container {
+    background: linear-gradient(180deg, var(--ink-1) 0%, var(--ink-0) 100%);
+    border-radius: 8px;
+    padding: 2rem;
+    max-width: 900px;
+    width: 100%;
+    box-shadow:
+        0 18px 40px -12px #000,
+        0 0 24px -8px var(--gold-glow),
+        inset 0 1px 0 rgba(255, 220, 170, 0.05),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.5);
+    border: 1px solid var(--ink-3);
+    min-height: 80vh;
+    display: flex;
+    flex-direction: column;
+}
+
+/* ============================================
+   Tabs
+   ============================================ */
+
+#view-tabs {
+    display: flex;
+    margin-bottom: 2rem;
+    background: var(--ink-0);
+    padding: 6px;
+    border-radius: 6px;
+    border: 1px solid var(--ink-3);
+    box-shadow: inset 0 1px 0 rgba(255, 220, 170, 0.03);
+}
+
+.tab-btn {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--bone-dim);
+    padding: 12px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    border-radius: 4px;
+    transition: all 0.25s ease;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+}
+
+.tab-btn:hover {
+    color: var(--bone);
+    background: rgba(214, 174, 84, 0.06);
+}
+
+.tab-btn.active {
+    background: linear-gradient(180deg, var(--ink-2) 0%, var(--ink-mid) 100%);
+    color: var(--gold-3);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.06),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 2px var(--ink-2),
+        0 0 12px -4px var(--gold-glow);
+    border: 1px solid var(--gold-2);
+}
+
+.view.hidden {
+    display: none;
+}

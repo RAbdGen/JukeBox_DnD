@@ -1,0 +1,102 @@
+/* ============================================
+   Animations
+   ============================================ */
+
+@keyframes pulse-glow {
+    0%, 100% { opacity: 1; }
+    50%       { opacity: 0.65; }
+}
+
+@keyframes calm-pulse {
+    0%, 100% {
+        box-shadow:
+            inset 0 1px 0 rgba(100, 180, 240, 0.08),
+            inset 0 0 0 1px rgba(0, 0, 0, 0.7),
+            inset 0 0 0 2px #162840,
+            0 0 18px -4px rgba(40, 100, 180, 0.5);
+    }
+    50% {
+        box-shadow:
+            inset 0 1px 0 rgba(100, 180, 240, 0.10),
+            inset 0 0 0 1px rgba(0, 0, 0, 0.7),
+            inset 0 0 0 2px #162840,
+            0 0 28px -4px rgba(40, 100, 180, 0.75);
+    }
+}
+
+@keyframes tension-pulse {
+    0%, 100% {
+        box-shadow:
+            inset 0 1px 0 rgba(240, 180, 80, 0.08),
+            inset 0 0 0 1px rgba(0, 0, 0, 0.7),
+            inset 0 0 0 2px #3a2000,
+            0 0 18px -4px rgba(140, 90, 0, 0.5);
+    }
+    50% {
+        box-shadow:
+            inset 0 1px 0 rgba(240, 180, 80, 0.10),
+            inset 0 0 0 1px rgba(0, 0, 0, 0.7),
+            inset 0 0 0 2px #3a2000,
+            0 0 28px -4px rgba(140, 90, 0, 0.75);
+    }
+}
+
+@keyframes combat-pulse {
+    0%, 100% {
+        box-shadow:
+            inset 0 1px 0 rgba(240, 120, 120, 0.08),
+            inset 0 0 0 1px rgba(0, 0, 0, 0.7),
+            inset 0 0 0 2px #5a1212,
+            0 0 18px -4px rgba(160, 40, 40, 0.55);
+    }
+    50% {
+        box-shadow:
+            inset 0 1px 0 rgba(240, 120, 120, 0.10),
+            inset 0 0 0 1px rgba(0, 0, 0, 0.7),
+            inset 0 0 0 2px #5a1212,
+            0 0 30px -4px rgba(180, 40, 40, 0.80);
+    }
+}
+
+/* Empty state */
+.empty-message {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    color: var(--bone-dim);
+    text-align: center;
+    padding: 2rem 1rem;
+    border-top: 1px solid var(--ink-3);
+    border-bottom: 1px solid var(--ink-3);
+    margin: 0.5rem 0;
+}
+
+/* ============================================
+   Footer
+   ============================================ */
+
+footer {
+    margin-top: auto;
+    padding: 1.5rem;
+    text-align: center;
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    color: var(--bone-dim);
+    background: linear-gradient(180deg, transparent 0%, rgba(0, 0, 0, 0.5) 100%);
+    border-top: 1px solid var(--ink-3);
+    letter-spacing: .18em;
+    text-transform: uppercase;
+}
+
+/* ============================================
+   Responsive
+   ============================================ */
+
+@media (max-width: 768px) {
+    .version-buttons {
+        flex-direction: column;
+    }
+
+    .version-btn {
+        width: 100%;
+    }
+}

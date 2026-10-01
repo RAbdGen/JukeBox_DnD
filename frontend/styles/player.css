@@ -1,0 +1,655 @@
+/* ============================================
+   Player View
+   ============================================ */
+
+/* Playlist Selector */
+#playlist-selector {
+    display: flex;
+    gap: 1rem;
+    align-items: center;
+    margin-bottom: 1.5rem;
+    background: var(--ink-0);
+    padding: 1rem;
+    border-radius: 6px;
+    border: 1px solid var(--ink-3);
+    box-shadow: inset 0 1px 0 rgba(255, 220, 170, 0.03);
+}
+
+#playlist-selector label {
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    font-size: 0.8rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--gold-3);
+}
+
+#playlist-select {
+    flex: 1;
+    padding: 10px;
+    border-radius: 4px;
+    background: var(--ink-1);
+    border: 1px solid var(--ink-3);
+    color: var(--bone);
+    cursor: pointer;
+    font-family: 'IM Fell English', serif;
+    font-size: 0.95rem;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+#playlist-select:focus {
+    outline: none;
+    border-color: var(--gold-2);
+    box-shadow:
+        inset 0 1px 2px rgba(0, 0, 0, 0.8),
+        0 0 0 1px var(--gold-2),
+        0 0 10px var(--gold-glow);
+}
+
+#playlist-select option {
+    background: var(--ink-1);
+    color: var(--bone);
+}
+
+.icon-btn {
+    background: none;
+    border: none;
+    color: var(--gold-3);
+    font-size: 1.2rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.icon-btn:hover {
+    transform: scale(1.15);
+    filter: drop-shadow(0 0 6px var(--gold-glow));
+}
+
+.icon-btn:disabled {
+    color: var(--bone-faint);
+    cursor: not-allowed;
+    opacity: 0.4;
+}
+
+.icon-btn:disabled:hover {
+    transform: none;
+    filter: none;
+}
+
+.danger-icon {
+    color: var(--danger-text);
+}
+
+.danger-icon:hover {
+    color: var(--danger-text-hover);
+}
+
+/* Current Track Indicator */
+#current-track-indicator {
+    background: linear-gradient(180deg, var(--ink-warm) 0%, var(--ink-0) 100%);
+    border-radius: 6px;
+    padding: 1rem 1.2rem 1.2rem;
+    margin-bottom: 1.5rem;
+    text-align: center;
+    border: 1px solid var(--ink-3);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.05),
+        inset 0 -8px 18px rgba(0, 0, 0, 0.5),
+        0 0 22px -10px var(--gold-glow);
+    position: relative;
+}
+
+#current-track-indicator::before,
+#current-track-indicator::after {
+    content: '— ✦ —';
+    display: block;
+    font-family: 'IM Fell English', serif;
+    font-size: 0.6rem;
+    color: var(--gold-2);
+    letter-spacing: 8px;
+    opacity: 0.5;
+}
+
+#current-track-indicator::before { margin-bottom: 0.8rem; }
+#current-track-indicator::after  { margin-top: 0.8rem; }
+
+.track-number {
+    display: block;
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    color: var(--gold-2);
+    font-weight: 600;
+    margin-bottom: 0.4rem;
+    letter-spacing: .25em;
+    text-transform: uppercase;
+}
+
+.track-title {
+    display: block;
+    font-family: 'IM Fell English', serif;
+    font-size: 1.7rem;
+    font-weight: 400;
+    font-style: italic;
+    color: var(--bone);
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+}
+
+/* Track Info */
+#track-info {
+    background: var(--ink-0);
+    border-radius: 6px;
+    padding: 1rem;
+    margin-bottom: 1.5rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border: 1px solid var(--ink-3);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.track-name {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+}
+
+.track-name .label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--gold-3);
+}
+
+.status {
+    padding: 0.35rem 0.9rem;
+    border-radius: 2px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    text-transform: uppercase;
+    letter-spacing: .22em;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+/* Noms de classe stables (indépendants de la langue affichée, #22) :
+   le libellé vient de i18n, mais la classe reste "stopped"/"playing"/"paused" */
+.status.stopped {
+    background: var(--danger-bg);
+    color: var(--danger-text);
+    border: 1px solid rgba(107, 20, 20, 0.6);
+}
+
+.status.playing {
+    background: rgba(138, 102, 34, 0.2);
+    color: var(--gold-3);
+    border: 1px solid var(--gold-2);
+    animation: pulse-glow 2.5s infinite;
+}
+
+.status.paused {
+    background: rgba(58, 47, 32, 0.4);
+    color: var(--gold-2);
+    border: 1px solid var(--ink-3);
+}
+
+/* ============================================
+   Version Switcher
+   ============================================ */
+
+#version-switcher {
+    margin-bottom: 2rem;
+    text-align: center;
+    padding: 1rem;
+    background: var(--ink-0);
+    border-radius: 6px;
+    border: 1px solid var(--ink-3);
+    box-shadow: inset 0 1px 0 rgba(255, 220, 170, 0.03);
+}
+
+#version-switcher h3 {
+    font-family: 'IM Fell English', serif;
+    font-weight: 400;
+    margin-bottom: 1rem;
+    font-size: 1.1rem;
+    color: var(--gold-3);
+    letter-spacing: .04em;
+}
+
+.version-buttons {
+    display: flex;
+    gap: 1rem;
+    justify-content: center;
+    flex-wrap: wrap;
+}
+
+/* Base Version Button */
+.version-btn {
+    padding: 0.85rem 1.8rem;
+    min-width: 140px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.8rem;
+    font-weight: 600;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.25s ease;
+    text-transform: uppercase;
+    letter-spacing: .18em;
+    position: relative;
+    overflow: hidden;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.04),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 2px var(--ink-2),
+        0 6px 16px -8px #000;
+}
+
+/* CALM */
+.version-btn[data-version="calm"] {
+    background: linear-gradient(180deg, #1a2f45 0%, #0f1e2e 100%);
+    border: 1px solid #1e3a5a;
+    color: var(--calm-text);
+}
+
+.version-btn[data-version="calm"]:hover {
+    border-color: #2a5580;
+    color: var(--calm-text-hover);
+    box-shadow:
+        inset 0 1px 0 rgba(100, 160, 220, 0.06),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 2px #1a2f45,
+        0 0 16px -4px rgba(40, 90, 150, 0.5);
+}
+
+.version-btn[data-version="calm"].active {
+    background: linear-gradient(180deg, #1e4a7a 0%, #162840 100%);
+    border: 1px solid #2a6090;
+    color: var(--calm-text-active);
+    box-shadow:
+        inset 0 1px 0 rgba(100, 180, 240, 0.08),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.7),
+        inset 0 0 0 2px #162840,
+        0 0 20px -4px rgba(40, 100, 180, 0.6);
+    animation: calm-pulse 3s ease-in-out infinite;
+}
+
+/* TENSION */
+.version-btn[data-version="tension"] {
+    background: linear-gradient(180deg, #3a2400 0%, #241600 100%);
+    border: 1px solid #5a3800;
+    color: var(--tension-text);
+}
+
+.version-btn[data-version="tension"]:hover {
+    border-color: #7a4e00;
+    color: var(--tension-text-hover);
+    box-shadow:
+        inset 0 1px 0 rgba(220, 170, 80, 0.06),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 2px #3a2400,
+        0 0 16px -4px rgba(120, 80, 0, 0.5);
+}
+
+.version-btn[data-version="tension"].active {
+    background: linear-gradient(180deg, #6b3c00 0%, #3a2000 100%);
+    border: 1px solid #9a5800;
+    color: var(--tension-text-active);
+    box-shadow:
+        inset 0 1px 0 rgba(240, 180, 80, 0.08),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.7),
+        inset 0 0 0 2px #3a2000,
+        0 0 20px -4px rgba(140, 90, 0, 0.6);
+    animation: tension-pulse 2.5s ease-in-out infinite;
+}
+
+/* COMBAT */
+.version-btn[data-version="combat"] {
+    background: linear-gradient(180deg, #2a0a0a 0%, #1a0505 100%);
+    border: 1px solid #4a1212;
+    color: var(--combat-text);
+}
+
+.version-btn[data-version="combat"]:hover {
+    border-color: #6a1818;
+    color: var(--combat-text-hover);
+    box-shadow:
+        inset 0 1px 0 rgba(220, 100, 100, 0.06),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 2px #2a0a0a,
+        0 0 16px -4px rgba(120, 30, 30, 0.5);
+}
+
+.version-btn[data-version="combat"].active {
+    background: linear-gradient(180deg, #8c2222 0%, #5a1212 100%);
+    border: 1px solid #aa3030;
+    color: var(--combat-text-active);
+    box-shadow:
+        inset 0 1px 0 rgba(240, 120, 120, 0.08),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.7),
+        inset 0 0 0 2px #5a1212,
+        0 0 20px -4px rgba(160, 40, 40, 0.65);
+    animation: combat-pulse 1.2s ease-in-out infinite;
+}
+
+/* Autres versions */
+.version-btn:not([data-version="calm"]):not([data-version="tension"]):not([data-version="combat"]) {
+    background: linear-gradient(180deg, var(--ink-2) 0%, var(--ink-1) 100%);
+    border: 1px solid var(--ink-3);
+    color: var(--bone-dim);
+}
+
+.version-btn:not([data-version="calm"]):not([data-version="tension"]):not([data-version="combat"]):hover {
+    border-color: var(--gold-2);
+    color: var(--bone);
+}
+
+.version-btn:not([data-version="calm"]):not([data-version="tension"]):not([data-version="combat"]).active {
+    background: linear-gradient(180deg, var(--gold-2) 0%, var(--gold-1) 100%);
+    border-color: var(--gold-3);
+    color: var(--ink-0);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.12),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.5),
+        0 0 14px -4px var(--gold-glow);
+}
+
+/* ============================================
+   Player Controls
+   ============================================ */
+
+.nav-btn,
+.control-btn {
+    border: none;
+    color: var(--bone);
+    padding: 12px 24px;
+    border-radius: 4px;
+    cursor: pointer;
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    font-weight: 600;
+    transition: all 0.2s ease;
+    text-transform: uppercase;
+    letter-spacing: .18em;
+}
+
+.nav-btn {
+    background: linear-gradient(180deg, var(--ink-2) 0%, var(--ink-1) 100%);
+    border: 1px solid var(--ink-3);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.04),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 2px var(--ink-2),
+        0 6px 16px -8px #000;
+}
+
+.nav-btn:hover {
+    border-color: var(--gold-2);
+    color: var(--bone);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.06),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 2px var(--ink-2),
+        0 0 12px -4px var(--gold-glow);
+}
+
+.control-btn {
+    background: linear-gradient(180deg, var(--gold-4) 0%, var(--gold-3) 55%, var(--gold-1) 100%);
+    color: var(--ink-0);
+    padding: 14px 28px;
+    font-size: 0.75rem;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.12),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.5),
+        inset 0 0 0 2px #4a3814,
+        0 0 22px -4px var(--gold-glow);
+    border: 1px solid var(--gold-2);
+}
+
+.control-btn:hover {
+    background: linear-gradient(180deg, #fff8e0 0%, var(--gold-4) 55%, var(--gold-2) 100%);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.18),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.4),
+        inset 0 0 0 2px #5a4820,
+        0 0 28px -4px var(--gold-glow);
+}
+
+.control-btn:active {
+    background: linear-gradient(180deg, var(--gold-3) 0%, var(--gold-1) 100%);
+    box-shadow:
+        inset 0 2px 4px rgba(0, 0, 0, 0.6),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.7);
+}
+
+#player-controls,
+#navigation-controls {
+    display: flex;
+    justify-content: center;
+    gap: 1rem;
+    margin-bottom: 1.5rem;
+}
+
+/* ============================================
+   Progress Bar
+   ============================================ */
+
+#progress-container {
+    margin-bottom: 1.5rem;
+    padding: 1rem;
+    background: var(--ink-0);
+    border-radius: 6px;
+    border: 1px solid var(--ink-3);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+.time-display {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.78rem;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    color: var(--bone-dim);
+    margin-bottom: 8px;
+    letter-spacing: .04em;
+}
+
+.progress-bar {
+    height: 8px;
+    background: linear-gradient(180deg, var(--ink-dark) 0%, var(--ink-dark) 100%);
+    border-radius: 2px;
+    overflow: hidden;
+    border: 1px solid var(--ink-3);
+    box-shadow: inset 0 2px 4px rgba(0, 0, 0, 0.8);
+    cursor: pointer;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--gold-1) 0%, var(--gold-3) 50%, var(--gold-4) 100%);
+    width: 0%;
+    transition: width 0.3s linear;
+    box-shadow: 0 0 8px var(--gold-glow);
+    position: relative;
+}
+
+.progress-fill::after {
+    content: '';
+    position: absolute;
+    right: 0;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    background: var(--gold-4);
+    box-shadow: 0 0 6px var(--gold-3);
+}
+
+/* ============================================
+   Play Mode Selector
+   ============================================ */
+
+#play-mode-selector {
+    display: flex;
+    justify-content: center;
+    gap: 0.5rem;
+    margin-bottom: 2rem;
+}
+
+.mode-btn {
+    background: var(--ink-0);
+    border: 1px solid var(--ink-3);
+    color: var(--bone-dim);
+    padding: 7px 16px;
+    border-radius: 2px;
+    cursor: pointer;
+    font-size: 0.7rem;
+    font-family: 'Cinzel', serif;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .18em;
+    transition: all 0.2s ease;
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.03),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.5);
+}
+
+.mode-btn:hover {
+    border-color: var(--gold-2);
+    color: var(--bone);
+}
+
+.mode-btn.active {
+    background: linear-gradient(180deg, var(--gold-3) 0%, var(--gold-1) 100%);
+    border-color: var(--gold-3);
+    color: var(--ink-0);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.12),
+        inset 0 0 0 1px rgba(0, 0, 0, 0.4),
+        0 0 12px -4px var(--gold-glow);
+}
+
+/* ============================================
+   Volume Control
+   ============================================ */
+
+#volume-control {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 1rem;
+    background: var(--ink-0);
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    border: 1px solid var(--ink-3);
+    margin-bottom: 1.5rem;
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.8);
+}
+
+#volume-control label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: var(--gold-3);
+    text-transform: uppercase;
+    letter-spacing: .22em;
+    white-space: nowrap;
+}
+
+#volume {
+    flex: 1;
+    -webkit-appearance: none;
+    appearance: none;
+    height: 4px;
+    background: linear-gradient(90deg, var(--gold-3) 0%, var(--ink-3) 100%);
+    border-radius: 2px;
+    border: none;
+    cursor: pointer;
+}
+
+#volume::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(135deg, var(--gold-4) 0%, var(--gold-3) 100%);
+    border-radius: 50%;
+    border: 1px solid var(--gold-2);
+    cursor: pointer;
+    box-shadow: 0 0 8px var(--gold-glow);
+}
+
+#volume::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    background: linear-gradient(135deg, var(--gold-4) 0%, var(--gold-3) 100%);
+    border-radius: 50%;
+    border: 1px solid var(--gold-2);
+    cursor: pointer;
+    box-shadow: 0 0 8px var(--gold-glow);
+}
+
+#volume-value {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.82rem;
+    color: var(--gold-3);
+    min-width: 38px;
+    text-align: right;
+}
+
+/* ============================================
+   Playlist Tracks
+   ============================================ */
+
+#playlist-tracks-container h3 {
+    font-family: 'IM Fell English', serif;
+    font-weight: 400;
+    text-align: left;
+    margin-bottom: 1rem;
+    color: var(--gold-3);
+    font-size: 1.15rem;
+}
+
+#playlist-tracks {
+    max-height: 300px;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    padding-right: 5px;
+}
+
+.playlist-track {
+    display: flex;
+    align-items: center;
+    padding: 11px 12px;
+    background: var(--ink-0);
+    margin-bottom: 4px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid transparent;
+    box-shadow: inset 0 1px 0 rgba(255, 220, 170, 0.02);
+}
+
+.playlist-track:hover {
+    background: var(--ink-1);
+    border-color: var(--ink-3);
+}
+
+.playlist-track.active {
+    border-left: 3px solid var(--gold-3);
+    background: linear-gradient(90deg, rgba(214, 174, 84, 0.10) 0%, var(--ink-0) 100%);
+    border-color: var(--gold-2);
+    box-shadow:
+        inset 0 1px 0 rgba(255, 220, 170, 0.04),
+        inset 2px 0 0 var(--gold-3);
+}
+
+.playlist-track-number {
+    width: 30px;
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.75rem;
+    color: var(--gold-2);
+}
+
+.playlist-track-title {
+    flex: 1;
+    font-family: 'IM Fell English', serif;
+    font-size: 0.95rem;
+}

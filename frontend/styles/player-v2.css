@@ -1,0 +1,600 @@
+/* ============================================
+   REDESIGN v2 — Lecture UI
+   ============================================ */
+
+/* ── Header: subtitle above h1 + ornament ── */
+header {
+    padding: 1.2rem 1.5rem 1rem;
+}
+
+.header-ornament {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 14px;
+    margin: 0.6rem auto 0;
+    width: 280px;
+}
+
+.ornament-line {
+    flex: 1;
+    height: 1px;
+    background: linear-gradient(90deg, transparent 0%, var(--gold-2) 50%, transparent 100%);
+    opacity: 0.55;
+}
+
+.ornament-gem {
+    color: var(--gold-3);
+    font-size: 0.6rem;
+    opacity: 0.75;
+}
+
+/* ── Hidden select (kept for JS) ── */
+.hidden-select {
+    display: none !important;
+}
+
+/* ── Container: remove min-height constraint for 2-col layout ── */
+.container {
+    min-height: unset;
+}
+
+/* ── Playlist header bar ── */
+.playlist-header {
+    margin-bottom: 0.85rem;
+    display: flex;
+    flex-direction: column;
+    gap: 0.35rem;
+}
+
+.breadcrumb-btn {
+    background: none;
+    border: none;
+    color: var(--bone-dim);
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    cursor: pointer;
+    text-align: left;
+    padding: 0;
+    transition: color 0.2s;
+}
+
+.breadcrumb-btn:hover {
+    color: var(--bone-dim);
+}
+
+.playlist-info-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--ink-0);
+    padding: 0.55rem 1rem;
+    border-radius: 4px;
+    border: 1px solid var(--ink-3);
+    box-shadow: inset 0 1px 0 rgba(255, 220, 170, 0.03);
+}
+
+.playlist-meta-group {
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+}
+
+.playlist-meta {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--bone-dim);
+}
+
+.playlist-name-display {
+    font-family: 'IM Fell English', serif;
+    font-size: 1rem;
+    font-style: italic;
+    color: var(--bone);
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    text-align: left;
+    transition: color 0.15s;
+}
+
+.playlist-name-display:hover {
+    color: var(--gold-3);
+}
+
+.playlist-dropdown {
+    position: absolute;
+    top: calc(100% + 4px);
+    left: 0;
+    min-width: 220px;
+    background: var(--ink-1);
+    border: 1px solid var(--ink-3);
+    border-radius: 4px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.7);
+    z-index: 200;
+    overflow: hidden;
+}
+
+.playlist-dropdown.hidden {
+    display: none;
+}
+
+.playlist-dropdown-item {
+    display: block;
+    width: 100%;
+    padding: 9px 14px;
+    background: none;
+    border: none;
+    color: var(--bone-dim);
+    font-family: 'IM Fell English', serif;
+    font-size: 0.95rem;
+    font-style: italic;
+    text-align: left;
+    cursor: pointer;
+    transition: all 0.15s;
+    border-bottom: 1px solid var(--ink-3);
+}
+
+.playlist-dropdown-item:last-child {
+    border-bottom: none;
+}
+
+.playlist-dropdown-item:hover {
+    background: var(--ink-2);
+    color: var(--bone);
+}
+
+.playlist-dropdown-item.active {
+    color: var(--gold-3);
+    background: linear-gradient(90deg, rgba(201, 168, 76, 0.08) 0%, transparent 100%);
+}
+
+.playlist-actions {
+    display: flex;
+    gap: 0.25rem;
+    align-items: center;
+}
+
+/* ── 2-column lecture layout ── */
+.lecture-layout {
+    display: grid;
+    grid-template-columns: 1.15fr 1fr;
+    gap: 1rem;
+    align-items: start;
+}
+
+/* ── Player Card ── */
+.player-card {
+    background: linear-gradient(180deg, var(--ink-1) 0%, var(--ink-0) 100%);
+    border: 1px solid var(--gold-1);
+    border-radius: 2px;
+    padding: 1.25rem;
+    position: relative;
+}
+
+.player-card::after {
+    content: '';
+    position: absolute;
+    inset: 5px;
+    border: 1px solid rgba(214, 174, 84, 0.09);
+    border-radius: 1px;
+    pointer-events: none;
+}
+
+/* ── Player card header row ── */
+.player-card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 0.6rem;
+}
+
+.incantation-label {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--bone-dim);
+}
+
+.version-badge {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--gold-3);
+}
+
+/* ── Track Indicator inside card ── */
+.player-card #current-track-indicator {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0 0 0.85rem;
+    text-align: left;
+}
+
+.player-card #current-track-indicator::before,
+.player-card #current-track-indicator::after {
+    display: none;
+}
+
+.player-card .track-title {
+    font-size: 1.65rem;
+    display: block;
+    margin-bottom: 0.15rem;
+    font-style: italic;
+}
+
+.player-card .track-number {
+    font-size: 0.7rem;
+    color: var(--bone-dim);
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    letter-spacing: .04em;
+    text-transform: none;
+    font-weight: 400;
+    color: var(--bone-dim);
+    margin-bottom: 0;
+}
+
+/* ── Version Switcher inside card ── */
+.player-card #version-switcher {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin-bottom: 1.1rem;
+    text-align: left;
+}
+
+/* ── Version Buttons — compact pills ── */
+.player-card .version-buttons {
+    gap: 0.35rem;
+    justify-content: flex-start;
+}
+
+.player-card .version-btn {
+    padding: 4px 11px 4px 8px;
+    min-width: unset;
+    font-size: 0.7rem;
+    letter-spacing: .14em;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    box-shadow: none;
+}
+
+.player-card .version-btn::before {
+    content: '●';
+    font-size: 0.42rem;
+    line-height: 1;
+    flex-shrink: 0;
+}
+
+/* Per-version dot color (calm) */
+.player-card .version-btn[data-version="calm"] {
+    background: var(--calm-bg);
+    border-color: #1e3a5a;
+    color: var(--calm-text);
+}
+.player-card .version-btn[data-version="calm"]::before { color: var(--calm-text); }
+.player-card .version-btn[data-version="calm"].active {
+    background: var(--calm-bg-active);
+    border-color: #2a6090;
+    color: var(--calm-text-active);
+    animation: none;
+}
+
+/* combat */
+.player-card .version-btn[data-version="combat"] {
+    background: var(--combat-bg);
+    border-color: #4a1212;
+    color: var(--combat-text);
+}
+.player-card .version-btn[data-version="combat"]::before { color: var(--combat-text); }
+.player-card .version-btn[data-version="combat"].active {
+    background: var(--combat-bg-active);
+    border-color: #aa3030;
+    color: var(--combat-text-active);
+    animation: none;
+}
+
+/* tension */
+.player-card .version-btn[data-version="tension"] {
+    background: var(--tension-bg);
+    border-color: #5a3800;
+    color: var(--tension-text);
+}
+.player-card .version-btn[data-version="tension"]::before { color: var(--tension-text); }
+.player-card .version-btn[data-version="tension"].active {
+    background: var(--tension-bg-active);
+    border-color: #9a5800;
+    color: var(--tension-text-active);
+    animation: none;
+}
+
+/* Other versions: gold dot */
+.player-card .version-btn:not([data-version="calm"]):not([data-version="tension"]):not([data-version="combat"]) {
+    background: rgba(42, 36, 31, 0.7);
+    border-color: var(--ink-3);
+    color: var(--bone-dim);
+}
+.player-card .version-btn:not([data-version="calm"]):not([data-version="tension"]):not([data-version="combat"])::before {
+    color: var(--gold-2);
+}
+.player-card .version-btn:not([data-version="calm"]):not([data-version="tension"]):not([data-version="combat"]).active {
+    background: rgba(214, 174, 84, 0.14);
+    border-color: var(--gold-2);
+    color: var(--gold-3);
+    box-shadow: none;
+    animation: none;
+}
+.player-card .version-btn:not([data-version="calm"]):not([data-version="tension"]):not([data-version="combat"]).active::before {
+    color: var(--gold-3);
+}
+
+/* ── Progress Container inside card ── */
+.player-card #progress-container {
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin-bottom: 1.1rem;
+    cursor: pointer;
+}
+
+.player-card .progress-bar {
+    height: 5px;
+    margin-bottom: 5px;
+}
+
+.player-card .time-display {
+    font-size: 0.7rem;
+    margin-bottom: 0;
+}
+
+/* ── Transport Controls ── */
+.player-card #player-controls {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.6rem;
+    margin-bottom: 1.1rem;
+}
+
+.ctrl-btn {
+    background: transparent;
+    border: 1px solid var(--ink-3);
+    color: var(--bone-dim);
+    font-size: 0.95rem;
+    cursor: pointer;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.2s ease;
+    padding: 0;
+}
+
+.ctrl-btn:hover {
+    color: var(--bone);
+    border-color: var(--gold-2);
+    box-shadow: 0 0 8px -2px var(--gold-glow);
+}
+
+.ctrl-play {
+    width: 50px;
+    height: 50px;
+    background: linear-gradient(180deg, var(--gold-4) 0%, var(--gold-3) 55%, var(--gold-1) 100%);
+    border: 1px solid var(--gold-2);
+    color: var(--ink-0);
+    font-size: 1.05rem;
+    box-shadow: 0 0 16px -4px var(--gold-glow);
+}
+
+.ctrl-play:hover {
+    background: linear-gradient(180deg, #fff8e0 0%, var(--gold-4) 55%, var(--gold-2) 100%);
+    box-shadow: 0 0 24px -4px var(--gold-glow);
+    color: var(--ink-0);
+    border-color: var(--gold-3);
+}
+
+/* ── Player footer: volume + mode ── */
+.player-footer-controls {
+    display: flex;
+    gap: 0.75rem;
+    align-items: center;
+}
+
+.player-footer-controls #volume-control {
+    flex: 1;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    padding: 0;
+    margin-bottom: 0;
+    gap: 0.5rem;
+}
+
+.player-footer-controls #volume-control label {
+    font-size: 0.7rem;
+    white-space: nowrap;
+    min-width: auto;
+}
+
+.player-footer-controls #play-mode-selector {
+    margin-bottom: 0;
+    flex-shrink: 0;
+}
+
+.player-footer-controls .mode-buttons {
+    display: flex;
+    gap: 0.2rem;
+}
+
+.player-footer-controls .mode-btn {
+    padding: 0;
+    width: 28px;
+    height: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.9rem;
+    letter-spacing: 0;
+    border-radius: 50%;
+}
+
+/* ── Tracklist Panel ── */
+.tracklist-panel {
+    background: var(--ink-0);
+    border: 1px solid var(--ink-3);
+    border-radius: 2px;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    min-height: 260px;
+}
+
+.tracklist-header {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: .22em;
+    text-transform: uppercase;
+    color: var(--bone-dim);
+    padding: 0.6rem 1rem;
+    border-bottom: 1px solid var(--ink-3);
+    background: linear-gradient(180deg, var(--ink-2) 0%, var(--ink-0) 100%);
+    flex-shrink: 0;
+}
+
+.tracklist-panel #playlist-tracks {
+    flex: 1;
+    overflow-y: auto;
+    scrollbar-gutter: stable;
+    max-height: none;
+    padding-right: 0;
+}
+
+/* ── Track rows with version tag ── */
+.tracklist-panel .playlist-track {
+    display: grid;
+    grid-template-columns: 26px 1fr auto auto auto;
+    align-items: center;
+    gap: 0.4rem;
+    padding: 9px 12px;
+    border-radius: 0;
+    margin-bottom: 0;
+    border: none;
+    border-bottom: 1px solid rgba(58, 47, 32, 0.35);
+    background: transparent;
+    box-shadow: none;
+}
+
+.playlist-track-actions {
+    display: flex;
+    align-items: center;
+    gap: 2px;
+}
+
+.playlist-track-actions .icon-btn {
+    font-size: 0.9rem;
+}
+
+.tracklist-panel .playlist-track:hover {
+    background: var(--ink-1);
+    border-color: rgba(58, 47, 32, 0.35);
+    border-left: none;
+}
+
+.tracklist-panel .playlist-track.active {
+    background: linear-gradient(90deg, rgba(214, 174, 84, 0.10) 0%, transparent 100%);
+    border-left: 2px solid var(--gold-3);
+    border-bottom-color: rgba(58, 47, 32, 0.35);
+    box-shadow: none;
+}
+
+.tracklist-panel .playlist-track-number {
+    width: auto;
+    font-size: 0.7rem;
+    color: var(--bone-dim);
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+}
+
+.tracklist-panel .playlist-track.active .playlist-track-number {
+    color: var(--gold-2);
+}
+
+.tracklist-panel .playlist-track-title {
+    font-size: 0.88rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.playlist-track-version {
+    font-family: 'Cinzel', serif;
+    font-size: 0.7rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--bone-dim);
+    white-space: nowrap;
+}
+
+.playlist-track.active .playlist-track-version {
+    color: var(--gold-2);
+}
+
+.playlist-track-duration {
+    font-family: 'JetBrains Mono', ui-monospace, monospace;
+    font-size: 0.7rem;
+    color: var(--bone-dim);
+    min-width: 30px;
+    text-align: right;
+}
+
+/* ── Stub views ── */
+.stub-view {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 4rem 2rem;
+    text-align: center;
+    gap: 0.75rem;
+}
+
+.stub-icon {
+    font-size: 2rem;
+    opacity: 0.3;
+}
+
+.stub-title {
+    font-family: 'Cinzel', serif;
+    font-size: 1rem;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    color: var(--gold-2);
+    opacity: 0.5;
+}
+
+.stub-desc {
+    font-family: 'IM Fell English', serif;
+    font-style: italic;
+    font-size: 0.9rem;
+    color: var(--bone-dim);
+}
+
+/* ── Footer ── */
+footer {
+    padding: 0.75rem 1.5rem;
+    letter-spacing: .2em;
+}

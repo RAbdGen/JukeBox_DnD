@@ -1,8 +1,8 @@
-import { readFileSync } from 'fs';
 import { describe, expect, it } from 'vitest';
+import { readStyles } from './helpers/readStyles.js';
 
 // #30 : scrollbars fines, stylées par le thème, jamais masquées
-const css = readFileSync(new URL('../frontend/styles.css', import.meta.url), 'utf-8');
+const css = readStyles();
 
 function rules() {
     const found = [];
