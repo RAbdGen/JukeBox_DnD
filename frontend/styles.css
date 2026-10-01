@@ -14,6 +14,7 @@
 @import './styles/modals.css';     /* modals et formulaires */
 @import './styles/animations.css'; /* animations, pied de page, responsive */
 @import './styles/player-v2.css';  /* refonte v2 de l'interface de lecture */
+@import './styles/sliders.css';    /* curseurs thémés, barre de progression (#39) */
 @import './styles/themes.css';     /* 8 palettes [data-theme] */
 @import './styles/settings.css';   /* réglages, sélecteur de thème */
 @import './styles/toast.css';      /* toasts (annulation) */

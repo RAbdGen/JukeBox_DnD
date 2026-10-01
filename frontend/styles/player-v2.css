@@ -349,12 +349,6 @@ header {
     box-shadow: none;
     padding: 0;
     margin-bottom: 1.1rem;
-    cursor: pointer;
-}
-
-.player-card .progress-bar {
-    height: 5px;
-    margin-bottom: 5px;
 }
 
 .player-card .time-display {

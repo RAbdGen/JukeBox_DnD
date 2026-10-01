@@ -321,24 +321,6 @@
 
 .volume-slider-group input[type="range"] {
     flex: 1;
-    -webkit-appearance: none;
-    appearance: none;
-    height: 4px;
-    background: var(--ink-3);
-    border-radius: 2px;
-    border: none;
-    cursor: pointer;
-}
-
-.volume-slider-group input[type="range"]::-webkit-slider-thumb {
-    -webkit-appearance: none;
-    width: 16px;
-    height: 16px;
-    background: linear-gradient(135deg, var(--gold-4) 0%, var(--gold-3) 100%);
-    border-radius: 50%;
-    cursor: pointer;
-    border: 1px solid var(--gold-2);
-    box-shadow: 0 0 8px var(--gold-glow);
 }
 
 .volume-slider-group span {

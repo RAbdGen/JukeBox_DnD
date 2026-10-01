@@ -1,0 +1,81 @@
+/* ============================================
+   Curseurs thémés (#39) — style unique de tous les input range
+   Modèle : Slider de shadcn (piste fine, partie remplie, poignée ronde
+   cerclée, halo au survol/focus). La partie remplie suit --fill, tenu à jour
+   par frontend/rangeFill.js (Chromium ne colore pas l'avant de la poignée).
+   ============================================ */
+
+/* Déclarée pour pouvoir être animée (progression fluide entre deux relevés).
+   inherits: true obligatoire : posée sur l'input, elle doit atteindre le
+   pseudo-élément de piste, sinon la partie remplie reste à 0 % */
+@property --fill {
+    syntax: '<percentage>';
+    inherits: true;
+    initial-value: 0%;
+}
+
+input[type="range"] {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 100%;
+    height: 18px; /* zone cliquable plus haute que la piste */
+    margin: 0;
+    background: transparent;
+    cursor: pointer;
+}
+
+input[type="range"]::-webkit-slider-runnable-track {
+    height: 6px;
+    border-radius: 3px;
+    background:
+        linear-gradient(90deg, var(--gold-1), var(--gold-3)) 0 0 / var(--fill) 100% no-repeat,
+        var(--ink-3);
+    box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.6);
+}
+
+input[type="range"]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    appearance: none;
+    width: 16px;
+    height: 16px;
+    margin-top: -5px; /* centre la poignée sur la piste de 6 px */
+    border-radius: 50%;
+    background: var(--ink-0);
+    border: 2px solid var(--gold-3);
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.6);
+    transition-property: box-shadow, transform;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: ease;
+}
+
+input[type="range"]:hover::-webkit-slider-thumb,
+input[type="range"]:focus-visible::-webkit-slider-thumb {
+    box-shadow: 0 0 0 4px var(--gold-glow), 0 1px 3px rgba(0, 0, 0, 0.6);
+}
+
+input[type="range"]:active::-webkit-slider-thumb {
+    transform: scale(1.1);
+}
+
+input[type="range"]:focus-visible {
+    outline: none; /* le halo de la poignée suffit */
+}
+
+input[type="range"]:disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+}
+
+input[type="range"]:disabled::-webkit-slider-thumb {
+    box-shadow: none;
+}
+
+/* Barre de progression : avance en douceur entre deux relevés (500 ms),
+   mais suit la poignée sans retard pendant un glissement */
+#progress {
+    transition: --fill var(--duration-slow) linear;
+}
+
+#progress:active {
+    transition: none;
+}

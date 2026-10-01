@@ -13,6 +13,8 @@ import { createCutterView } from './cutterView.js';
 import { createPreviewController } from './previewController.js';
 import { createPreviewState } from './previewState.js';
 import { initTooltips, setTooltip } from './tooltip.js';
+import { initRangeFill } from './rangeFill.js';
+import { createProgressSlider } from './progressSlider.js';
 import { getPreviewVolume } from './trackVolume.js';
 
 // ========================================
@@ -52,6 +54,7 @@ let editingVersions = [];
 // Tempo en cours d'édition (#18) : { versionName: { bpm: string, offsetMs: string } }
 let editingTempo = {};
 let cutterView = null; // onglet Découpage (#24), créé au DOMContentLoaded
+let progressSlider = null; // barre de progression manipulable (#39), créée au DOMContentLoaded
 
 // ========================================
 // i18n (#22) — langue courante persistée dans settings.language
@@ -976,20 +979,14 @@ function updateModeButtons(mode) {
 }
 
 function updateProgress() {
-    const currentTime = audioManager.getCurrentTime();
     const duration = audioManager.getDuration();
-
-    document.getElementById('current-time').textContent = formatTime(currentTime);
     document.getElementById('duration').textContent = formatTime(duration);
-
-    if (duration > 0) {
-        const pct = (currentTime / duration) * 100;
-        document.getElementById('progress-fill').style.width = `${pct}%`;
-    }
+    progressSlider?.update(audioManager.getCurrentTime(), duration);
 }
 
 function startProgressUpdate() {
     if (updateInterval) clearInterval(updateInterval);
+    updateProgress(); // sans attendre le premier relevé : le curseur #39 part désactivé
     updateInterval = setInterval(updateProgress, 500);
 }
 
@@ -1232,6 +1229,7 @@ function switchView(viewName) {
 
 document.addEventListener('DOMContentLoaded', () => {
     initTooltips(); // #38 : avant init(), qui pose déjà des tooltips
+    initRangeFill(); // #39 : avant init(), qui règle déjà le volume
     init();
     loadShortcutSettings();
 
@@ -1395,24 +1393,15 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     });
 
-    // --- Progress Bar Seek ---
-    const progressContainer = document.getElementById('progress-container');
-    if (progressContainer) {
-        progressContainer.addEventListener('click', (e) => {
-            const duration = audioManager.getDuration();
-            if (duration > 0) {
-                const rect = progressContainer.getBoundingClientRect();
-                const clickX = e.clientX - rect.left;
-                const percentage = clickX / rect.width;
-                const seekPosition = percentage * duration;
-                audioManager.seek(seekPosition);
-                updateProgress();
-            }
-        });
-
-        // Add cursor pointer style
-        progressContainer.style.cursor = 'pointer';
-    }
+    // --- Progress Bar Seek (#39 : curseur manipulable, voir progressSlider.js) ---
+    progressSlider = createProgressSlider({
+        input: document.getElementById('progress'),
+        timeLabel: document.getElementById('current-time'),
+        audio: audioManager,
+        formatTime,
+        t,
+        onSeek: updateProgress,
+    });
 
     // --- Volume ---
     document.getElementById('volume').addEventListener('input', (e) => {
