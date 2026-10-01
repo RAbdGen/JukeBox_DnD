@@ -8,6 +8,7 @@ button.playlist-track-version {
     cursor: pointer;
     text-decoration: underline dotted;
     text-underline-offset: 3px;
+    transition: color var(--duration-fast) ease;
 }
 
 button.playlist-track-version:hover,

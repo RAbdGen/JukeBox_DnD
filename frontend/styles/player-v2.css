@@ -58,7 +58,7 @@ header {
     cursor: pointer;
     text-align: left;
     padding: 0;
-    transition: color 0.2s;
+    transition: color var(--duration-base);
 }
 
 .breadcrumb-btn:hover {
@@ -100,7 +100,7 @@ header {
     padding: 0;
     cursor: pointer;
     text-align: left;
-    transition: color 0.15s;
+    transition: color var(--duration-fast);
 }
 
 .playlist-name-display:hover {
@@ -136,7 +136,9 @@ header {
     font-style: italic;
     text-align: left;
     cursor: pointer;
-    transition: all 0.15s;
+    transition-property: color, background-color;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: ease;
     border-bottom: 1px solid var(--ink-3);
 }
 
@@ -381,7 +383,9 @@ header {
     display: flex;
     align-items: center;
     justify-content: center;
-    transition: all 0.2s ease;
+    transition-property: color, border-color, box-shadow;
+    transition-duration: var(--duration-base);
+    transition-timing-function: ease;
     padding: 0;
 }
 

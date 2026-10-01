@@ -3,6 +3,14 @@
    ============================================ */
 
 :root {
+    /* ── Mouvement (indépendant du thème) : 3 durées d'interface, 3 rythmes de pulsation ── */
+    --duration-fast:   150ms;  /* survols de texte, listes */
+    --duration-base:   200ms;  /* boutons, champs, états actifs, sortie de toast */
+    --duration-slow:   300ms;  /* entrée de toast, barre de progression */
+    --pulse-fast:      1.2s;   /* combat */
+    --pulse-medium:    2.5s;   /* tension, statut en lecture, écran de chargement */
+    --pulse-slow:      3s;     /* calme */
+
     /* ── Backgrounds — "Nuit" (default) ── */
     --ink-0:   #0b0b09;
     --ink-1:   #141310;
@@ -253,7 +261,9 @@ main {
     font-weight: 600;
     cursor: pointer;
     border-radius: 4px;
-    transition: all 0.25s ease;
+    transition-property: color, background-color, border-color, box-shadow;
+    transition-duration: var(--duration-base);
+    transition-timing-function: ease;
     letter-spacing: .18em;
     text-transform: uppercase;
 }
@@ -276,4 +286,18 @@ main {
 
 .view.hidden {
     display: none;
+}
+
+/* Mouvement réduit demandé par le système : animations et transitions quasi
+   instantanées (les événements animationend restent émis). Exception : la
+   barre de progression du toast d'annulation, qui indique le temps restant. */
+@media (prefers-reduced-motion: reduce) {
+    *:not(.toast-progress),
+    *::before,
+    *::after {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+        scroll-behavior: auto !important;
+    }
 }

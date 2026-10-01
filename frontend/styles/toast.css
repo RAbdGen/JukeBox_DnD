@@ -30,11 +30,11 @@
         inset 0 1px 0 rgba(255, 220, 170, 0.05);
     position: relative;
     overflow: hidden;
-    animation: toast-in 0.25s ease-out;
+    animation: toast-in var(--duration-slow) ease-out;
 }
 
 .toast.toast-leaving {
-    animation: toast-out 0.2s ease-in forwards;
+    animation: toast-out var(--duration-base) ease-in forwards;
 }
 
 .toast-message {
@@ -55,7 +55,9 @@
     font-size: 0.72rem;
     letter-spacing: .1em;
     text-transform: uppercase;
-    transition: all 0.2s ease;
+    transition-property: color, background-color, border-color;
+    transition-duration: var(--duration-base);
+    transition-timing-function: ease;
     white-space: nowrap;
 }
 

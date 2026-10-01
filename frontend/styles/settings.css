@@ -70,7 +70,9 @@
     flex-direction: column;
     align-items: center;
     gap: 0.7rem;
-    transition: all 0.2s ease;
+    transition-property: color, border-color, box-shadow;
+    transition-duration: var(--duration-base);
+    transition-timing-function: ease;
     font-family: 'Cinzel', serif;
     font-size: 0.7rem;
     letter-spacing: .14em;
