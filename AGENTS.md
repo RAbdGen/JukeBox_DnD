@@ -179,6 +179,7 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 
 **À faire (`Todo`) :**
 - [#36 — Mesurer la mémoire de l'onglet Découpage avec un fichier d'1 h (machine 8 Go)](https://github.com/RAbdGen/JukeBox_DnD/issues/36) — mesure manuelle sur la machine de l'ami avant la prochaine release
+- [#37 — Mettre à jour Electron 37 → version supportée (≥ 40)](https://github.com/RAbdGen/JukeBox_DnD/issues/37) — corrige en amont l'installeur cassé sous Node 26 (electron/electron#51619) ; permettra de revoir le verrouillage Node 24
 
 ### Conventions de code
 - ESM partout sauf les fichiers `.cjs` d'Electron (ne pas toucher au module system sans raison)
