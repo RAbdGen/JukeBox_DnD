@@ -69,14 +69,14 @@ build-linux: ## Créer un AppImage pour Linux
 	npm run build:linux
 	@echo "$(GREEN)✅ AppImage créé dans dist/ !$(NC)"
 
-build-win: ## Créer un exécutable portable pour Windows
-	@echo "$(BLUE)🪟 Build pour Windows (portable .exe)...$(NC)"
+build-win: ## Créer l'installeur NSIS pour Windows
+	@echo "$(BLUE)🪟 Build pour Windows (installeur NSIS)...$(NC)"
 	npm run build:win
-	@echo "$(GREEN)✅ Exécutable Windows créé dans dist/ !$(NC)"
+	@echo "$(GREEN)✅ Installeur Windows créé dans dist/ !$(NC)"
 
 ##@ Tests
 
-test: ## Lancer la suite de tests (FileManager, DatabaseManager, AudioManager)
+test: ## Lancer la suite de tests Vitest
 	@echo "$(BLUE)🧪 Lancement des tests...$(NC)"
 	npm test
 	@echo "$(GREEN)✅ Tests terminés !$(NC)"
