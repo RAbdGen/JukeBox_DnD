@@ -1,11 +1,7 @@
 import fs from 'fs/promises';
 import path from 'path';
 import crypto from 'crypto';
-import { fileURLToPath } from 'url';
 import { uniquePaths } from './segments.js';
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 /**
  * Gestionnaire de fichiers audio

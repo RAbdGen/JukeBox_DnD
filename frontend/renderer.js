@@ -47,7 +47,6 @@ audioManager.on('crossfadeDurationMigrated', (trackId, seconds) => {
 });
 let currentPlaylistId = 'default'; // seule source de la playlist sélectionnée (#40)
 let playlistsCache = []; // dernières playlists affichées (noms pour le toast d'undo, menu)
-let playlistMenu = null; // liste déroulante accessible (#40), créée au DOMContentLoaded
 let updateInterval = null;
 let volumeBeforeMute = null; // volume mémorisé pour le mute rapide (raccourci clavier) ; null = pas muté
 let libraryCache = []; // dernière bibliothèque chargée, pour filtrer la recherche sans re-fetch IPC
@@ -861,7 +860,6 @@ function handleVersionChange(targetVersion) {
     updateVersionButtons(state.currentTrack, state.currentVersion);
     updateVersionDisplay(state.currentVersion);
     updateVersionBadge(state.currentVersion);
-    if (wasPlaying) showCrossfadeIndicator(2000);
 }
 
 /**
@@ -986,16 +984,6 @@ function formatTime(seconds) {
     const m = Math.floor(seconds / 60);
     const s = Math.floor(seconds % 60);
     return `${m}:${s.toString().padStart(2, '0')}`;
-}
-
-function showCrossfadeIndicator(duration) {
-    const el = document.getElementById('crossfade-indicator');
-    if (!el) {
-        // Créer l'indicateur s'il n'existe pas dynamiquement (ou update index.html)
-        // Pour l'instant, supposons qu'il est géré par CSS si présent
-        return;
-    }
-    // ... code indicateur existant ...
 }
 
 /**
@@ -1247,7 +1235,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }
 
     // --- Menu des playlists (#40 : clavier + ARIA, voir listbox.js) ---
-    playlistMenu = createListbox({
+    createListbox({
         button: document.getElementById('playlist-name-display'),
         list: document.getElementById('playlist-dropdown'),
         onSelect: id => {

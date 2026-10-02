@@ -379,8 +379,9 @@ export class AudioManager {
      * @param {Function} callback - Fonction de callback
      */
     on(event, callback) {
-        if (this.callbacks.hasOwnProperty(`on${event.charAt(0).toUpperCase() + event.slice(1)}`)) {
-            this.callbacks[`on${event.charAt(0).toUpperCase() + event.slice(1)}`] = callback;
+        const key = `on${event.charAt(0).toUpperCase() + event.slice(1)}`;
+        if (Object.hasOwn(this.callbacks, key)) {
+            this.callbacks[key] = callback;
         }
     }
 

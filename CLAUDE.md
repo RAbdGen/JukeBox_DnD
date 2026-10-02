@@ -28,6 +28,7 @@ frontend/               → Vanilla JS ESM, bundlé par Vite → dist/
 - Un `Track` peut avoir plusieurs versions audio avec crossfade
 - `webSecurity: false` dans BrowserWindow pour les `file://` URLs
 - Dev : `make dev` ou `npm run dev` (Vite sur :3000 + electronmon)
+- Lint : `make lint` / `npm run lint` (ESLint 10, `eslint.config.js` : règles recommandées, globals par environnement — navigateur pour `frontend/`, navigateur + Node pour `backend/`, CommonJS pour `electron/`). À garder à 0 problème ; un argument inutilisé volontaire se préfixe `_`
 - Electron **44** (depuis #37). Le binaire n'est plus téléchargé à `npm install` mais au premier `require('electron')` (lancement de `npm run dev`) ; à la main : `npx install-electron --no`
 - Node **24** LTS, fixé par `mise.toml` (et `node-version` de `.github/workflows/release.yml`, à garder alignés). Electron 44 exige Node >= 22.12. Electron 37 ne s'installait pas sous Node 26 (`extract-zip`, electron/electron#51619), corrigé depuis la mise à jour
 - Dialogues natifs : depuis Electron 43, sans `defaultPath` ils s'ouvrent toujours sur Téléchargements. Toujours passer par `showOpenDialog()` de `electron/main.cjs`, qui retient le dernier dossier choisi pendant la session

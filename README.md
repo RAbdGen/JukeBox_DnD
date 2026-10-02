@@ -76,6 +76,7 @@ Le binaire Electron n'est pas téléchargé par `npm install` mais au premier la
 | `make dev-nosandbox` | Mode développement, sandbox désactivé (Linux) |
 | `make start` | Lance l'application à partir du build |
 | `make test` / `make test-watch` | Tests Vitest, une fois ou en continu |
+| `make lint` | ESLint (règles recommandées, `eslint.config.js`) |
 | `make build` | Build complet (Vite + electron-builder) |
 | `make build-linux` | AppImage Linux |
 | `make build-win` | Installeur NSIS Windows |
@@ -111,6 +112,7 @@ JukeBox_DnD/
 ├── tests/                  # 25 fichiers Vitest
 ├── docs/superpowers/       # Specs et plans des grosses fonctionnalités
 ├── .github/workflows/release.yml
+├── eslint.config.js        # Règles par environnement (navigateur, Node, CommonJS)
 ├── Makefile
 └── mise.toml               # Node 24
 ```
