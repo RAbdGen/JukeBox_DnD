@@ -196,6 +196,11 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 **À faire (`Todo`) :**
 - [#36 — Mesurer la mémoire de l'onglet Découpage avec un fichier d'1 h (machine 8 Go)](https://github.com/RAbdGen/JukeBox_DnD/issues/36) — mesure manuelle sur la machine de l'ami avant la prochaine release
 
+### Pour la prochaine release
+Changements déjà sur `master` mais sans issue, à reprendre dans la description de la prochaine release (section « 🔧 Technique » ou « Qualité »), puis à vider ici une fois publiée :
+- **Passe de linter (ESLint 10)** pour améliorer la qualité du code : `make lint` fonctionne enfin (`eslint.config.js`, règles recommandées par environnement), 4 remarques corrigées sans changement de comportement — `Object.hasOwn()` dans `AudioManager.on()`, variables inutilisées retirées (`FileManager.js`, `renderer.js`), indicateur de fondu factice supprimé (`fa3ffb3`)
+- **README refait** pour la 2.x : installation depuis les Releases, fonctionnalités à jour, prérequis Node 24, publication par tag ; aides du `Makefile` corrigées (`8bd44b5`)
+
 ### Conventions de code
 - ESM partout sauf les fichiers `.cjs` d'Electron (ne pas toucher au module system sans raison)
 - Pas de framework JS côté frontend (Vanilla JS, pas de React/Vue) sauf décision explicite
