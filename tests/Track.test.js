@@ -22,6 +22,8 @@ const { FakeHowl, instances } = vi.hoisted(() => {
             // type la vide) — c'est le piège de #42
             this._playLock = false;
             this.lostSeeks = [];
+            this.lostPauses = 0;
+            this.fades = []; // [from, to, durationMs, id]
             this.listeners = {};
             this.playCount = 0;
             this.lastPlayArg = undefined;
@@ -71,7 +73,9 @@ const { FakeHowl, instances } = vi.hoisted(() => {
             return this._soundId;
         }
         pause() {
+            if (this._playLock) { this.lostPauses++; return this; } // même piège que le seek (#42)
             if (this._playing) { this._playing = false; this._paused = true; }
+            return this;
         }
         stop() { this._playing = false; this._paused = false; this._soundId = null; this._seek = 0; }
         playing() { return this._playing; }
@@ -85,7 +89,7 @@ const { FakeHowl, instances } = vi.hoisted(() => {
             this._volume = value;
             return this;
         }
-        fade(from, to) { this._volume = to; }
+        fade(from, to, len, id) { this.fades.push([from, to, len, id]); this._volume = to; }
         seek(value, id) {
             // Comme Howler : un argument unique égal à l'id d'un son vivant est lu
             // comme « donne-moi la position de ce son » (getter), pas comme un seek
@@ -93,6 +97,10 @@ const { FakeHowl, instances } = vi.hoisted(() => {
             if (typeof value === 'number') {
                 if (this._playLock) { this.lostSeeks.push(value); return this; }
                 this._seek = value;
+                // Comme Howler : événement « seek » une fois le son déplacé
+                const listeners = (this.listeners.seek || []).filter(fn => fn.soundId === undefined || fn.soundId === id);
+                this.listeners.seek = (this.listeners.seek || []).filter(fn => !listeners.includes(fn));
+                setTimeout(() => listeners.forEach(fn => fn(id)), 0);
                 return this;
             }
             return this._seek;
@@ -154,6 +162,7 @@ describe('Track — actions pendant un fondu (#23)', () => {
 
         track.resume();
         expect(playingVersions(track)).toEqual(['combat']);
+        vi.runAllTimers(); // fondu d'entrée de la reprise (#43)
         expect(track.versions.combat.volume()).toBe(track.defaultVolume);
     });
 
@@ -351,6 +360,104 @@ describe('Track — seek pendant le démarrage HTML5 (#42)', () => {
     });
 });
 
+describe('Track — fondu à la pause et à la reprise (#43)', () => {
+    function playingTrack(seconds = 4) {
+        const track = createTrack();
+        track.crossfadeDurationSeconds = seconds;
+        track.play('calm');
+        vi.advanceTimersByTime(0); // lecture HTML5 démarrée
+        return track;
+    }
+
+    it('pause : fondu de sortie sur la durée de la piste, puis vraie pause', () => {
+        const track = playingTrack(4);
+        const calm = track.versions.calm;
+
+        track.pause();
+        expect(track.isPlaying).toBe(false);
+        expect(calm.playing()).toBe(true); // on entend encore le fondu
+        expect(calm.fades.at(-1).slice(0, 3)).toEqual([track.defaultVolume, 0, 4000]);
+
+        vi.advanceTimersByTime(3999);
+        expect(calm.playing()).toBe(true);
+        vi.advanceTimersByTime(1);
+        expect(calm.playing()).toBe(false);
+    });
+
+    it('reprise : le son en pause repart (même son) avec un fondu d\'entrée', () => {
+        const track = playingTrack(4);
+        const calm = track.versions.calm;
+        track.pause();
+        vi.advanceTimersByTime(4000);
+        const id = track._soundIds.calm;
+
+        track.resume();
+        vi.advanceTimersByTime(0);
+        expect(calm.playing()).toBe(true);
+        expect(calm.lastPlayArg).toBe(id);
+        expect(calm.fades.at(-1).slice(0, 3)).toEqual([0, track.defaultVolume, 4000]);
+    });
+
+    it('reprise pendant le fondu de sortie : le son n\'est jamais coupé, le volume remonte', () => {
+        const track = playingTrack(4);
+        const calm = track.versions.calm;
+        track.pause();
+        vi.advanceTimersByTime(1000); // un quart du fondu
+
+        track.resume();
+        vi.runAllTimers();
+        expect(track.isPlaying).toBe(true);
+        expect(calm.playing()).toBe(true);
+        const [from, to, len] = calm.fades.at(-1);
+        expect(from).toBeCloseTo(track.defaultVolume * 0.75);
+        expect(to).toBe(track.defaultVolume);
+        expect(len).toBe(1000); // le temps déjà passé à descendre
+    });
+
+    it('stop pendant le fondu de pause : plus rien ne joue ni ne se met en pause ensuite', () => {
+        const track = playingTrack(4);
+        track.pause();
+        vi.advanceTimersByTime(1000);
+        track.stop();
+        vi.runAllTimers();
+        expect(playingVersions(track)).toEqual([]);
+        expect(track.currentVersion).toBe(null);
+    });
+
+    it('changement de version pendant le fondu de pause : la reprise joue la cible au même timecode, en fondu', () => {
+        const track = playingTrack(4);
+        track.versions.calm.setPosition(30);
+        track.pause();
+        vi.advanceTimersByTime(1000);
+
+        expect(track.switchVersionWhilePaused('combat')).toBe(true);
+        vi.runAllTimers();
+        expect(playingVersions(track)).toEqual([]);
+
+        track.resume();
+        vi.runAllTimers();
+        expect(playingVersions(track)).toEqual(['combat']);
+        expect(track.versions.combat.seek()).toBe(30);
+        expect(track.versions.combat.fades.at(-1).slice(0, 2)).toEqual([0, track.defaultVolume]);
+    });
+
+    it('pause pendant le démarrage HTML5 : appliquée une fois la lecture démarrée, pas perdue', () => {
+        const track = createTrack();
+        track.crossfadeDurationSeconds = 1;
+        track.play('calm'); // _playLock posé
+        track.pause();
+        vi.runAllTimers();
+        expect(track.versions.calm.lostPauses).toBe(0);
+        expect(track.versions.calm.playing()).toBe(false);
+    });
+
+    it('lancement d\'une piste : pas de fondu d\'entrée (seule la reprise en a un)', () => {
+        const track = playingTrack(4);
+        expect(track.versions.calm.fades).toEqual([]);
+        expect(track.versions.calm.volume()).toBe(track.defaultVolume);
+    });
+});
+
 describe('Track — versions découpées (#24)', () => {
     it('déclare un sprite par version découpée', () => {
         const track = createSplitTrack();
@@ -384,10 +491,13 @@ describe('Track — versions découpées (#24)', () => {
     it('reprise après pause : reprend le son en pause, pas le début du segment', () => {
         const track = createSplitTrack();
         track.play('combat');
+        vi.advanceTimersByTime(0); // lecture démarrée
         track.versions.combat.setPosition(120);
 
         track.pause();
+        vi.runAllTimers(); // fondu de pause terminé (#43) : le son est vraiment en pause
         track.resume();
+        vi.advanceTimersByTime(0);
 
         expect(typeof track.versions.combat.lastPlayArg).toBe('number');
         expect(track.getCurrentTime()).toBe(30);

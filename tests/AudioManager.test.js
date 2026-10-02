@@ -47,7 +47,7 @@ describe('AudioManager volume handling', () => {
     });
 
     it('resumes a track normalised to zero at zero volume', () => {
-        const howl = { volume: vi.fn(), play: vi.fn(), playing: vi.fn(() => false), state: vi.fn(() => 'loaded') };
+        const howl = { volume: vi.fn(), play: vi.fn(), fade: vi.fn(), playing: vi.fn(() => false), state: vi.fn(() => 'loaded') };
         const manager = new AudioManager();
         const track = new Track('t1', 'Track 1', { calm: 'a.mp3' });
         track.defaultVolume = 0;
@@ -59,6 +59,8 @@ describe('AudioManager volume handling', () => {
 
         expect(howl.volume).toHaveBeenCalledWith(0);
         expect(howl.play).toHaveBeenCalledOnce();
+        // Fondu d'entrée de la reprise (#43) : vers le volume de la piste, donc 0
+        expect(howl.fade.mock.calls[0].slice(0, 2)).toEqual([0, 0]);
     });
 
     it('cancels a fade when a manual volume adjustment occurs', async () => {

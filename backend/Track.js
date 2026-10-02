@@ -52,6 +52,8 @@ export class Track {
         this._soundIds = {};
         // Version mise en pause (son reprenable par son id)
         this._pausedVersion = null;
+        // Fondu de sortie d'une pause en cours (#43) : { version, id, timer, startedAt, duration }
+        this._pauseFade = null;
         // Synchronisation BPM (#18) : { versionName: { bpm, offsetMs } }, appliqué par AudioManager
         this.tempo = {};
     }
@@ -129,16 +131,31 @@ export class Track {
      * la version repartait alors du début (#42). On attend donc l'événement
      * « play » de ce son avant de le déplacer.
      */
-    _seekSound(versionName, id, position) {
+    _seekSound(versionName, id, position, afterSeek = null) {
         const howl = this.versions[versionName];
         const absolute = this._toAbsolute(versionName, position);
-        if (!howl._playLock) {
+        this._whenStarted(versionName, id, () => {
+            // Howler met le son en pause un instant pour le déplacer, ce qui arrête
+            // un fondu : celui qui doit suivre attend la fin du déplacement
+            if (afterSeek) howl.once('seek', afterSeek, id);
             howl.seek(absolute, id);
+        });
+    }
+
+    /**
+     * Exécute `action` sur le son `id` dès que sa lecture a vraiment démarré.
+     * Pendant le _playLock HTML5, Howler met seek, pause et fade en file et ne
+     * les rejoue jamais (#42) : on attend alors l'événement « play » de ce son.
+     */
+    _whenStarted(versionName, id, action) {
+        const howl = this.versions[versionName];
+        if (!howl._playLock) {
+            action();
             return;
         }
         howl.once('play', () => {
             // Le son a pu être remplacé entre-temps (stop, autre version, relance)
-            if (this._soundIds[versionName] === id) howl.seek(absolute, id);
+            if (this._soundIds[versionName] === id) action();
         }, id);
     }
 
@@ -494,10 +511,10 @@ export class Track {
      * un (par son id), sinon lance un nouveau son ; puis applique la position
      * mémorisée (toujours après play(), cf. crossfade).
      */
-    _playCurrent() {
+    _playCurrent({ fadeIn = false } = {}) {
         const versionName = this.currentVersion;
         const howl = this.versions[versionName];
-        howl.volume(this.defaultVolume);
+        howl.volume(fadeIn ? 0 : this.defaultVolume);
 
         const resumeSeek = this._resumeSeek;
         this._resumeSeek = null;
@@ -511,8 +528,14 @@ export class Track {
         }
         this._pausedVersion = null;
 
+        // Fondu d'entrée de la reprise (#43), après le déplacement s'il y en a un
+        const startFadeIn = fadeIn
+            ? () => howl.fade(0, this.defaultVolume, this.getCrossfadeDurationMs(), id)
+            : null;
         if (resumeSeek !== null) {
-            this._seekSound(versionName, id, resumeSeek);
+            this._seekSound(versionName, id, resumeSeek, startFadeIn);
+        } else if (startFadeIn) {
+            this._whenStarted(versionName, id, startFadeIn);
         }
     }
 
@@ -525,13 +548,46 @@ export class Track {
         if (this._crossfade) this._finishCrossfade();
 
         // Pas encore démarrée (chargement en cours) : on annule simplement le démarrage,
-        // la reprise la lancera. Sinon, pause classique.
-        if (!this._cancelPendingStart()) {
-            this.versions[this.currentVersion].pause();
-            this._pausedVersion = this.currentVersion;
+        // la reprise la lancera. Sinon, fondu de sortie puis pause (#43).
+        if (!this._cancelPendingStart() && !this._pauseFade) {
+            this._fadeOutThenPause();
         }
         this.isPlaying = false;
         console.log(`⏸️ Pause "${this.name}"`);
+    }
+
+    /**
+     * Fondu de sortie sur la durée de fondu de la piste (comme le mute, #29),
+     * puis vraie pause : le son reste reprenable par son id (#43).
+     */
+    _fadeOutThenPause() {
+        const version = this.currentVersion;
+        const howl = this.versions[version];
+        const id = this._soundIds[version];
+        const duration = this.getCrossfadeDurationMs();
+        const fade = { version, id, duration, startedAt: Date.now(), timer: null };
+        this._pauseFade = fade;
+
+        this._whenStarted(version, id, () => {
+            if (this._pauseFade !== fade) return; // repris ou arrêté entre-temps
+            fade.startedAt = Date.now();
+            howl.fade(this.defaultVolume, 0, duration, id);
+            fade.timer = setTimeout(() => {
+                this._pauseFade = null;
+                howl.pause(id);
+                this._pausedVersion = version;
+            }, duration);
+        });
+    }
+
+    /** Annule un fondu de pause en cours ; renvoie le volume atteint (0–1 du volume de piste) */
+    _cancelPauseFade() {
+        const fade = this._pauseFade;
+        if (!fade) return null;
+        this._pauseFade = null;
+        clearTimeout(fade.timer);
+        const elapsed = Math.min(Date.now() - fade.startedAt, fade.duration);
+        return fade.duration > 0 ? 1 - elapsed / fade.duration : 0;
     }
 
     /**
@@ -544,8 +600,17 @@ export class Track {
         const howl = this.currentVersion && this.versions[this.currentVersion];
         if (!howl) return false;
 
-        if (!howl.playing() && !this._pendingStart) {
-            this._startWhenLoaded(howl, () => this._playCurrent());
+        // Reprise pendant le fondu de sortie : le son n'a jamais été coupé, on
+        // remonte le volume depuis où il en est, en autant de temps qu'il a baissé
+        const pauseFade = this._pauseFade;
+        const reached = this._cancelPauseFade();
+        if (reached !== null) {
+            const from = this.defaultVolume * reached;
+            this._whenStarted(pauseFade.version, pauseFade.id, () => {
+                howl.fade(from, this.defaultVolume, pauseFade.duration * (1 - reached), pauseFade.id);
+            });
+        } else if (!howl.playing() && !this._pendingStart) {
+            this._startWhenLoaded(howl, () => this._playCurrent({ fadeIn: true }));
         }
         this.isPlaying = true;
         console.log(`▶️ Reprise de "${this.name}"`);
@@ -608,6 +673,7 @@ export class Track {
      * Arrêter toutes les versions (y compris celles en pause)
      */
     stopAllVersions() {
+        this._cancelPauseFade();
         Object.values(this.versions).forEach(version => {
             if (version.playing() || version.state() === 'loaded') {
                 version.stop();
