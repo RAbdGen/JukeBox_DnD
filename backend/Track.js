@@ -122,6 +122,27 @@ export class Track {
     }
 
     /**
+     * Place le son `id` de `versionName` à `position` (relative au segment).
+     * En HTML5, play() verrouille le Howl (_playLock) jusqu'à ce que la lecture
+     * démarre vraiment ; un seek reçu pendant ce verrou part dans la file de
+     * Howler et n'en ressort jamais (seul un événement « seek » la viderait) :
+     * la version repartait alors du début (#42). On attend donc l'événement
+     * « play » de ce son avant de le déplacer.
+     */
+    _seekSound(versionName, id, position) {
+        const howl = this.versions[versionName];
+        const absolute = this._toAbsolute(versionName, position);
+        if (!howl._playLock) {
+            howl.seek(absolute, id);
+            return;
+        }
+        howl.once('play', () => {
+            // Le son a pu être remplacé entre-temps (stop, autre version, relance)
+            if (this._soundIds[versionName] === id) howl.seek(absolute, id);
+        }, id);
+    }
+
+    /**
      * Réordonne les versions sans recréer les Howl (simple réordonnancement
      * dans la modal d'édition : ne doit pas couper la lecture).
      */
@@ -371,12 +392,20 @@ export class Track {
             // un seek fait avant.
             const startPosition = this._startPositionFor(cf.fromVersion, toVersion, currentSeek);
             if (startPosition > 0) {
-                toVersionHowl.seek(this._toAbsolute(toVersion, startPosition), playId);
+                this._seekSound(toVersion, playId, startPosition);
             }
             console.log(`▶️ Piste "${toVersion}" lancée (ID: ${playId})`);
 
-            // 6. Attendre 50ms puis démarrer le fade-in
-            cf.timers.push(setTimeout(() => {
+            // 6. Attendre 50ms puis démarrer le fade-in. Un démarrage HTML5 lent, ou le
+            // seek de _seekSound (Howler met le son en pause un instant pour le
+            // déplacer), peut faire paraître la cible arrêtée : on revérifie
+            // quelques fois avant de conclure à un échec.
+            let checksLeft = 4;
+            const startFadeIn = () => {
+                if (!toVersionHowl.playing(playId) && checksLeft-- > 0) {
+                    cf.timers.push(setTimeout(startFadeIn, 50));
+                    return;
+                }
                 // Vérifier que la version joue bien
                 if (!toVersionHowl.playing(playId)) {
                     console.error(`❌ Erreur: la nouvelle version ne joue pas, annulation du crossfade`);
@@ -387,7 +416,7 @@ export class Track {
                     if (!fromVersion.playing()) {
                         // Reprendre à la position du switch, pas au début (#35)
                         const restoredId = this._startSound(cf.fromVersion);
-                        fromVersion.seek(this._toAbsolute(cf.fromVersion, currentSeek), restoredId);
+                        this._seekSound(cf.fromVersion, restoredId, currentSeek);
                     }
 
                     complete(false);
@@ -400,7 +429,8 @@ export class Track {
 
                 // 7. Finaliser une fois le fade-in terminé
                 cf.timers.push(setTimeout(() => this._finishCrossfade(), duration));
-            }, 50));
+            };
+            cf.timers.push(setTimeout(startFadeIn, 50));
         };
 
         if (toVersionHowl.state() === 'loaded') {
@@ -482,7 +512,7 @@ export class Track {
         this._pausedVersion = null;
 
         if (resumeSeek !== null) {
-            howl.seek(this._toAbsolute(versionName, resumeSeek), id);
+            this._seekSound(versionName, id, resumeSeek);
         }
     }
 
@@ -557,10 +587,7 @@ export class Track {
         } else {
             // Toujours avec l'id : un argument unique égal à l'id d'un son vivant serait
             // lu par Howler comme un getter et la position ignorée (#35)
-            this.versions[this.currentVersion].seek(
-                this._toAbsolute(this.currentVersion, position),
-                this._soundIds[this.currentVersion],
-            );
+            this._seekSound(this.currentVersion, this._soundIds[this.currentVersion], position);
         }
     }
 

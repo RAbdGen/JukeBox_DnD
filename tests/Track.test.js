@@ -16,6 +16,12 @@ const { FakeHowl, instances } = vi.hoisted(() => {
             this._sprite = opts.sprite || {};
             this._nextId = 0;
             this._soundId = null;
+            // HTML5 (html5: true) : play() renvoie une promesse et verrouille le Howl
+            // (_playLock) jusqu'à sa résolution ; un seek reçu pendant le verrou part
+            // dans la file de Howler et n'en ressort pas (seul un événement du même
+            // type la vide) — c'est le piège de #42
+            this._playLock = false;
+            this.lostSeeks = [];
             this.listeners = {};
             this.playCount = 0;
             this.lastPlayArg = undefined;
@@ -29,7 +35,19 @@ const { FakeHowl, instances } = vi.hoisted(() => {
             this.listeners.load = [];
             listeners.forEach(fn => fn());
         }
-        once(event, fn) { (this.listeners[event] ||= []).push(fn); }
+        once(event, fn, id) {
+            if (id !== undefined) fn.soundId = id;
+            (this.listeners[event] ||= []).push(fn);
+        }
+        _lockUntilPlaying(id) {
+            this._playLock = true;
+            setTimeout(() => {
+                this._playLock = false;
+                const listeners = (this.listeners.play || []).filter(fn => fn.soundId === undefined || fn.soundId === id);
+                this.listeners.play = (this.listeners.play || []).filter(fn => !listeners.includes(fn));
+                listeners.forEach(fn => fn(id));
+            }, 0);
+        }
         off(event, fn) {
             this.listeners[event] = (this.listeners[event] || []).filter(l => l !== fn);
         }
@@ -39,6 +57,7 @@ const { FakeHowl, instances } = vi.hoisted(() => {
             if (typeof arg === 'number' && arg === this._soundId && this._paused) {
                 this._paused = false;
                 this._playing = true;
+                this._lockUntilPlaying(arg);
                 return arg;
             }
             // Comme Howler : un nouveau son (ou un son recyclé via reset()) repart
@@ -48,6 +67,7 @@ const { FakeHowl, instances } = vi.hoisted(() => {
             this._seek = sprite ? sprite[0] / 1000 : 0;
             this._paused = false;
             this._playing = true;
+            this._lockUntilPlaying(this._soundId);
             return this._soundId;
         }
         pause() {
@@ -70,10 +90,16 @@ const { FakeHowl, instances } = vi.hoisted(() => {
             // Comme Howler : un argument unique égal à l'id d'un son vivant est lu
             // comme « donne-moi la position de ce son » (getter), pas comme un seek
             if (typeof value === 'number' && arguments.length === 1 && value === this._soundId) return this._seek;
-            if (typeof value === 'number') { this._seek = value; return this; }
+            if (typeof value === 'number') {
+                if (this._playLock) { this.lostSeeks.push(value); return this; }
+                this._seek = value;
+                return this;
+            }
             return this._seek;
         }
         duration() { return 180; }
+        // Mise en place d'un test : position atteinte par la lecture (pas un seek)
+        setPosition(value) { this._seek = value; }
     }
     return { FakeHowl, instances };
 });
@@ -169,7 +195,7 @@ describe('Track — actions pendant un fondu (#23)', () => {
     it('pause pendant le chargement de la cible : rien ne joue au chargement, la reprise joue la cible', () => {
         const track = createTrack();
         track.play('calm');
-        track.versions.calm.seek(42);
+        track.versions.calm.setPosition(42);
         track.versions.combat._state = 'unloaded';
 
         track.crossfade('combat', 1);
@@ -182,6 +208,7 @@ describe('Track — actions pendant un fondu (#23)', () => {
 
         track.resume();
         expect(playingVersions(track)).toEqual(['combat']);
+        vi.advanceTimersByTime(0); // démarrage HTML5 : le seek attend la fin du _playLock (#42)
         expect(track.versions.combat.seek()).toBe(42);
     });
 
@@ -215,7 +242,7 @@ describe('Track — actions pendant un fondu (#23)', () => {
     it('changer de version en pause : la reprise joue la nouvelle version à la même position', () => {
         const track = createTrack();
         track.play('calm');
-        track.versions.calm.seek(30);
+        track.versions.calm.setPosition(30);
         track.pause();
 
         track.switchVersionWhilePaused('combat');
@@ -225,6 +252,7 @@ describe('Track — actions pendant un fondu (#23)', () => {
 
         track.resume();
         expect(playingVersions(track)).toEqual(['combat']);
+        vi.advanceTimersByTime(0); // démarrage HTML5 : le seek attend la fin du _playLock (#42)
         expect(track.versions.combat.seek()).toBe(30);
     });
 
@@ -238,6 +266,7 @@ describe('Track — actions pendant un fondu (#23)', () => {
 
         expect(track.isCrossfading).toBe(false);
         expect(playingVersions(track)).toEqual(['combat']);
+        vi.advanceTimersByTime(0); // démarrage HTML5 : le seek attend la fin du _playLock (#42)
         expect(track.versions.combat.seek()).toBe(12);
     });
 });
@@ -283,11 +312,42 @@ describe('Track — position lors d\'un changement de version (seek après play)
     it('fondu entre versions fichier entier : la cible reprend au même timecode', () => {
         const track = createTrack();
         track.play('calm');
-        track.versions.calm.seek(40);
+        track.versions.calm.setPosition(40);
 
         track.crossfade('combat', 1);
 
+        vi.advanceTimersByTime(0); // démarrage HTML5 : le seek attend la fin du _playLock (#42)
         expect(track.versions.combat.seek()).toBe(40);
+    });
+});
+
+describe('Track — seek pendant le démarrage HTML5 (#42)', () => {
+    it('la cible d\'un fondu reprend au même timecode, même si son seek arrive pendant le _playLock', () => {
+        const track = createTrack();
+        track.play('calm');
+        vi.advanceTimersByTime(0);
+        track.versions.calm.setPosition(75);
+
+        track.crossfade('combat', 1);
+        vi.advanceTimersByTime(0); // la promesse de play() se résout
+
+        expect(track.versions.combat.lostSeeks).toEqual([]); // rien n'est resté coincé dans la file
+        expect(track.versions.combat.seek()).toBe(75);
+        vi.runAllTimers();
+        expect(track.currentVersion).toBe('combat');
+        expect(track.getCurrentTime()).toBe(75); // la position lue est celle de combat, pas 0
+    });
+
+    it('un seek différé ne s\'applique pas à un son déjà remplacé', () => {
+        const track = createTrack();
+        track.play('calm');
+        track.versions.calm.setPosition(75);
+        track.crossfade('combat', 1);
+        track.stop(); // avant que la lecture HTML5 de combat ait démarré
+        track.play('combat');
+        vi.advanceTimersByTime(0);
+
+        expect(track.versions.combat.seek()).toBe(0);
     });
 });
 
@@ -310,12 +370,13 @@ describe('Track — versions découpées (#24)', () => {
     it('fondu vers une version découpée : démarre au début de son segment', () => {
         const track = createSplitTrack();
         track.play('calm');
-        track.versions.calm.seek(40);
+        track.versions.calm.setPosition(40);
 
         track.crossfade('combat', 1);
         vi.runAllTimers();
 
         expect(track.versions.combat.lastPlayArg).toBe('segment');
+        vi.advanceTimersByTime(0); // démarrage HTML5 : le seek attend la fin du _playLock (#42)
         expect(track.versions.combat.seek()).toBe(90);
         expect(track.getCurrentTime()).toBe(0);
     });
@@ -323,7 +384,7 @@ describe('Track — versions découpées (#24)', () => {
     it('reprise après pause : reprend le son en pause, pas le début du segment', () => {
         const track = createSplitTrack();
         track.play('combat');
-        track.versions.combat.seek(120);
+        track.versions.combat.setPosition(120);
 
         track.pause();
         track.resume();
@@ -338,6 +399,7 @@ describe('Track — versions découpées (#24)', () => {
 
         track.seek(10);
 
+        vi.advanceTimersByTime(0); // démarrage HTML5 : le seek attend la fin du _playLock (#42)
         expect(track.versions.combat.seek()).toBe(100);
         expect(track.getCurrentTime()).toBe(10);
     });
@@ -345,13 +407,14 @@ describe('Track — versions découpées (#24)', () => {
     it('changer de version en pause vers un segment : reprise au début du segment', () => {
         const track = createSplitTrack();
         track.play('calm');
-        track.versions.calm.seek(40);
+        track.versions.calm.setPosition(40);
         track.pause();
 
         track.switchVersionWhilePaused('combat');
         expect(track.getCurrentTime()).toBe(0);
 
         track.resume();
+        vi.advanceTimersByTime(0); // démarrage HTML5 : le seek attend la fin du _playLock (#42)
         expect(track.versions.combat.seek()).toBe(90);
     });
 
@@ -390,10 +453,11 @@ describe('Track — synchronisation BPM (#18)', () => {
         const track = createTrack();
         track.tempo = { calm: { bpm: 120, offsetMs: 500 }, combat: { bpm: 60, offsetMs: 1000 } };
         track.play('calm');
-        track.versions.calm.seek(10.5);
+        track.versions.calm.setPosition(10.5);
 
         track.crossfade('combat', 1);
 
+        vi.advanceTimersByTime(0); // démarrage HTML5 : le seek attend la fin du _playLock (#42)
         expect(track.versions.combat.seek()).toBeCloseTo(21);
     });
 
@@ -401,12 +465,13 @@ describe('Track — synchronisation BPM (#18)', () => {
         const track = createSplitTrack();
         track.tempo = { calm: { bpm: 120, offsetMs: 0 }, combat: { bpm: 60, offsetMs: 0 } };
         track.play('calm');
-        track.versions.calm.seek(10);
+        track.versions.calm.setPosition(10);
 
         track.crossfade('combat', 1);
         vi.runAllTimers();
 
         expect(track.getCurrentTime()).toBeCloseTo(20);
+        vi.advanceTimersByTime(0); // démarrage HTML5 : le seek attend la fin du _playLock (#42)
         expect(track.versions.combat.seek()).toBeCloseTo(110);
     });
 
@@ -414,7 +479,7 @@ describe('Track — synchronisation BPM (#18)', () => {
         const track = createTrack();
         track.tempo = { calm: { bpm: 120, offsetMs: 500 }, combat: { bpm: 60, offsetMs: 1000 } };
         track.play('calm');
-        track.versions.calm.seek(10.5);
+        track.versions.calm.setPosition(10.5);
         track.pause();
 
         track.switchVersionWhilePaused('combat');
@@ -426,10 +491,11 @@ describe('Track — synchronisation BPM (#18)', () => {
         const track = createTrack();
         track.tempo = { calm: { bpm: 120, offsetMs: 500 } };
         track.play('calm');
-        track.versions.calm.seek(10.5);
+        track.versions.calm.setPosition(10.5);
 
         track.crossfade('combat', 1);
 
+        vi.advanceTimersByTime(0); // démarrage HTML5 : le seek attend la fin du _playLock (#42)
         expect(track.versions.combat.seek()).toBe(10.5);
     });
 });
@@ -438,24 +504,27 @@ describe('Track — écarts de position (#35)', () => {
     it('fondu échoué : la version d\'origine reprend à sa position, pas au début', () => {
         const track = createTrack();
         track.play('calm');
-        track.versions.calm.seek(40);
+        track.versions.calm.setPosition(40);
         track.versions.combat.play = vi.fn(() => 99); // la cible ne démarre pas
 
         track.crossfade('combat', 1);
         track.versions.calm.stop(); // l'origine s'est arrêtée entre-temps
-        vi.advanceTimersByTime(60);
+        vi.advanceTimersByTime(300); // échec constaté après les revérifications (démarrage lent toléré)
 
         expect(track.versions.calm.playing()).toBe(true);
+        vi.advanceTimersByTime(0); // démarrage HTML5 : le seek attend la fin du _playLock (#42)
         expect(track.versions.calm.seek()).toBe(40);
     });
 
     it('seek vers une position égale à l\'id du son : bien appliqué (pas pris pour un getter)', () => {
         const track = createTrack();
         track.play('calm'); // FakeHowl : premier son = id 1
+        vi.advanceTimersByTime(0); // lecture démarrée
 
         track.seek(1);
         track.versions.calm.seek(55); // puis on vérifie qu'un seek arbitraire marche toujours
         track.seek(1);
+        vi.advanceTimersByTime(0);
 
         expect(track.getCurrentTime()).toBe(1);
     });
