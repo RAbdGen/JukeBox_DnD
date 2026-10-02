@@ -474,7 +474,7 @@ describe('Track — versions découpées (#24)', () => {
         expect(track.getDuration()).toBe(90);
     });
 
-    it('fondu vers une version découpée : démarre au début de son segment', () => {
+    it('fondu vers une version découpée : même position relative dans son segment (#44)', () => {
         const track = createSplitTrack();
         track.play('calm');
         track.versions.calm.setPosition(40);
@@ -483,9 +483,39 @@ describe('Track — versions découpées (#24)', () => {
         vi.runAllTimers();
 
         expect(track.versions.combat.lastPlayArg).toBe('segment');
-        vi.advanceTimersByTime(0); // démarrage HTML5 : le seek attend la fin du _playLock (#42)
-        expect(track.versions.combat.seek()).toBe(90);
+        expect(track.versions.combat.seek()).toBe(130); // 90 (début du segment) + 40
+        expect(track.getCurrentTime()).toBe(40);
+    });
+
+    it('au-delà de la fin du segment cible : début de la cible, comme avec un tempo (#44)', () => {
+        const track = new Track('t4', 'Inégale', { calm: 'src.mp3', combat: 'src.mp3' }, {
+            calm: { start: 0, end: 120 },
+            combat: { start: 120, end: 180 }, // 60 s
+        });
+        track.loadVersions();
+        track.play('calm');
+        track.versions.calm.setPosition(100);
+
+        track.crossfade('combat', 1);
+        vi.runAllTimers();
+
         expect(track.getCurrentTime()).toBe(0);
+    });
+
+    it('au-delà de la fin du segment cible en boucle unique : on boucle dans la cible (#44)', () => {
+        const track = new Track('t4', 'Inégale', { calm: 'src.mp3', combat: 'src.mp3' }, {
+            calm: { start: 0, end: 120 },
+            combat: { start: 120, end: 180 }, // 60 s
+        });
+        track.loadVersions();
+        track.setLoop(true);
+        track.play('calm');
+        track.versions.calm.setPosition(100);
+
+        track.crossfade('combat', 1);
+        vi.runAllTimers();
+
+        expect(track.getCurrentTime()).toBe(40); // 100 modulo 60
     });
 
     it('reprise après pause : reprend le son en pause, pas le début du segment', () => {
@@ -514,18 +544,20 @@ describe('Track — versions découpées (#24)', () => {
         expect(track.getCurrentTime()).toBe(10);
     });
 
-    it('changer de version en pause vers un segment : reprise au début du segment', () => {
+    it('changer de version en pause vers un segment : reprise à la même position relative (#44)', () => {
         const track = createSplitTrack();
         track.play('calm');
+        vi.advanceTimersByTime(0);
         track.versions.calm.setPosition(40);
         track.pause();
+        vi.runAllTimers(); // fondu de pause (#43)
 
         track.switchVersionWhilePaused('combat');
-        expect(track.getCurrentTime()).toBe(0);
+        expect(track.getCurrentTime()).toBe(40);
 
         track.resume();
         vi.advanceTimersByTime(0); // démarrage HTML5 : le seek attend la fin du _playLock (#42)
-        expect(track.versions.combat.seek()).toBe(90);
+        expect(track.versions.combat.seek()).toBe(130);
     });
 
     it('fin du segment actif → piste suivante', () => {

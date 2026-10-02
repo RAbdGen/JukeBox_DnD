@@ -10,6 +10,10 @@ import { beatSyncedPosition } from './tempo.js';
 // Nom du sprite Howler d'une version découpée (#24)
 const SPRITE_NAME = 'segment';
 
+// Sans tempo saisi, tout se passe comme si chaque version avait le même tempo et
+// son premier temps à 0 ms : même position relative dans la cible (#44)
+const SAME_TEMPO = { bpm: 1, offsetMs: 0 };
+
 /**
  * Classe représentant une piste musicale avec plusieurs versions
  * (ex: Calme, Combat, Boss, etc.)
@@ -101,18 +105,19 @@ export class Track {
     /**
      * Position (relative) où reprendre `toVersion` quand on quitte `fromVersion`
      * à `position` : calée sur les temps si les deux versions ont un tempo (#18),
-     * sinon début du segment pour une cible découpée (#24), sinon même timecode.
+     * sinon même position relative, versions découpées comprises (#44 : on ne
+     * repart plus du début du segment). Au-delà de la fin de la cible : début de
+     * la cible, ou modulo en boucle unique, dans les deux cas.
      */
     _startPositionFor(fromVersion, toVersion, position) {
-        const synced = beatSyncedPosition({
-            from: this.tempo[fromVersion],
-            to: this.tempo[toVersion],
+        const bothHaveTempo = this.tempo[fromVersion] && this.tempo[toVersion];
+        return beatSyncedPosition({
+            from: bothHaveTempo ? this.tempo[fromVersion] : SAME_TEMPO,
+            to: bothHaveTempo ? this.tempo[toVersion] : SAME_TEMPO,
             position,
             targetDuration: this._versionDuration(toVersion),
             loop: this.loop,
         });
-        if (synced !== null) return synced;
-        return this._segmentOf(toVersion) ? 0 : position;
     }
 
     /** Lance un nouveau son (le sprite du segment pour une version découpée) */
@@ -404,7 +409,7 @@ export class Track {
             toVersionHowl.volume(0); // Force le volume à 0
             const playId = this._startSound(toVersion);
 
-            // 5. Position (tempo #18, sinon début du segment #24, sinon même timecode).
+            // 5. Position (tempo #18, sinon même position relative #44).
             // Toujours APRÈS play() : stop() puis play() recycle le son (reset) et perd
             // un seek fait avant.
             const startPosition = this._startPositionFor(cf.fromVersion, toVersion, currentSeek);
@@ -632,7 +637,7 @@ export class Track {
         this._cancelPendingStart();
         this.stopAllVersions();
         this.currentVersion = toVersion;
-        // Tempo (#18), sinon début du segment (#24), sinon même position
+        // Tempo (#18), sinon même position relative (#44)
         this._resumeSeek = this._startPositionFor(fromVersion, toVersion, position);
         return true;
     }

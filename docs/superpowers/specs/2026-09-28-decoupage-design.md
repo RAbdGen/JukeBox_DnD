@@ -20,7 +20,7 @@ Hors scope : détection automatique des sections, time-stretching, édition du f
 
 | Sujet | Décision |
 |---|---|
-| Point de départ au changement de version pendant la lecture | La version cible **découpée** démarre au **début de son segment** (en fondu). Une cible « fichier entier » garde le comportement actuel (même timecode). |
+| Point de départ au changement de version pendant la lecture | ~~La version cible **découpée** démarre au **début de son segment** (en fondu).~~ **Révisé par #44** : même position relative dans la cible, découpée ou non (comme un tempo identique au premier temps à 0 ms) ; au-delà de la fin de la cible, début de la cible (modulo en boucle unique). |
 | Modèle de découpe | **Points de coupe** : le fichier est coupé en tronçons consécutifs ; un tronçon **nommé** devient une version, un tronçon **vide** est ignoré. Pas de chevauchement ni de plages libres. |
 | Retouche | Oui dès cette version : bouton ✂ sur une piste découpée → rouverte dans l'onglet, bouton « Enregistrer ». |
 | Outils de précision | Waveform + **zoom** (＋/－, Ctrl+molette centré souris, jusqu'à ~4 s visibles) + défilement, écoute depuis un point, marqueurs déplaçables, nudge ±0,1 s au clavier, fin de segment éditable au dixième de seconde, écoute d'un segment. |
@@ -54,9 +54,9 @@ Hors scope : détection automatique des sections, time-stretching, édition du f
 - `loadVersions()` : pour une version découpée, `new Howl({ src, html5: true, sprite: { segment: [startMs, durationMs] }, … })`. Les autres versions ne changent pas.
 - Toute lecture d'une version découpée passe par le **nom du sprite** (`play('segment')`) : un `play()` sans nom jouerait le fichier entier.
 - **Reprise après pause** : via l'**id du son** mémorisé (`play(soundId)`), jamais `play('segment')` qui repartirait du début du segment. Vaut aussi pour les versions « fichier entier » (remplace le `play()` sans argument).
-- **Fondu** (`crossfade`) : cible découpée → démarre au début du segment, sans seek ; cible « fichier entier » → même timecode que la source (relatif au segment si la source est découpée). Toutes les règles de #23 (terminer / annuler un fondu, boucle sur toutes les versions, pas de double instance) restent inchangées.
+- **Fondu** (`crossfade`) : ~~cible découpée → démarre au début du segment, sans seek~~ (révisé par #44 : même position relative, voir le tableau) ; cible « fichier entier » → même timecode que la source (relatif au segment si la source est découpée). Toutes les règles de #23 (terminer / annuler un fondu, boucle sur toutes les versions, pas de double instance) restent inchangées.
 - **Temps et durée** : `getCurrentTime()` et `getDuration()` sont **relatifs au segment** (0 → longueur du segment). `seek(position)` prend une position relative et ajoute `start`.
-- **Changement de version en pause** : la position mémorisée pour la reprise suit la même règle que le fondu (cible découpée → début du segment).
+- **Changement de version en pause** : la position mémorisée pour la reprise suit la même règle que le fondu (révisé par #44 : même position relative).
 - **Boucle unique** : `howl.loop(true)` s'applique au son du sprite ; Howler rejoue le segment (html5 : `stop(id).play(id)` conserve le sprite). En « Une fois » / « Boucle playlist », la fin du segment déclenche `onend` → piste suivante (on ne continue jamais dans le segment d'après).
 
 ### AudioManager (corrige aussi #32)
