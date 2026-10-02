@@ -191,6 +191,8 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#41 — Modals accessibles (dialog natif)](https://github.com/RAbdGen/JukeBox_DnD/issues/41) — modèle du Dialog shadcn/Radix, sans fermeture au clic sur le fond
 
 **À faire (`Todo`) :**
+- [#42 — Changer de version fait repartir la musique du début (sur certaines pistes)](https://github.com/RAbdGen/JukeBox_DnD/issues/42) — bloquant, patch v2.0.1 ; cause à identifier (piste découpée, BPM ou durées différentes)
+- [#43 — Fondu à la pause et à la reprise (durée de fondu de la piste)](https://github.com/RAbdGen/JukeBox_DnD/issues/43) — patch v2.0.1 ; la pause n'a jamais eu de fondu (c'était le mute, #3/#29)
 - [#36 — Mesurer la mémoire de l'onglet Découpage avec un fichier d'1 h (machine 8 Go)](https://github.com/RAbdGen/JukeBox_DnD/issues/36) — mesure manuelle sur la machine de l'ami avant la prochaine release
 
 ### Conventions de code
