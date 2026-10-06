@@ -38,13 +38,14 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
     /**
      * Onglet Découpage (#24) : lecture brute d'un fichier audio (waveform),
-     * ajout d'une musique découpée, retouche d'une découpe.
+     * ajout d'une musique découpée (un ou plusieurs fichiers, #45), retouche
+     * de ses fichiers découpés.
      */
     readAudioFile: (filePath) => ipcRenderer.invoke('audio:readFile', filePath),
     addSegmentedTrack: (trackData, selectedPlaylists) =>
         ipcRenderer.invoke('library:addSegmentedTrack', trackData, selectedPlaylists),
-    updateSegments: (trackId, segments, defaultVersion) =>
-        ipcRenderer.invoke('library:updateSegments', trackId, segments, defaultVersion),
+    updateSources: (trackId, requests, launchVersion) =>
+        ipcRenderer.invoke('library:updateSources', trackId, requests, launchVersion),
 
     /**
      * Exporter la bibliothèque (JSON + copie des fichiers audio) vers un

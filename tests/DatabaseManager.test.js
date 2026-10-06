@@ -264,16 +264,6 @@ describe('DatabaseManager — pistes découpées (#24)', () => {
         expect(manager.db.data.library[0].segments).toEqual({ combat: { start: 90, end: 180 } });
     });
 
-    it('updateSegments applique la retouche et persiste', async () => {
-        const manager = createDatabaseManager(splitLibrary());
-
-        await manager.updateSegments('t1', { calme: { start: 0, end: 80 }, assaut: { start: 80, end: 180 } }, 'assaut');
-
-        const track = manager.db.data.library[0];
-        expect(Object.keys(track.localPaths)).toEqual(['calme', 'assaut', 'boss']);
-        expect(track.defaultVersion).toBe('assaut');
-        expect(manager.db.write).toHaveBeenCalledOnce();
-    });
 
     it('nettoie les segments d\'une piste importée', async () => {
         const manager = createDatabaseManager({ library: [], playlists: [], metadata: {} });
@@ -352,21 +342,6 @@ describe('DatabaseManager — version de lancement (#25)', () => {
         expect(manager.db.data.library[0].launchVersion).toBe('calm');
     });
 
-    it('une retouche de découpe qui fait disparaître la version de lancement l\'efface', async () => {
-        const manager = createDatabaseManager({
-            library: [{
-                id: 't1', title: 'x', launchVersion: 'combat',
-                localPaths: { calm: '/s', combat: '/s' },
-                segments: { calm: { start: 0, end: 5 }, combat: { start: 5, end: 9 } },
-            }],
-            playlists: [],
-            metadata: {},
-        });
-
-        await manager.updateSegments('t1', { calme: { start: 0, end: 5 }, assaut: { start: 5, end: 9 } });
-
-        expect(manager.db.data.library[0]).not.toHaveProperty('launchVersion');
-    });
 });
 
 describe('DatabaseManager — tempo (#18)', () => {
@@ -416,19 +391,63 @@ describe('DatabaseManager — tempo (#18)', () => {
     });
 });
 
-describe('DatabaseManager.updateSegments — bornes reçues par IPC (#34)', () => {
-    it('refuse des bornes invalides sans rien modifier', async () => {
-        const track = {
-            id: 't1', title: 'x',
-            localPaths: { calm: '/s', combat: '/s' },
-            segments: { calm: { start: 0, end: 5 }, combat: { start: 5, end: 9 } },
-        };
-        const manager = createDatabaseManager({ library: [structuredClone(track)], playlists: [], metadata: {} });
+describe('DatabaseManager.updateSources (#45)', () => {
+    const library = () => ({
+        library: [{
+            id: 't1', title: 'x', launchVersion: 'combat',
+            originalPaths: { calm: '/oa', combat: '/ob', boss: '/ofull' },
+            localPaths: { calm: '/a', combat: '/b', boss: '/full' },
+            segments: { calm: { start: 0, end: 5 }, combat: { start: 0, end: 4 } },
+            tempo: { combat: { bpm: 120, offsetMs: 0 } },
+        }],
+        playlists: [], metadata: {},
+    });
 
-        await expect(manager.updateSegments('t1', { calm: { start: 0, end: 5 }, combat: { start: 9, end: 3 } }))
-            .rejects.toThrow();
+    it('ajoute une source copiée, persiste, ne signale aucun fichier inutile', async () => {
+        const manager = createDatabaseManager(library());
+        const { result, unusedPaths } = await manager.updateSources('t1', [
+            { localPath: '/a', segments: { calm: { start: 0, end: 5 } } },
+            { localPath: '/b', segments: { combat: { start: 0, end: 4 } } },
+            { localPath: '/new', originalPath: '/home/new.mp3', segments: { victoire: { start: 0, end: 3 } } },
+        ], { newLocalPaths: ['/new'] });
+        expect(Object.keys(result.localPaths)).toEqual(['calm', 'combat', 'victoire', 'boss']);
+        expect(result.originalPaths.victoire).toBe('/home/new.mp3');
+        expect(result.originalPaths.combat).toBe('/ob');
+        expect(unusedPaths).toEqual([]);
+        expect(manager.db.write).toHaveBeenCalledOnce();
+    });
 
-        expect(manager.db.data.library[0]).toEqual(track);
-        expect(manager.db.write).not.toHaveBeenCalled();
+    it('retirer une source : son fichier, sa version de lancement et son tempo disparaissent', async () => {
+        const manager = createDatabaseManager(library());
+        const { result, unusedPaths } = await manager.updateSources('t1', [{ localPath: '/a', segments: { calm: { start: 0, end: 5 } } }]);
+        expect(unusedPaths).toEqual(['/b']);
+        expect(result).not.toHaveProperty('launchVersion');
+        expect(result).not.toHaveProperty('tempo');
+        expect(manager.db.data.library[0]).toBe(result);
+    });
+
+    it('version de lancement renommée : celle choisie par l\'appelant', async () => {
+        const manager = createDatabaseManager(library());
+        const { result } = await manager.updateSources('t1', [
+            { localPath: '/a', segments: { calm: { start: 0, end: 5 } } },
+            { localPath: '/b', segments: { assaut: { start: 0, end: 4 } } },
+        ], { launchVersion: 'assaut' });
+        expect(result.launchVersion).toBe('assaut');
+    });
+
+    it('refuse sans rien modifier : chemin étranger, chemin de version entière, bornes invalides, doublon', async () => {
+        for (const sources of [
+            [{ localPath: '/elsewhere', segments: { a: { start: 0, end: 1 } } }],
+            [{ localPath: '/full', segments: { a: { start: 0, end: 1 } } }],
+            [{ localPath: '/a', segments: { calm: { start: 5, end: 1 } } }],
+            [{ localPath: '/a', segments: { Boss: { start: 0, end: 1 } } }],
+        ]) {
+            const data = library();
+            const before = structuredClone(data.library[0]);
+            const manager = createDatabaseManager(data);
+            await expect(manager.updateSources('t1', sources)).rejects.toThrow();
+            expect(manager.db.data.library[0]).toEqual(before);
+            expect(manager.db.write).not.toHaveBeenCalled();
+        }
     });
 });

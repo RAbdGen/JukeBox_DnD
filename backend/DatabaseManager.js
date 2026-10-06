@@ -6,7 +6,7 @@ import {
     normalizeCrossfadeDurationPercent,
     normalizeCrossfadeDurationSeconds,
 } from './crossfadeDuration.js';
-import { applySegmentUpdate, sanitizeSegments } from './segments.js';
+import { applySourcesUpdate, sanitizeSegments, sourceGroups, unusedPaths } from './segments.js';
 import { sanitizeTempo } from './tempo.js';
 
 /**
@@ -382,39 +382,46 @@ export class DatabaseManager {
     }
 
     /**
-     * Retouche d'une découpe (#24) : remplace les versions découpées, garde les
-     * versions « fichier entier ». Voir applySegmentUpdate (backend/segments.js).
-     * @param {string} trackId
-     * @param {Object} segments - { versionName: { start, end } }
-     * @param {string} [defaultVersion]
+     * Retouche des versions découpées d'une piste (#45) : `sources` remplace
+     * toutes ses sources. Un `localPath` doit être celui d'une source de la
+     * piste, ou un fichier tout juste copié (`newLocalPaths`). Tout est validé
+     * avant la moindre modification (#34).
+     * @returns {{ result: object, unusedPaths: string[] }} piste enregistrée, fichiers qui ne servent plus
      */
-    async updateSegments(trackId, segments, defaultVersion) {
-        const track = this.db.data.library.find(t => t.id === trackId);
-        if (!track) {
-            throw new Error(`Track ${trackId} introuvable`);
-        }
+    async updateSources(trackId, sources, { launchVersion, newLocalPaths = [] } = {}) {
+        const index = this.db.data.library.findIndex(t => t.id === trackId);
+        if (index === -1) throw new Error(`Track ${trackId} introuvable`);
+        const track = this.db.data.library[index];
+        if (!Array.isArray(sources)) throw new Error(`Sources invalides pour ${trackId}`);
 
-        // Bornes reçues par IPC : toutes doivent être valides, sinon rien n'est modifié (#34)
-        const names = Object.keys(segments || {});
-        const clean = sanitizeSegments(segments, Object.fromEntries(names.map(name => [name, true])));
-        if (!clean || Object.keys(clean).length !== names.length) {
-            throw new Error(`Segments invalides pour ${trackId}`);
-        }
+        const existing = new Map(sourceGroups(track).map(group => [group.localPath, group.originalPath]));
+        const clean = sources.map(source => {
+            const isNew = newLocalPaths.includes(source?.localPath);
+            if (!isNew && !existing.has(source?.localPath)) throw new Error(`Fichier inconnu pour ${trackId}`);
+            const names = Object.keys(source.segments || {});
+            const segments = sanitizeSegments(source.segments, Object.fromEntries(names.map(name => [name, true])));
+            if (!segments || Object.keys(segments).length !== names.length) {
+                throw new Error(`Segments invalides pour ${trackId}`);
+            }
+            const originalPath = isNew ? (source.originalPath ?? source.localPath) : existing.get(source.localPath);
+            return { localPath: source.localPath, originalPath, segments };
+        });
 
-        applySegmentUpdate(track, clean, defaultVersion);
-        if (track.launchVersion && !Object.hasOwn(track.localPaths, track.launchVersion)) {
-            delete track.launchVersion; // version de lancement renommée ou retirée (#25)
+        const next = applySourcesUpdate(structuredClone(track), clean);
+        if (launchVersion && Object.hasOwn(next.localPaths, launchVersion)) {
+            next.launchVersion = launchVersion;
+        } else if (next.launchVersion && !Object.hasOwn(next.localPaths, next.launchVersion)) {
+            delete next.launchVersion; // version de lancement retirée (#25)
         }
-        if (track.tempo) setTempo(track, track.tempo); // tempo des versions renommées/retirées (#18)
-        if (track.metadata) {
-            track.metadata.modifiedAt = new Date().toISOString();
-        }
+        if (next.tempo) setTempo(next, next.tempo); // tempo des versions renommées/retirées (#18)
+        if (next.metadata) next.metadata.modifiedAt = new Date().toISOString();
 
+        this.db.data.library[index] = next;
         this.updateMetadata();
         await this.db.write();
 
-        console.log(`✂️ Découpe de "${track.title}" mise à jour`);
-        return track;
+        console.log(`✂️ Découpe de "${next.title}" mise à jour`);
+        return { result: next, unusedPaths: unusedPaths(track.localPaths, next.localPaths) };
     }
 
     // ============================================

@@ -290,44 +290,49 @@ ipcHandle('library:addTrack', async (event, trackData, selectedPlaylists) => {
     }
 });
 
-// Musique découpée (#24) : le fichier source est copié UNE fois, toutes les
-// versions découpées pointent dessus ; le fichier source n'est jamais modifié.
+// Musique découpée (#24, plusieurs fichiers #45) : chaque fichier source est
+// copié une fois, ses versions découpées pointent dessus ; jamais modifié.
 ipcHandle('library:addSegmentedTrack', async (event, trackData, selectedPlaylists = []) => {
-    let localPath = null;
-    let saved = null;
     try {
         const trackId = fileManager.generateTrackId();
-        localPath = await fileManager.copyAudioFile(trackData.sourcePath, trackId, segmentsModule.SOURCE_VERSION_KEY);
-        const track = segmentsModule.buildSegmentedTrack({
-            trackId,
-            title: trackData.title,
-            sourcePath: trackData.sourcePath,
-            localPath,
-            segments: trackData.segments,
-            selectedPlaylists,
+        let saved = null;
+        return await segmentsModule.persistSources({
+            requests: (trackData.sources || []).map(source => ({ sourcePath: source.sourcePath, segments: source.segments })),
+            copyFile: (sourcePath, reserved) => fileManager.copyAudioFile(sourcePath, trackId, segmentsModule.SOURCE_VERSION_KEY, reserved),
+            // Piste enregistrée puis échec sur une playlist : ses fichiers doivent rester (#34)
+            deleteFile: path => (saved ? Promise.resolve(false) : fileManager.deleteAudioFile(path)),
+            persist: async sources => {
+                const track = segmentsModule.buildSegmentedTrack({
+                    trackId,
+                    title: trackData.title,
+                    sources: sources.map(source => ({ ...source, sourcePath: source.originalPath })),
+                    selectedPlaylists,
+                });
+                saved = await dbManager.addTrackToLibrary(track);
+                await Promise.all(selectedPlaylists.map(playlistId => dbManager.addTrackIdToPlaylist(playlistId, trackId)));
+                console.log(`✂️ Piste découpée "${track.title}" ajoutée`);
+                return { result: saved };
+            },
         });
-
-        saved = await dbManager.addTrackToLibrary(track);
-        await Promise.all(
-            selectedPlaylists.map(playlistId => dbManager.addTrackIdToPlaylist(playlistId, trackId))
-        );
-
-        console.log(`✂️ Piste découpée "${track.title}" ajoutée`);
-        return saved;
     } catch (error) {
         console.error('❌ Erreur addSegmentedTrack:', error);
-        // Piste non créée après la copie : ne pas laisser de fichier orphelin dans music/ (#34).
-        // Si la piste est enregistrée (échec sur une playlist), son fichier doit rester.
-        if (localPath && !saved) await fileManager.deleteAudioFile(localPath);
         throw error;
     }
 });
 
-ipcHandle('library:updateSegments', async (event, trackId, segments, defaultVersion) => {
+ipcHandle('library:updateSources', async (event, trackId, requests, launchVersion) => {
     try {
-        return await dbManager.updateSegments(trackId, segments, defaultVersion);
+        const track = await dbManager.getTrack(trackId);
+        if (!track) throw new Error(`Track ${trackId} introuvable`);
+        return await segmentsModule.persistSources({
+            requests: Array.isArray(requests) ? requests.map(r => ({ sourcePath: r?.sourcePath, localPath: r?.localPath, segments: r?.segments })) : [],
+            reservedPaths: segmentsModule.uniquePaths(track.localPaths),
+            copyFile: (sourcePath, reserved) => fileManager.copyAudioFile(sourcePath, trackId, segmentsModule.SOURCE_VERSION_KEY, reserved),
+            deleteFile: path => fileManager.deleteAudioFile(path),
+            persist: (sources, copied) => dbManager.updateSources(trackId, sources, { launchVersion, newLocalPaths: copied }),
+        });
     } catch (error) {
-        console.error('❌ Erreur updateSegments:', error);
+        console.error('❌ Erreur updateSources:', error);
         throw error;
     }
 });
