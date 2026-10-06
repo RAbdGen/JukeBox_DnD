@@ -219,6 +219,12 @@ export class AudioManager {
      * Reprendre la lecture
      */
     resume() {
+        // Après un Stop, la piste n'a plus de version courante : rien à reprendre,
+        // on relance la piste sélectionnée depuis sa version de lancement (#47)
+        if (this.currentTrack && !this.currentTrack.currentVersion && this.playlist.length > 0) {
+            this.playTrackAtIndex(this.currentTrackIndex);
+            return;
+        }
         // Le volume par piste (defaultVolume) reste indépendant du volume maître Howler
         if (this.currentTrack && this.currentTrack.resume()) {
             console.log('▶️ Reprise de la lecture');

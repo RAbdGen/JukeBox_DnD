@@ -313,6 +313,43 @@ describe('AudioManager — modes de boucle et switch de musique (#23)', () => {
     });
 });
 
+describe('AudioManager — reprise après un arrêt (#47)', () => {
+    const config = [
+        { id: 't1', title: 'Track 1', versions: { calm: 'a.mp3', combat: 'a2.mp3' }, launchVersion: 'combat' },
+        { id: 't2', title: 'Track 2', versions: { calm: 'b.mp3' } },
+    ];
+
+    it('après Stop, Lecture relance la piste sélectionnée depuis sa version de lancement', () => {
+        const manager = new AudioManager();
+        const onTrackChange = vi.fn();
+        manager.on('trackChange', onTrackChange);
+        manager.loadPlaylist(config);
+        manager.playTrackAtIndex(0);
+        manager.switchVersion('calm');
+        manager.stop();
+        onTrackChange.mockClear();
+
+        manager.resume();
+
+        expect(manager.isPlaying()).toBe(true);
+        expect(manager.currentTrack.id).toBe('t1');
+        expect(manager.currentTrack.currentVersion).toBe('combat');
+        expect(onTrackChange).toHaveBeenCalledOnce();
+    });
+
+    it('après une pause, reprend la piste là où elle était (inchangé)', () => {
+        const manager = new AudioManager();
+        manager.loadPlaylist(config);
+        manager.playTrackAtIndex(1);
+        manager.pause();
+
+        manager.resume();
+
+        expect(manager.isPlaying()).toBe(true);
+        expect(manager.currentTrack.id).toBe('t2');
+    });
+});
+
 describe('AudioManager — défiler les versions (#46)', () => {
     const config = [
         { id: 't1', title: 'Track 1', versions: { calm: 'a.mp3', combat: 'a2.mp3' } },

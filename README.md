@@ -7,7 +7,7 @@ En anglais, l'application s'appelle **Jukebox RPG**.
 ![Electron](https://img.shields.io/badge/Electron-44-47848F?style=flat&logo=electron)
 ![Node.js](https://img.shields.io/badge/Node.js-24_LTS-339933?style=flat&logo=node.js)
 ![Howler.js](https://img.shields.io/badge/Howler.js-2.2.4-E85D75?style=flat)
-![Vitest](https://img.shields.io/badge/Vitest-292_tests-6E9F18?style=flat)
+![Vitest](https://img.shields.io/badge/Vitest-294_tests-6E9F18?style=flat)
 
 ## 📥 Installer l'application
 
@@ -136,7 +136,7 @@ Les conventions du projet (thèmes, i18n, pièges de Howler, règles d'interface
 make test
 ```
 
-292 tests, dont :
+294 tests, dont :
 - **Lecture** : fondus et actions pendant un fondu, pause et reprise en fondu, positions au changement de version, avec un faux Howler qui reproduit le comportement HTML5 ;
 - **Données** : bibliothèque, playlists, versions découpées, import et export, migrations ;
 - **Logique pure** : tempo, raccourcis, découpage, waveform, placement des bulles d'aide, navigation au clavier ;
