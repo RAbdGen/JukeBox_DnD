@@ -27,7 +27,7 @@ export class AudioManager {
         // Playlist
         this.playlist = [];           // Liste ordonnée des pistes
         this.currentTrackIndex = 0;   // Index de la piste actuelle
-        this.playMode = 'noLoop';     // 'noLoop', 'loopOne', 'loopAll'
+        this.playMode = 'noLoop';     // 'noLoop', 'loopOne', 'loopAll', 'cycleVersions' (#46)
         this.currentVersion = 'calm'; // Version en cours (conservée entre pistes)
 
         // Configurer le volume global Howler
@@ -46,6 +46,8 @@ export class AudioManager {
 
         const track = new Track(trackId, name, versionPaths, segments);
         track.loadVersions();
+        // Défilement des versions (#46) : version enchaînée automatiquement
+        track.onVersionCycled = () => this._onVersionCycled(track);
 
         this.tracks.set(trackId, track);
 
@@ -107,7 +109,7 @@ export class AudioManager {
         }
 
         // Jouer la nouvelle piste
-        track.setLoop(this.playMode === 'loopOne');
+        this._applyPlayMode(track);
         track.play(version);
         this.currentTrack = track;
         this.currentVersion = track.currentVersion; // Rester synchronisé avec la version réellement appliquée
@@ -529,7 +531,7 @@ export class AudioManager {
 
         // Mode de boucle appliqué à toutes les versions, pas seulement à celle
         // lancée : sinon la version atteinte par crossfade ne boucle pas (#23)
-        track.setLoop(this.playMode === 'loopOne');
+        this._applyPlayMode(track);
 
         // Jouer la piste avec la première version
         track.play(this.currentVersion);
@@ -591,10 +593,10 @@ export class AudioManager {
 
     /**
      * Définir le mode de lecture
-     * @param {string} mode - 'noLoop', 'loopOne', 'loopAll'
+     * @param {string} mode - 'noLoop', 'loopOne', 'loopAll', 'cycleVersions'
      */
     setPlayMode(mode) {
-        const validModes = ['noLoop', 'loopOne', 'loopAll'];
+        const validModes = ['noLoop', 'loopOne', 'loopAll', 'cycleVersions'];
 
         if (!validModes.includes(mode)) {
             console.error(`❌ Mode invalide: ${mode}`);
@@ -606,7 +608,21 @@ export class AudioManager {
 
         // Mettre à jour le loop de la piste actuelle
         if (this.currentTrack) {
-            this.currentTrack.setLoop(mode === 'loopOne');
+            this._applyPlayMode(this.currentTrack);
+        }
+    }
+
+    /** Boucle unique (#23) et défilement des versions (#46) portés par la piste */
+    _applyPlayMode(track) {
+        track.setLoop(this.playMode === 'loopOne');
+        track.setVersionCycle(this.playMode === 'cycleVersions');
+    }
+
+    _onVersionCycled(track) {
+        if (track !== this.currentTrack) return;
+        this.currentVersion = track.currentVersion ?? this.currentVersion;
+        if (this.callbacks.onVersionChange) {
+            this.callbacks.onVersionChange(track.getState());
         }
     }
 
@@ -619,8 +635,9 @@ export class AudioManager {
         // Le mode loopOne est géré directement par Howler (loop: true)
         // On ne fait rien ici car la piste boucle automatiquement
 
-        if (this.playMode === 'loopOne') {
-            // La piste boucle déjà, rien à faire
+        // Boucle unique : la piste boucle déjà. Défilement des versions (#46) : la
+        // piste enchaîne ses versions (une piste à une version boucle)
+        if (this.playMode === 'loopOne' || this.playMode === 'cycleVersions') {
             return;
         }
 

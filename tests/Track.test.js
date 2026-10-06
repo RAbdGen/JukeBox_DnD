@@ -685,3 +685,162 @@ describe('Track — écarts de position (#35)', () => {
         expect(track.versions.combat._sprite.segment).toEqual([90000, 90000]);
     });
 });
+
+describe('Track — défiler les versions (#46)', () => {
+    // FakeHowl : versions de 180 s, fondu par défaut 5 s → enchaînement à 175 s
+    const FADE_START_MS = 175000;
+
+    function startCycling(track = createTrack(), version = 'calm') {
+        track.setVersionCycle(true);
+        track.play(version);
+        vi.advanceTimersByTime(0); // démarrage HTML5 (_playLock)
+        return track;
+    }
+
+    it('lance la version suivante en fondu, à son début, une durée de fondu avant la fin', () => {
+        const track = startCycling();
+
+        vi.advanceTimersByTime(FADE_START_MS - 10);
+        expect(track.isCrossfading).toBe(false);
+        vi.advanceTimersByTime(10);
+
+        expect(track.isCrossfading).toBe(true);
+        expect(track.versions.calm.fades).toContainEqual([track.defaultVolume, 0, 5000, undefined]);
+        vi.advanceTimersByTime(6000);
+        expect(track.currentVersion).toBe('combat');
+        expect(track.versions.combat.seek()).toBe(0); // pas la position relative (#44) : 175 s
+        expect(track.versions.combat.lostSeeks).toEqual([]);
+    });
+
+    it('après la dernière version, revient à la première', () => {
+        const track = startCycling(createTrack(), 'tension');
+
+        vi.advanceTimersByTime(FADE_START_MS + 6000);
+
+        expect(track.currentVersion).toBe('calm');
+    });
+
+    it('continue de défiler après un premier enchaînement', () => {
+        const track = startCycling();
+
+        vi.advanceTimersByTime(FADE_START_MS + 6000);
+        vi.advanceTimersByTime(FADE_START_MS);
+
+        expect(track.isCrossfading).toBe(true);
+        vi.advanceTimersByTime(6000);
+        expect(track.currentVersion).toBe('tension');
+    });
+
+    it('prévient quand une version a été enchaînée', () => {
+        const track = createTrack();
+        const cycled = vi.fn();
+        track.onVersionCycled = cycled;
+        startCycling(track);
+
+        vi.advanceTimersByTime(FADE_START_MS + 6000);
+
+        expect(cycled).toHaveBeenCalledOnce();
+    });
+
+    it('une piste à une seule version boucle', () => {
+        const track = new Track('t2', 'Seule', { calm: 'calm.mp3' });
+        track.loadVersions();
+        startCycling(track);
+
+        expect(track.versions.calm.loop()).toBe(true);
+        vi.advanceTimersByTime(FADE_START_MS + 6000);
+        expect(track.isCrossfading).toBe(false);
+    });
+
+    it('la pause annule l\'enchaînement, la reprise le reprogramme', () => {
+        const track = startCycling();
+
+        track.pause();
+        vi.advanceTimersByTime(FADE_START_MS + 6000);
+        expect(track.isCrossfading).toBe(false);
+        expect(track.currentVersion).toBe('calm');
+
+        track.resume();
+        vi.advanceTimersByTime(FADE_START_MS);
+        expect(track.isCrossfading).toBe(true);
+    });
+
+    it('un déplacement dans la piste reprogramme l\'enchaînement', () => {
+        const track = startCycling();
+
+        track.seek(170);
+        vi.advanceTimersByTime(5000);
+
+        expect(track.isCrossfading).toBe(true);
+    });
+
+    it('un changement de version manuel : le défilement repart de la version choisie', () => {
+        const track = startCycling();
+
+        track.crossfade('tension', 1);
+        vi.advanceTimersByTime(2000);
+        expect(track.currentVersion).toBe('tension');
+
+        vi.advanceTimersByTime(FADE_START_MS + 6000);
+        expect(track.currentVersion).toBe('calm');
+    });
+
+    it('désactiver le mode : plus rien n\'est programmé', () => {
+        const track = startCycling();
+
+        track.setVersionCycle(false);
+        vi.advanceTimersByTime(FADE_START_MS + 6000);
+
+        expect(track.isCrossfading).toBe(false);
+        expect(track.currentVersion).toBe('calm');
+    });
+
+    it('activer le mode pendant la lecture programme l\'enchaînement', () => {
+        const track = createTrack();
+        track.play('calm');
+        vi.advanceTimersByTime(0);
+
+        track.setVersionCycle(true);
+        vi.advanceTimersByTime(FADE_START_MS);
+
+        expect(track.isCrossfading).toBe(true);
+    });
+
+    it('version courte : fondu plafonné à la moitié de la version', () => {
+        const track = new Track('t3', 'Court', { calm: 'src.mp3', combat: 'src.mp3' }, {
+            calm: { start: 0, end: 6 },
+            combat: { start: 6, end: 12 },
+        });
+        track.loadVersions();
+        startCycling(track);
+
+        vi.advanceTimersByTime(2990);
+        expect(track.isCrossfading).toBe(false);
+        vi.advanceTimersByTime(10);
+
+        expect(track.isCrossfading).toBe(true);
+        expect(track.versions.calm.fades).toContainEqual([track.defaultVolume, 0, 3000, undefined]);
+    });
+
+    it('fin de version malgré tout : version suivante tout de suite, jamais la piste suivante', () => {
+        const track = startCycling();
+        const onEnd = vi.fn();
+        track.onEndCallback = onEnd;
+        track.setVersionCycle(true);
+
+        track.versions.calm.opts.onend();
+
+        expect(onEnd).not.toHaveBeenCalled();
+        expect(track.currentVersion).toBe('combat');
+        expect(track.versions.combat.playing()).toBe(true);
+    });
+
+    it('stop : plus rien n\'est programmé', () => {
+        const track = startCycling();
+
+        track.stop();
+        vi.advanceTimersByTime(FADE_START_MS + 6000);
+
+        expect(playingVersions(track)).toEqual([]);
+    });
+});

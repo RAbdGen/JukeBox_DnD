@@ -313,6 +313,75 @@ describe('AudioManager — modes de boucle et switch de musique (#23)', () => {
     });
 });
 
+describe('AudioManager — défiler les versions (#46)', () => {
+    const config = [
+        { id: 't1', title: 'Track 1', versions: { calm: 'a.mp3', combat: 'a2.mp3' } },
+        { id: 't2', title: 'Track 2', versions: { calm: 'b.mp3' } },
+    ];
+
+    it('accepte le mode et l\'applique à la piste lancée, sans boucle unique', () => {
+        const manager = new AudioManager();
+        manager.loadPlaylist(config);
+        manager.setPlayMode('cycleVersions');
+
+        manager.playTrackAtIndex(0);
+
+        expect(manager.playMode).toBe('cycleVersions');
+        expect(manager.currentTrack.versionCycle).toBe(true);
+        expect(manager.currentTrack.loop).toBe(false);
+    });
+
+    it('changer de mode pendant la lecture l\'applique à la piste en cours', () => {
+        const manager = new AudioManager();
+        manager.loadPlaylist(config);
+        manager.playTrackAtIndex(0);
+
+        manager.setPlayMode('cycleVersions');
+        expect(manager.currentTrack.versionCycle).toBe(true);
+
+        manager.setPlayMode('loopAll');
+        expect(manager.currentTrack.versionCycle).toBe(false);
+    });
+
+    it('la fin naturelle d\'une piste ne change pas de piste', () => {
+        const manager = new AudioManager();
+        manager.loadPlaylist(config);
+        manager.setPlayMode('cycleVersions');
+        manager.playTrackAtIndex(0);
+
+        manager.onTrackEnd();
+
+        expect(manager.currentTrack.id).toBe('t1');
+    });
+
+    it('le bouton suivant change de piste', () => {
+        const manager = new AudioManager();
+        manager.loadPlaylist(config);
+        manager.setPlayMode('cycleVersions');
+        manager.playTrackAtIndex(0);
+
+        manager.nextTrack();
+
+        expect(manager.currentTrack.id).toBe('t2');
+        expect(manager.currentTrack.versionCycle).toBe(true);
+    });
+
+    it('une version enchaînée met à jour la version courante et prévient l\'UI', () => {
+        const manager = new AudioManager();
+        const onVersionChange = vi.fn();
+        manager.on('versionChange', onVersionChange);
+        manager.loadPlaylist(config);
+        manager.setPlayMode('cycleVersions');
+        manager.playTrackAtIndex(0);
+        manager.currentTrack.currentVersion = 'combat';
+
+        manager.currentTrack.onVersionCycled();
+
+        expect(manager.currentVersion).toBe('combat');
+        expect(onVersionChange).toHaveBeenCalledOnce();
+    });
+});
+
 describe('AudioManager — versions modifiées dans la playlist active (#32)', () => {
     const base = [
         { id: 't1', title: 'Track 1', versions: { calm: 'a.mp3', combat: 'b.mp3' } },

@@ -43,6 +43,8 @@ const fr = {
     'controls.modeNormal': 'Une fois',
     'controls.modeLoopOne': 'Boucle une piste',
     'controls.modeLoopAll': 'Tout répéter',
+    'controls.modeCycleVersions': 'Défiler les versions',
+    'controls.playMode': 'Mode de lecture',
 
     'tracklist.header': 'Pistes du Grimoire',
     'tracklist.emptyMain': 'Aucune piste. Chargez une playlist.',
@@ -238,6 +240,8 @@ const en = {
     'controls.modeNormal': 'Once',
     'controls.modeLoopOne': 'Loop one track',
     'controls.modeLoopAll': 'Repeat all',
+    'controls.modeCycleVersions': 'Cycle versions',
+    'controls.playMode': 'Playback mode',
 
     'tracklist.header': 'Grimoire Tracks',
     'tracklist.emptyMain': 'No tracks. Load a playlist.',

@@ -16,6 +16,7 @@ import { initTooltips, setTooltip } from './tooltip.js';
 import { initRangeFill } from './rangeFill.js';
 import { createProgressSlider } from './progressSlider.js';
 import { createListbox } from './listbox.js';
+import { createRadioGroup } from './roving.js';
 import { closeModal, initModals, openModal } from './modal.js';
 import { getPreviewVolume } from './trackVolume.js';
 
@@ -58,6 +59,7 @@ let editingVersions = [];
 let editingTempo = {};
 let cutterView = null; // onglet Découpage (#24), créé au DOMContentLoaded
 let progressSlider = null; // barre de progression manipulable (#39), créée au DOMContentLoaded
+let playModeGroup = null; // modes de lecture (#46), créé au DOMContentLoaded
 
 // ========================================
 // i18n (#22) — langue courante persistée dans settings.language
@@ -84,6 +86,9 @@ function applyTranslations() {
     });
     document.querySelectorAll('[data-i18n-placeholder]').forEach(el => {
         el.placeholder = t(el.dataset.i18nPlaceholder);
+    });
+    document.querySelectorAll('[data-i18n-label]').forEach(el => {
+        el.setAttribute('aria-label', t(el.dataset.i18nLabel));
     });
     document.querySelectorAll('[data-i18n-tooltip]').forEach(el => {
         const text = t(el.dataset.i18nTooltip);
@@ -957,9 +962,7 @@ async function startShortcutRecording(action) {
 }
 
 function updateModeButtons(mode) {
-    document.querySelectorAll('.mode-btn').forEach(btn => {
-        btn.classList.toggle('active', btn.dataset.mode === mode);
-    });
+    playModeGroup?.setValue(mode);
 }
 
 function updateProgress() {
@@ -1348,14 +1351,14 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 
     // --- Mode Buttons ---
-    document.querySelectorAll('.mode-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            const mode = btn.dataset.mode;
+    // Modes de lecture : groupe à choix unique accessible (#46, ToggleGroup shadcn/Radix)
+    playModeGroup = createRadioGroup({
+        group: document.querySelector('#play-mode-selector .mode-buttons'),
+        valueKey: 'mode',
+        onSelect: mode => {
             audioManager.setPlayMode(mode);
-            updateModeButtons(mode);
-            // Save settings
             window.electronAPI.saveSettings({ playMode: mode });
-        });
+        },
     });
 
     // --- Progress Bar Seek (#39 : curseur manipulable, voir progressSlider.js) ---

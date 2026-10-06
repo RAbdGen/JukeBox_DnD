@@ -604,3 +604,9 @@
     font-family: 'IM Fell English', serif;
     font-size: 0.95rem;
 }
+
+/* Groupe de modes (#46) : focus clavier visible, comme les autres contrôles */
+.mode-btn:focus-visible {
+    outline: 2px solid var(--gold-2);
+    outline-offset: 2px;
+}

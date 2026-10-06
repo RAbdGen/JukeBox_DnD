@@ -108,10 +108,11 @@
                                     <span id="volume-value">50%</span>
                                 </div>
                                 <div id="play-mode-selector">
-                                    <div class="mode-buttons">
-                                        <button class="mode-btn active" data-mode="noLoop" data-i18n-tooltip="controls.modeNormal" data-tooltip="Une fois">↩</button>
-                                        <button class="mode-btn" data-mode="loopOne" data-i18n-tooltip="controls.modeLoopOne" data-tooltip="Boucle une piste">↻</button>
-                                        <button class="mode-btn" data-mode="loopAll" data-i18n-tooltip="controls.modeLoopAll" data-tooltip="Tout répéter">⟳</button>
+                                    <div class="mode-buttons" role="radiogroup" data-i18n-label="controls.playMode" aria-label="Mode de lecture">
+                                        <button type="button" class="mode-btn active" role="radio" aria-checked="true" tabindex="0" data-mode="noLoop" data-i18n-tooltip="controls.modeNormal" data-tooltip="Une fois">↩</button>
+                                        <button type="button" class="mode-btn" role="radio" aria-checked="false" tabindex="-1" data-mode="loopOne" data-i18n-tooltip="controls.modeLoopOne" data-tooltip="Boucle une piste">↻</button>
+                                        <button type="button" class="mode-btn" role="radio" aria-checked="false" tabindex="-1" data-mode="loopAll" data-i18n-tooltip="controls.modeLoopAll" data-tooltip="Tout répéter">⟳</button>
+                                        <button type="button" class="mode-btn" role="radio" aria-checked="false" tabindex="-1" data-mode="cycleVersions" data-i18n-tooltip="controls.modeCycleVersions" data-tooltip="Défiler les versions">⇉</button>
                                     </div>
                                 </div>
                             </div>

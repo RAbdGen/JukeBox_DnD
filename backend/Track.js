@@ -60,6 +60,10 @@ export class Track {
         this._pauseFade = null;
         // Synchronisation BPM (#18) : { versionName: { bpm, offsetMs } }, appliqué par AudioManager
         this.tempo = {};
+        // Défiler les versions (#46) : enchaînement programmé de la version suivante
+        this.versionCycle = false;
+        this._cycleTimer = null;
+        this.onVersionCycled = null; // () => void, une version a été enchaînée automatiquement
     }
 
     get isCrossfading() {
@@ -193,7 +197,7 @@ export class Track {
             this.versions[versionName] = new Howl({
                 src: [path],
                 html5: true, // Use HTML5 Audio for file:// URLs
-                loop: this.loop, // false par défaut pour permettre la progression de playlist
+                loop: this._howlLoop(), // false par défaut pour permettre la progression de playlist
                 volume: 0,
                 preload: false, // Chargement à la première lecture, pas au démarrage
                 // Version découpée (#24) : ne lire que son segment du fichier partagé
@@ -215,6 +219,13 @@ export class Track {
                     const activeVersion = this._crossfade ? this._crossfade.toVersion : this.currentVersion;
                     if (versionName !== activeVersion) return;
                     console.log(`🏁 Fin de "${this.name}" - ${versionName}`);
+                    // Défilement (#46) : l'enchaînement aurait dû partir avant la fin
+                    // (minuteur en retard) — version suivante tout de suite, jamais la piste suivante
+                    if (this._cyclesVersions()) {
+                        this.play(this._nextCycleVersion());
+                        if (this.onVersionCycled) this.onVersionCycled();
+                        return;
+                    }
                     // Appeler le callback de fin de piste si défini
                     if (this.onEndCallback) {
                         this.onEndCallback();
@@ -320,8 +331,10 @@ export class Track {
      * @param {string} toVersion - Version cible
      * @param {number} [durationSeconds] - Durée du fondu ; par défaut celle réglée sur la piste
      * @param {(success: boolean) => void} [onComplete] - Appelé une fois le crossfade terminé (ou avorté)
+     * @param {{ fromStart?: boolean }} [options] - fromStart : la cible démarre à son début
+     *   (enchaînement du défilement #46) au lieu de la position de reprise (#18, #44)
      */
-    crossfade(toVersion, durationSeconds, onComplete) {
+    crossfade(toVersion, durationSeconds, onComplete, { fromStart = false } = {}) {
         const complete = (success) => {
             if (onComplete) onComplete(success);
         };
@@ -384,9 +397,11 @@ export class Track {
             timers: [],
             loadListener: null,
             started: false,
+            fromStart,
             complete,
         };
         this._crossfade = cf;
+        this._clearCycle(); // reprogrammé à la fin du fondu
 
         // Prépare et lance la nouvelle version une fois qu'elle est chargée : même garde-fou
         // que Track.play() (avec preload:false + html5, le Howl peut ne pas être chargé au
@@ -412,7 +427,7 @@ export class Track {
             // 5. Position (tempo #18, sinon même position relative #44).
             // Toujours APRÈS play() : stop() puis play() recycle le son (reset) et perd
             // un seek fait avant.
-            const startPosition = this._startPositionFor(cf.fromVersion, toVersion, currentSeek);
+            const startPosition = cf.fromStart ? 0 : this._startPositionFor(cf.fromVersion, toVersion, currentSeek);
             if (startPosition > 0) {
                 this._seekSound(toVersion, playId, startPosition);
             }
@@ -489,9 +504,10 @@ export class Track {
             toHowl.volume(this.defaultVolume); // Interrompt un fade-in éventuellement en cours
         } else {
             toHowl.off('load', cf.loadListener);
-            this._resumeSeek = this._startPositionFor(cf.fromVersion, cf.toVersion, cf.currentSeek);
+            this._resumeSeek = cf.fromStart ? 0 : this._startPositionFor(cf.fromVersion, cf.toVersion, cf.currentSeek);
             this._startWhenLoaded(toHowl, () => this._playCurrent());
         }
+        this._scheduleCycle();
 
         console.log(`✅ Crossfade terminé, maintenant sur "${cf.toVersion}"`);
         cf.complete(true);
@@ -542,6 +558,7 @@ export class Track {
         } else if (startFadeIn) {
             this._whenStarted(versionName, id, startFadeIn);
         }
+        this._scheduleCycle(resumeSeek);
     }
 
     /**
@@ -558,6 +575,7 @@ export class Track {
             this._fadeOutThenPause();
         }
         this.isPlaying = false;
+        this._clearCycle();
         console.log(`⏸️ Pause "${this.name}"`);
     }
 
@@ -609,11 +627,13 @@ export class Track {
         // remonte le volume depuis où il en est, en autant de temps qu'il a baissé
         const pauseFade = this._pauseFade;
         const reached = this._cancelPauseFade();
+        this.isPlaying = true; // avant _playCurrent, qui programme le défilement (#46)
         if (reached !== null) {
             const from = this.defaultVolume * reached;
             this._whenStarted(pauseFade.version, pauseFade.id, () => {
                 howl.fade(from, this.defaultVolume, pauseFade.duration * (1 - reached), pauseFade.id);
             });
+            this._scheduleCycle();
         } else if (!howl.playing() && !this._pendingStart) {
             this._startWhenLoaded(howl, () => this._playCurrent({ fadeIn: true }));
         }
@@ -658,6 +678,7 @@ export class Track {
             // Toujours avec l'id : un argument unique égal à l'id d'un son vivant serait
             // lu par Howler comme un getter et la position ignorée (#35)
             this._seekSound(this.currentVersion, this._soundIds[this.currentVersion], position);
+            this._scheduleCycle(position);
         }
     }
 
@@ -679,6 +700,7 @@ export class Track {
      */
     stopAllVersions() {
         this._cancelPauseFade();
+        this._clearCycle();
         Object.values(this.versions).forEach(version => {
             if (version.playing() || version.state() === 'loaded') {
                 version.stop();
@@ -695,8 +717,73 @@ export class Track {
      */
     setLoop(loop) {
         this.loop = loop;
-        Object.values(this.versions).forEach(version => version.loop(loop));
+        this._applyHowlLoop();
         console.log(`🔁 Loop ${loop ? 'activé' : 'désactivé'} pour "${this.name}"`);
+    }
+
+    /** Boucle Howler : boucle unique, ou défilement d'une piste à une seule version (#46) */
+    _howlLoop() {
+        return this.loop || (this.versionCycle && Object.keys(this.versionPaths).length === 1);
+    }
+
+    _applyHowlLoop() {
+        const loop = this._howlLoop();
+        Object.values(this.versions).forEach(version => version.loop(loop));
+    }
+
+    /**
+     * Défiler les versions (#46) : une durée de fondu avant la fin de la version
+     * active, la suivante démarre à son début en fondu croisé ; après la
+     * dernière, retour à la première. Une piste à une seule version boucle.
+     * @param {boolean} enabled
+     */
+    setVersionCycle(enabled) {
+        this.versionCycle = enabled;
+        this._applyHowlLoop();
+        if (enabled) this._scheduleCycle();
+        else this._clearCycle();
+    }
+
+    _cyclesVersions() {
+        return this.versionCycle && Object.keys(this.versions).length > 1;
+    }
+
+    _nextCycleVersion() {
+        const names = Object.keys(this.versions);
+        return names[(names.indexOf(this.currentVersion) + 1) % names.length];
+    }
+
+    /** Fondu de l'enchaînement : celui de la piste, plafonné à la moitié de la version */
+    _cycleFadeMs(versionDuration) {
+        return Math.min(this.getCrossfadeDurationMs(), (versionDuration * 1000) / 2);
+    }
+
+    _clearCycle() {
+        clearTimeout(this._cycleTimer);
+        this._cycleTimer = null;
+    }
+
+    /**
+     * (Re)programme l'enchaînement depuis `position` de la version active
+     * (par défaut la position courante).
+     * Jamais pendant un fondu (reprogrammé à sa fin) ni en pause.
+     */
+    _scheduleCycle(position = null) {
+        this._clearCycle();
+        if (!this._cyclesVersions() || !this.isPlaying || !this.currentVersion) return;
+        if (this._crossfade || this._pauseFade) return;
+
+        const duration = this._versionDuration(this.currentVersion);
+        if (!(duration > 0)) return;
+        const fadeMs = this._cycleFadeMs(duration);
+        const at = position ?? this.getCurrentTime();
+        const delay = Math.max(0, (duration - at) * 1000 - fadeMs);
+        this._cycleTimer = setTimeout(() => {
+            this._cycleTimer = null;
+            this.crossfade(this._nextCycleVersion(), fadeMs / 1000, success => {
+                if (success && this.onVersionCycled) this.onVersionCycled();
+            }, { fromStart: true });
+        }, delay);
     }
 
     /**

@@ -7,7 +7,7 @@ En anglais, l'application s'appelle **Jukebox RPG**.
 ![Electron](https://img.shields.io/badge/Electron-44-47848F?style=flat&logo=electron)
 ![Node.js](https://img.shields.io/badge/Node.js-24_LTS-339933?style=flat&logo=node.js)
 ![Howler.js](https://img.shields.io/badge/Howler.js-2.2.4-E85D75?style=flat)
-![Vitest](https://img.shields.io/badge/Vitest-256_tests-6E9F18?style=flat)
+![Vitest](https://img.shields.io/badge/Vitest-282_tests-6E9F18?style=flat)
 
 ## 📥 Installer l'application
 
@@ -32,7 +32,7 @@ Les données (bibliothèque, playlists, réglages et fichiers audio copiés) son
   - lecture/pause, piste suivante et précédente avec les touches média ;
   - mute : `Ctrl+Alt+M` ;
   - version suivante : `Ctrl+Alt+V` ; versions 1 à 3 : `Ctrl+Alt+1..3`, modifiables dans Réglages.
-- 🔁 **Modes de lecture** : Une fois, Boucle sur une piste, Tout répéter
+- 🔁 **Modes de lecture** : Une fois, Boucle sur une piste, Tout répéter, **Défiler les versions** (chaque version s'enchaîne en fondu sur la suivante, puis retour à la première)
 - 📍 **Barre de progression manipulable** à la souris (glisser) et au clavier
 
 ### Bibliothèque
@@ -106,10 +106,10 @@ JukeBox_DnD/
 │   ├── index.html
 │   ├── renderer.js         # Interface et appels IPC
 │   ├── cutterView.js       # Onglet Découpage (waveform.js, segmentModel.js)
-│   ├── tooltip.js, listbox.js, modal.js, progressSlider.js, rangeFill.js
+│   ├── tooltip.js, listbox.js, modal.js, roving.js, progressSlider.js, rangeFill.js
 │   ├── styles.css          # Point d'entrée : uniquement des @import (ordre = cascade)
 │   └── styles/             # base, thèmes, lecteur, bibliothèque, modals, curseurs…
-├── tests/                  # 25 fichiers Vitest
+├── tests/                  # 26 fichiers Vitest
 ├── docs/superpowers/       # Specs et plans des grosses fonctionnalités
 ├── .github/workflows/release.yml
 ├── eslint.config.js        # Règles par environnement (navigateur, Node, CommonJS)
@@ -136,7 +136,7 @@ Les conventions du projet (thèmes, i18n, pièges de Howler, règles d'interface
 make test
 ```
 
-256 tests, dont :
+282 tests, dont :
 - **Lecture** : fondus et actions pendant un fondu, pause et reprise en fondu, positions au changement de version, avec un faux Howler qui reproduit le comportement HTML5 ;
 - **Données** : bibliothèque, playlists, versions découpées, import et export, migrations ;
 - **Logique pure** : tempo, raccourcis, découpage, waveform, placement des bulles d'aide, navigation au clavier ;
