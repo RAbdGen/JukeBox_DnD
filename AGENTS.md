@@ -195,6 +195,8 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#44 — Piste découpée : changer de version repart au début du segment](https://github.com/RAbdGen/JukeBox_DnD/issues/44) — même position relative par défaut, comme un tempo identique au premier temps à 0 ms
 
 **À faire (`Todo`) :**
+- [#45 — Découpage : plusieurs fichiers sources découpés dans une même piste](https://github.com/RAbdGen/JukeBox_DnD/issues/45) — design en cours (spec)
+- [#46 — Mode de lecture « Défiler les versions »](https://github.com/RAbdGen/JukeBox_DnD/issues/46) — design en cours
 - [#36 — Mesurer la mémoire de l'onglet Découpage avec un fichier d'1 h (machine 8 Go)](https://github.com/RAbdGen/JukeBox_DnD/issues/36) — mesure manuelle sur la machine de l'ami avant la prochaine release
 
 ### Pour la prochaine release
