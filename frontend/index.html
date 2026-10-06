@@ -155,11 +155,11 @@
                 <div id="decoupage-view" class="view hidden">
                     <div class="split-panel">
                         <div class="split-header">
-                            <button type="button" id="split-choose-file" class="secondary-btn" data-i18n="split.chooseFile">📂 Choisir un fichier</button>
-                            <span id="split-file-name" class="split-file-name"></span>
+                            <div id="split-tabs" class="split-tabs" role="tablist" data-i18n-label="split.filesLabel" aria-label="Fichiers découpés"></div>
+                            <button type="button" id="split-add-file" class="secondary-btn" data-i18n="split.addFile">＋ Ajouter un fichier</button>
                         </div>
                         <p id="split-message" class="split-message" aria-live="polite"></p>
-                        <div id="split-editor" class="split-editor hidden">
+                        <div id="split-editor" class="split-editor hidden" role="tabpanel">
                             <div class="split-wave-wrap">
                                 <canvas id="split-canvas" class="split-canvas" tabindex="0"></canvas>
                             </div>
@@ -170,9 +170,13 @@
                                 <button type="button" id="split-listen" class="secondary-btn"></button>
                                 <button type="button" id="split-cut" class="secondary-btn" data-i18n="split.cutHere">✂ Couper ici</button>
                                 <span id="split-time" class="split-time">0:00.0 / 0:00.0</span>
+                                <button type="button" id="split-remove-file" class="secondary-btn split-remove-file" data-i18n="split.removeFile">Retirer ce fichier</button>
                             </div>
                             <h3 class="settings-title" data-i18n="split.segmentsTitle">Segments</h3>
                             <div id="split-segments" class="split-segments"></div>
+                        </div>
+                        <div id="split-form" class="split-form hidden">
+                            <p id="split-summary" class="split-summary"></p>
                             <div class="split-footer">
                                 <div class="split-field">
                                     <label for="split-title" data-i18n="split.titleLabel">Titre</label>

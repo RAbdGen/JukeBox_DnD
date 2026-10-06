@@ -657,7 +657,7 @@ function renderLibraryList(tracks) {
             <div class="track-actions">
                 <button class="preview-track-btn secondary-btn" data-id="${track.id}" data-tooltip="${t('preview.play')}" aria-label="${t('preview.play')}" ${canPreview ? '' : 'disabled'}>▶</button>
                 <button class="add-to-playlist-btn secondary-btn" data-id="${track.id}" data-tooltip="${t('library.addToPlaylist')}" aria-label="${t('library.addToPlaylist')}" ${currentPlaylistId ? '' : 'disabled'}>➕</button>
-                ${Object.keys(track.segments || {}).length > 0 ? `<button class="split-track-btn secondary-btn" data-id="${track.id}" data-tooltip="${t('library.splitTrack')}" aria-label="${t('library.splitTrack')}">✂</button>` : ''}
+                <button class="split-track-btn secondary-btn" data-id="${track.id}" data-tooltip="${t('library.splitTrack')}" aria-label="${t('library.splitTrack')}">✂</button>
                 <button class="edit-track-btn secondary-btn" data-id="${track.id}" data-tooltip="${t('library.editTrack')}" aria-label="${t('library.editTrack')}">✏️</button>
                 <button class="delete-track-btn danger-btn" data-id="${track.id}">🗑️</button>
             </div>
@@ -699,15 +699,12 @@ function renderLibraryList(tracks) {
             openEditTrackModal(track);
         });
 
-        // Retouche de la découpe (#24)
-        const splitBtn = div.querySelector('.split-track-btn');
-        if (splitBtn) {
-            splitBtn.addEventListener('click', (e) => {
-                e.stopPropagation();
-                switchView('decoupage');
-                cutterView.openTrack(track);
-            });
-        }
+        // Retouche de la découpe (#24), ou ajout d'un fichier découpé à toute piste (#45)
+        div.querySelector('.split-track-btn').addEventListener('click', (e) => {
+            e.stopPropagation();
+            switchView('decoupage');
+            cutterView.openTrack(track);
+        });
 
         // Event delete — suppression optimiste avec possibilité d'annuler (toast)
         div.querySelector('.delete-track-btn').addEventListener('click', (e) => {

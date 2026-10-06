@@ -20,7 +20,6 @@
 
 .split-actions { justify-content: flex-end; }
 
-.split-file-name,
 .split-time {
     color: var(--bone-dim);
     font-size: 0.85rem;
@@ -36,13 +35,15 @@
     margin: 0;
 }
 
-.split-editor {
+.split-editor,
+.split-form {
     display: flex;
     flex-direction: column;
     gap: 0.75rem;
 }
 
 .split-editor.hidden,
+.split-form.hidden,
 .split-field.hidden,
 .split-error.hidden { display: none; }
 
@@ -114,3 +115,48 @@
     color: var(--danger-text);
     margin: 0;
 }
+
+/* ── Plusieurs fichiers (#45) : onglets sur le modèle Tabs shadcn/Radix ── */
+.split-tabs {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.25rem;
+}
+
+.split-tab {
+    background: var(--ink-0);
+    border: 1px solid var(--ink-3);
+    border-radius: 4px 4px 0 0;
+    color: var(--bone-dim);
+    padding: 0.4rem 0.8rem;
+    font-size: 0.85rem;
+    max-width: 16rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+    transition-property: color, border-color;
+    transition-duration: var(--duration-base);
+    transition-timing-function: ease;
+}
+
+.split-tab:hover { color: var(--bone); }
+
+.split-tab[aria-selected="true"] {
+    border-color: var(--gold-2);
+    color: var(--bone);
+}
+
+.split-tab:focus-visible {
+    outline: 2px solid var(--gold-2);
+    outline-offset: 2px;
+}
+
+.split-tab.has-error { text-decoration: line-through; }
+
+.split-summary {
+    color: var(--bone);
+    margin: 0;
+}
+
+.split-summary-full { color: var(--bone-dim); }

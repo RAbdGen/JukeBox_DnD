@@ -1,5 +1,3 @@
-import { orderedSegmentNames } from '../backend/segments.js';
-
 /**
  * Logique pure de l'onglet Découpage (#24) : points de coupe (secondes, au
  * dixième), plages consécutives entre ces coupes, noms des plages (vide =
@@ -70,25 +68,36 @@ export function parseTime(text) {
 }
 
 /**
- * @returns {{ key: string, vars?: object } | null} première erreur (clé i18n), ou null
+ * Validation d'une découpe à un ou plusieurs fichiers (#45).
+ * `ranges: null` = fichier illisible : seuls ses noms (versions conservées)
+ * comptent, pour les doublons.
+ * @returns {{ key: string, vars?: object, sourceIndex?: number } | null}
+ *   première erreur (clé i18n, fichier fautif), ou null
  */
-export function validateSplit({ title, ranges, names, reservedNames = [] }) {
+export function validateSources({ title, sources, reservedNames = [] }) {
     if (!title || !title.trim()) return { key: 'split.errorTitle' };
+    if (sources.length === 0 && reservedNames.length === 0) return { key: 'split.errorNoNamed' };
 
-    const named = ranges
-        .map((range, i) => ({ ...range, name: (names[i] || '').trim() }))
-        .filter(range => range.name);
-    if (named.length === 0) return { key: 'split.errorNoNamed' };
+    const seen = new Map(reservedNames.map(name => [name.trim().toLowerCase(), null])); // nom → fichier (null : version entière)
+    for (const [sourceIndex, source] of sources.entries()) {
+        const named = source.ranges
+            ? source.ranges.map((range, i) => ({ ...range, name: (source.names[i] || '').trim() })).filter(range => range.name)
+            : source.names.map(name => ({ name: name.trim() }));
+        if (named.length === 0) return { key: 'split.errorNoNamedIn', vars: { file: source.fileName }, sourceIndex };
 
-    const seen = new Set(reservedNames.map(name => name.trim().toLowerCase()));
-    for (const range of named) {
-        const key = range.name.toLowerCase();
-        if (seen.has(key)) return { key: 'split.errorDuplicate', vars: { name: range.name } };
-        seen.add(key);
-    }
-
-    if (named.some(range => range.end - range.start < MIN_SEGMENT_SECONDS - EPSILON)) {
-        return { key: 'split.errorTooShort' };
+        for (const range of named) {
+            const key = range.name.toLowerCase();
+            if (seen.has(key)) {
+                const file = seen.get(key);
+                return file === null
+                    ? { key: 'split.errorDuplicate', vars: { name: range.name }, sourceIndex }
+                    : { key: 'split.errorDuplicateIn', vars: { name: range.name, file }, sourceIndex };
+            }
+            seen.set(key, source.fileName);
+        }
+        if (source.ranges && named.some(range => range.end - range.start < MIN_SEGMENT_SECONDS - EPSILON)) {
+            return { key: 'split.errorTooShort', sourceIndex };
+        }
     }
     return null;
 }
@@ -103,11 +112,12 @@ export function rangesToSegments(ranges, names) {
 }
 
 /**
- * Rouvre une découpe : coupes = bornes des segments (hors 0 et durée,
- * bornées au fichier réellement décodé), noms = segment couvrant chaque plage.
+ * Rouvre la découpe d'un fichier : coupes = bornes de ses segments (hors 0 et
+ * durée, bornées au fichier réellement décodé), noms = segment couvrant
+ * chaque plage.
  */
-export function stateFromTrack(track, duration) {
-    const segments = track.segments || {};
+export function stateFromSegments(segments, duration) {
+    segments = segments || {};
     const bounds = new Set();
     for (const { start, end } of Object.values(segments)) {
         bounds.add(roundTenth(Math.min(Math.max(start, 0), duration)));
@@ -124,15 +134,46 @@ export function stateFromTrack(track, duration) {
     return { cuts, names };
 }
 
-/** Retouche : la version de lancement suit son segment (position), sinon inchangée */
-export function planSegmentUpdate(track, segments) {
-    const old = track.segments || {};
-    let defaultVersion = track.defaultVersion;
+/**
+ * Requêtes d'enregistrement, une par onglet (#45) : fichier déjà dans la piste
+ * (localPath) ou nouveau (sourcePath). Un fichier illisible renvoie ses
+ * segments d'origine tels quels : jamais supprimés en silence.
+ */
+export function sourceRequests(tabs) {
+    return tabs.map(tab => {
+        const segments = tab.loadError
+            ? tab.keptSegments
+            : rangesToSegments(cutsToRanges(tab.cuts, tab.duration), tab.names);
+        return tab.localPath ? { localPath: tab.localPath, segments } : { sourcePath: tab.sourcePath, segments };
+    });
+}
 
-    if (old[defaultVersion]) {
-        const middle = (old[defaultVersion].start + old[defaultVersion].end) / 2;
-        defaultVersion = Object.keys(segments).find(name => segments[name].start <= middle && middle < segments[name].end)
-            ?? orderedSegmentNames(segments)[0];
-    }
-    return { segments, defaultVersion };
+/**
+ * Retouche : la version de lancement découpée suit son segment (même
+ * position, même fichier) ; version entière inchangée ; undefined si son
+ * fichier est retiré ou sa plage n'est plus nommée.
+ */
+export function planLaunchVersion(track, requests) {
+    const launch = track.launchVersion;
+    if (!launch) return undefined;
+    const old = (track.segments || {})[launch];
+    if (!old) return launch; // version entière : inchangée
+    const source = requests.find(request => request.localPath && request.localPath === track.localPaths?.[launch]);
+    if (!source) return undefined;
+    const middle = (old.start + old.end) / 2;
+    return Object.keys(source.segments).find(name => source.segments[name].start <= middle && middle < source.segments[name].end);
+}
+
+/**
+ * Libellés des onglets de fichiers (#45) : le nom du fichier, précédé de son
+ * dossier quand deux fichiers portent le même nom (sinon onglets et messages
+ * d'erreur ne se distinguent plus).
+ */
+export function fileLabels(paths) {
+    const parts = paths.map(path => path.split(/[\\/]/).filter(Boolean));
+    const names = parts.map(segments => segments.at(-1) || '');
+    return parts.map((segments, i) => {
+        const clash = names.some((name, j) => j !== i && name.toLowerCase() === names[i].toLowerCase());
+        return clash && segments.length > 1 ? `${segments.at(-2)}/${names[i]}` : names[i];
+    });
 }
