@@ -42,6 +42,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
      * de ses fichiers découpés.
      */
     readAudioFile: (filePath) => ipcRenderer.invoke('audio:readFile', filePath),
+    // Longs fichiers (#36) : pics (WAV) ou tranches (MP3), sans transférer le fichier entier
+    analyzeAudio: (filePath) => ipcRenderer.invoke('audio:waveform', filePath),
+    readAudioRange: (filePath, offset, length) => ipcRenderer.invoke('audio:readRange', filePath, offset, length),
     addSegmentedTrack: (trackData, selectedPlaylists) =>
         ipcRenderer.invoke('library:addSegmentedTrack', trackData, selectedPlaylists),
     updateSources: (trackId, requests, launchVersion) =>

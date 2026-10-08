@@ -7,7 +7,7 @@ En anglais, l'application s'appelle **Jukebox RPG**.
 ![Electron](https://img.shields.io/badge/Electron-44-47848F?style=flat&logo=electron)
 ![Node.js](https://img.shields.io/badge/Node.js-24_LTS-339933?style=flat&logo=node.js)
 ![Howler.js](https://img.shields.io/badge/Howler.js-2.2.4-E85D75?style=flat)
-![Vitest](https://img.shields.io/badge/Vitest-294_tests-6E9F18?style=flat)
+![Vitest](https://img.shields.io/badge/Vitest-310_tests-6E9F18?style=flat)
 
 ## 📥 Installer l'application
 
@@ -22,7 +22,7 @@ Les données (bibliothèque, playlists, réglages et fichiers audio copiés) son
 
 ### Musique et versions
 - 🎵 **Plusieurs versions par musique**, avec un fondu réglable par piste (de 0,5 à 10 s)
-- ✂️ **Onglet Découpage** : on découpe un ou plusieurs fichiers en versions à la main, sur une waveform zoomable, un onglet par fichier (ex. `exploration.mp3` → calme + tension, `boss.mp3` → combat). Le bouton ✂ ajoute aussi un fichier découpé à une piste existante. Les fichiers d'origine ne sont jamais modifiés
+- ✂️ **Onglet Découpage** : on découpe un ou plusieurs fichiers en versions à la main, sur une waveform zoomable, un onglet par fichier (ex. `exploration.mp3` → calme + tension, `boss.mp3` → combat). Le bouton ✂ ajoute aussi un fichier découpé à une piste existante. Les fichiers d'origine ne sont jamais modifiés. Un fichier d'1 h s'analyse en quelques secondes, sans saturer la mémoire
 - 🥁 **Synchronisation au tempo** (mode avancé) : avec un BPM et un premier temps par version, le changement reprend sur le même temps de la mesure
 - 🎯 **Version de lancement** : choisie par piste, d'un clic sur son nom de version
 - ⏯️ **Pause et reprise en fondu**, et **mute d'urgence** progressif
@@ -99,6 +99,7 @@ JukeBox_DnD/
 │   ├── FileManager.js      # Copie et suppression des fichiers audio
 │   ├── ImportManager.js    # Fusion d'une bibliothèque importée
 │   ├── segments.js         # Versions découpées
+│   ├── audioScan.js        # Analyse WAV / MP3 par blocs pour la waveform
 │   ├── tempo.js            # Synchronisation au tempo
 │   ├── shortcuts.js        # Raccourcis de version (validation, conflits)
 │   └── i18n.js             # Traductions français / anglais
@@ -109,7 +110,7 @@ JukeBox_DnD/
 │   ├── tooltip.js, listbox.js, modal.js, roving.js, progressSlider.js, rangeFill.js
 │   ├── styles.css          # Point d'entrée : uniquement des @import (ordre = cascade)
 │   └── styles/             # base, thèmes, lecteur, bibliothèque, modals, curseurs…
-├── tests/                  # 26 fichiers Vitest
+├── tests/                  # 27 fichiers Vitest
 ├── docs/superpowers/       # Specs et plans des grosses fonctionnalités
 ├── .github/workflows/release.yml
 ├── eslint.config.js        # Règles par environnement (navigateur, Node, CommonJS)
@@ -136,7 +137,7 @@ Les conventions du projet (thèmes, i18n, pièges de Howler, règles d'interface
 make test
 ```
 
-294 tests, dont :
+310 tests, dont :
 - **Lecture** : fondus et actions pendant un fondu, pause et reprise en fondu, positions au changement de version, avec un faux Howler qui reproduit le comportement HTML5 ;
 - **Données** : bibliothèque, playlists, versions découpées, import et export, migrations ;
 - **Logique pure** : tempo, raccourcis, découpage, waveform, placement des bulles d'aide, navigation au clavier ;

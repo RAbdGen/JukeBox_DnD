@@ -208,10 +208,85 @@ ipcMain.handle('dialog:openFiles', async () => {
 // Limité aux extensions audio proposées par dialog:openFiles.
 const AUDIO_FILE_EXTENSIONS = ['.mp3', '.wav', '.ogg', '.m4a', '.flac', '.aac'];
 ipcMain.handle('audio:readFile', async (event, filePath) => {
+    assertAudioPath(filePath);
+    return fs.readFile(filePath); // Buffer → Uint8Array côté renderer
+});
+
+function assertAudioPath(filePath) {
     if (typeof filePath !== 'string' || !AUDIO_FILE_EXTENSIONS.includes(path.extname(filePath).toLowerCase())) {
         throw new Error('Fichier audio non pris en charge');
     }
-    return fs.readFile(filePath); // Buffer → Uint8Array côté renderer
+}
+
+// Analyse des longs fichiers (#36) : un fichier d'1 h décodé d'un bloc montait
+// à ~3 Go (MP3) / ~6 Go (WAV). Ici il est lu par blocs, jamais en entier.
+const SCAN_BLOCK_BYTES = 4 * 1024 * 1024;
+const MAX_RANGE_BYTES = 16 * 1024 * 1024;
+let audioScanModule;
+async function loadAudioScan() {
+    audioScanModule ||= await import(pathToFileURL(path.join(__dirname, '..', 'backend', 'audioScan.js')).href);
+    return audioScanModule;
+}
+
+async function readBlocks(handle, from, to, onBlock, blockBytes = SCAN_BLOCK_BYTES) {
+    const buffer = Buffer.alloc(blockBytes);
+    for (let position = from; position < to;) {
+        const { bytesRead } = await handle.read(buffer, 0, Math.min(blockBytes, to - position), position);
+        if (bytesRead === 0) break;
+        onBlock(buffer.subarray(0, bytesRead));
+        position += bytesRead;
+    }
+}
+
+/**
+ * WAV → { kind: 'peaks', duration, min, max } (pics calculés ici) ;
+ * MP3 → { kind: 'chunks', duration, chunks } (tranches lues par audio:readRange) ;
+ * sinon { kind: 'full' } : le renderer décode le fichier entier (audio:readFile).
+ */
+ipcMain.handle('audio:waveform', async (event, filePath) => {
+    assertAudioPath(filePath);
+    const scan = await loadAudioScan();
+    const extension = path.extname(filePath).toLowerCase();
+    const handle = await fs.open(filePath, 'r');
+    try {
+        const { size } = await handle.stat();
+        if (extension === '.wav') {
+            const head = Buffer.alloc(Math.min(size, scan.WAV_HEADER_BYTES));
+            await handle.read(head, 0, head.length, 0);
+            const header = scan.parseWavHeader(head, size);
+            if (!header) return { kind: 'full' };
+            const totalFrames = header.dataLength / header.blockAlign;
+            const peaks = scan.createPeakAccumulator({ ...header, totalFrames });
+            const blockBytes = SCAN_BLOCK_BYTES - (SCAN_BLOCK_BYTES % header.blockAlign);
+            await readBlocks(handle, header.dataOffset, header.dataOffset + header.dataLength, block => peaks.push(block), blockBytes);
+            const { min, max } = peaks.finish();
+            return { kind: 'peaks', duration: totalFrames / header.sampleRate, min, max };
+        }
+        if (extension === '.mp3') {
+            const scanner = scan.createMp3Scanner({ fileSize: size });
+            await readBlocks(handle, 0, size, block => scanner.push(block));
+            const result = scanner.finish();
+            return result ? { kind: 'chunks', ...result } : { kind: 'full' };
+        }
+        return { kind: 'full' };
+    } finally {
+        await handle.close();
+    }
+});
+
+ipcMain.handle('audio:readRange', async (event, filePath, offset, length) => {
+    assertAudioPath(filePath);
+    if (!Number.isSafeInteger(offset) || !Number.isSafeInteger(length) || offset < 0 || length <= 0 || length > MAX_RANGE_BYTES) {
+        throw new Error('Plage invalide');
+    }
+    const handle = await fs.open(filePath, 'r');
+    try {
+        const buffer = Buffer.alloc(length);
+        const { bytesRead } = await handle.read(buffer, 0, length, offset);
+        return buffer.subarray(0, bytesRead);
+    } finally {
+        await handle.close();
+    }
 });
 
 ipcMain.handle('dialog:openFolder', async () => {

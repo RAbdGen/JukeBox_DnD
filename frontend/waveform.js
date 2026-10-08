@@ -49,6 +49,58 @@ export async function decodeForWaveform(arrayBuffer, {
     return { duration: buffer.duration, peaks: computePeaks(mixToMono(channels), bucketCount) };
 }
 
+/** Le tableau des octets reçus par IPC, sans copie quand il le couvre en entier */
+function ownBuffer(bytes) {
+    return bytes.byteOffset === 0 && bytes.byteLength === bytes.buffer.byteLength
+        ? bytes.buffer
+        : bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
+}
+
+async function decodeMono(bytes, createContext) {
+    const buffer = await createContext(WAVEFORM_SAMPLE_RATE).decodeAudioData(ownBuffer(bytes));
+    const channels = Array.from({ length: buffer.numberOfChannels }, (_, i) => buffer.getChannelData(i));
+    return { sampleRate: buffer.sampleRate, samples: mixToMono(channels) };
+}
+
+/**
+ * Ajoute des échantillons mono commençant à `startTime` aux pics (une case
+ * par centième de seconde) ; ce qui sort de la waveform est ignoré.
+ */
+export function addSamplesToPeaks(peaks, samples, startTime, sampleRate) {
+    const count = peaks.max.length;
+    for (let j = 0; j < samples.length; j++) {
+        // + 1e-9 : 0,015 + 3/200 ne doit pas tomber à 2,999… (case précédente)
+        const bucket = Math.floor((startTime + j / sampleRate) * PEAKS_PER_SECOND + 1e-9);
+        if (bucket < 0 || bucket >= count) continue;
+        const value = samples[j];
+        if (value < peaks.min[bucket]) peaks.min[bucket] = value;
+        if (value > peaks.max[bucket]) peaks.max[bucket] = value;
+    }
+}
+
+/**
+ * MP3 long (#36) : décode les tranches une à une (lues par `readRange`) au
+ * lieu du fichier entier. Une tranche qui commence au milieu du flux perd sa
+ * première trame au décodage : on la cale sur sa fin exacte (`endTime`, du
+ * compte de trames), le trou de ~26 ms au début est invisible et rien ne
+ * dérive. Renvoie null si `isCancelled()` devient vrai.
+ */
+export async function decodeChunks(info, readRange, {
+    decode = bytes => decodeMono(bytes, sampleRate => new OfflineAudioContext(1, 1, sampleRate)),
+    isCancelled = () => false,
+} = {}) {
+    const bucketCount = Math.max(1, Math.ceil(info.duration * PEAKS_PER_SECOND));
+    const peaks = { min: new Float32Array(bucketCount), max: new Float32Array(bucketCount) };
+    for (const chunk of info.chunks) {
+        if (isCancelled()) return null;
+        const bytes = await readRange(chunk.offset, chunk.length);
+        if (isCancelled()) return null;
+        const { sampleRate, samples } = await decode(bytes);
+        addSamplesToPeaks(peaks, samples, chunk.endTime - samples.length / sampleRate, sampleRate);
+    }
+    return { duration: info.duration, peaks };
+}
+
 export function timeToX(time, view, width) {
     return ((time - view.start) / (view.end - view.start)) * width;
 }

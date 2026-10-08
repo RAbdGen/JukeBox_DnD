@@ -14,6 +14,7 @@ import {
     validateSources,
 } from './segmentModel.js';
 import {
+    decodeChunks,
     decodeForWaveform,
     drawWaveform,
     fullView,
@@ -29,6 +30,8 @@ import { setTooltip } from './tooltip.js';
 const CUT_HIT_PX = 6;
 const NUDGE_SECONDS = 0.1;
 const ZOOM_STEP = 1.5;
+// Au-delà, un format décodé en entier (OGG, FLAC, M4A…) peut prendre plusieurs Go (#36)
+const LONG_FILE_SECONDS = 30 * 60;
 
 /**
  * Seul le dernier chargement lancé peut appliquer son résultat : choisir un
@@ -47,6 +50,23 @@ export function createLatestOnly() {
 
 const toFileUrl = path => (path.startsWith('http') || path.startsWith('file://') ? path : `file://${path}`);
 const baseName = path => path.split(/[\\/]/).pop();
+
+/** Durée annoncée par le lecteur (estimation, 0 si inconnue) : seulement pour avertir */
+function estimateDuration(path) {
+    return new Promise(resolve => {
+        const audio = new Audio();
+        const done = duration => {
+            clearTimeout(timer);
+            audio.removeAttribute('src');
+            resolve(Number.isFinite(duration) ? duration : 0);
+        };
+        const timer = setTimeout(() => done(0), 5000);
+        audio.preload = 'metadata';
+        audio.addEventListener('loadedmetadata', () => done(audio.duration), { once: true });
+        audio.addEventListener('error', () => done(0), { once: true });
+        audio.src = toFileUrl(path);
+    });
+}
 
 /**
  * Contrôleur de l'onglet Découpage (#24), un onglet par fichier découpé (#45).
@@ -344,22 +364,49 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
 
     // ── Chargement ───────────────────────────────────────────
 
+    /**
+     * Pics de la waveform d'un fichier (#36) : WAV analysé par le processus
+     * principal, MP3 décodé par tranches, autres formats décodés en entier
+     * (après confirmation au-delà de 30 min). Null si abandonné ou refusé.
+     */
+    async function analyze(target, session) {
+        const live = () => isLive(session, target);
+        const info = await electronAPI.analyzeAudio(target.readPath);
+        if (!live()) return null;
+        if (info.kind === 'peaks') return { duration: info.duration, peaks: { min: info.min, max: info.max } };
+        if (info.kind === 'chunks') {
+            return decodeChunks(info, (offset, length) => electronAPI.readAudioRange(target.readPath, offset, length), {
+                isCancelled: () => !live(),
+            });
+        }
+
+        const estimated = await estimateDuration(target.readPath);
+        if (!live()) return null;
+        if (estimated > LONG_FILE_SECONDS
+            && !window.confirm(t('split.confirmLongFile', { file: target.fileName, minutes: Math.round(estimated / 60) }))) {
+            target.declined = true;
+            return null;
+        }
+        const bytes = await electronAPI.readAudioFile(target.readPath);
+        if (!live()) return null;
+        return decodeForWaveform(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength));
+    }
+
     /** Décode un fichier pour sa waveform ; seuls les pics restent (#36) */
     async function loadTab(target, session) {
         try {
-            const bytes = await electronAPI.readAudioFile(target.readPath);
-            if (!isLive(session, target)) return;
-            const arrayBuffer = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength);
-            const { duration, peaks } = await decodeForWaveform(arrayBuffer);
+            const result = await analyze(target, session);
             if (!isLive(session, target)) return; // onglet retiré ou session quittée entre-temps
+            if (!result) throw new Error('Analyse refusée');
 
+            const { duration, peaks } = result;
             Object.assign(target, { duration, peaks, view: fullView(duration), loading: false });
             if (target.keptSegments) {
                 Object.assign(target, stateFromSegments(target.keptSegments, duration), { keptSegments: null });
             }
         } catch (error) {
             if (!isLive(session, target)) return;
-            console.error('❌ Découpage : lecture du fichier impossible', error);
+            if (!target.declined) console.error('❌ Découpage : lecture du fichier impossible', error);
             target.loading = false;
             target.loadError = true; // fichier existant : ses versions restent telles quelles
         }
@@ -413,9 +460,9 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
 
         await loadTab(target, session);
         if (target.loadError && isLive(session, target)) {
-            // Nouveau fichier illisible : pas d'onglet, message comme avant (#24)
+            // Nouveau fichier illisible ou analyse refusée : pas d'onglet (#24, #36)
             removeTab(state.tabs.indexOf(target));
-            state.message = { key: 'split.loadError' };
+            state.message = { key: target.declined ? 'split.longFileCancelled' : 'split.loadError' };
             refresh();
         }
     }
