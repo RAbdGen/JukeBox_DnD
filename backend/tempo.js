@@ -16,10 +16,9 @@ export const MAX_BPM = 400;
  * @param {{ bpm: number, offsetMs: number }} [params.to] - Tempo de la version cible
  * @param {number} params.position - Z1 : position dans la version quittée (s)
  * @param {number} params.targetDuration - Durée jouée de la cible (s), 0 si inconnue
- * @param {boolean} params.loop - La piste boucle-t-elle ?
  * @returns {number|null} Z2, ou null si l'une des deux versions n'a pas de tempo
  */
-export function beatSyncedPosition({ from, to, position, targetDuration, loop }) {
+export function beatSyncedPosition({ from, to, position, targetDuration }) {
     if (!from || !to) return null;
 
     const firstBeatFrom = from.offsetMs / 1000;
@@ -27,11 +26,9 @@ export function beatSyncedPosition({ from, to, position, targetDuration, loop })
     if (position < firstBeatFrom) return firstBeatTo; // switch avant le premier temps
 
     const synced = (position - firstBeatFrom) * (from.bpm / to.bpm) + firstBeatTo;
-    if (!(targetDuration > 0) || synced < targetDuration) return synced;
-
-    // Au-delà de la fin de la cible : modulo sur la zone bouclée (après le premier temps)
-    const loopedZone = targetDuration - firstBeatTo;
-    return loop && loopedZone > 0 ? firstBeatTo + ((synced - firstBeatTo) % loopedZone) : firstBeatTo;
+    // Au-delà de la fin de la cible : son premier temps, quel que soit le mode de
+    // lecture (#48 : le modulo en boucle unique se lisait comme une soustraction)
+    return !(targetDuration > 0) || synced < targetDuration ? synced : firstBeatTo;
 }
 
 /**

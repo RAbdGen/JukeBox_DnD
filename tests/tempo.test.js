@@ -7,27 +7,26 @@ const B = { bpm: 60, offsetMs: 1000 };
 describe('beatSyncedPosition (#18)', () => {
     it('applique Z2 = (Z1 − Y1) × (X1 / X2) + Y2', () => {
         // 10 s après le 1er temps de A (120 BPM) = 20 temps → 20 s dans B (60 BPM), + Y2
-        expect(beatSyncedPosition({ from: A, to: B, position: 10.5, targetDuration: 300, loop: false })).toBeCloseTo(21);
+        expect(beatSyncedPosition({ from: A, to: B, position: 10.5, targetDuration: 300 })).toBeCloseTo(21);
     });
 
     it('null si l\'une des deux versions n\'a pas de tempo (comportement par défaut)', () => {
-        expect(beatSyncedPosition({ from: A, to: undefined, position: 10, targetDuration: 300, loop: false })).toBeNull();
-        expect(beatSyncedPosition({ from: null, to: B, position: 10, targetDuration: 300, loop: false })).toBeNull();
+        expect(beatSyncedPosition({ from: A, to: undefined, position: 10, targetDuration: 300 })).toBeNull();
+        expect(beatSyncedPosition({ from: null, to: B, position: 10, targetDuration: 300 })).toBeNull();
     });
 
     it('switch avant le premier temps de A : reprise au premier temps de B', () => {
-        expect(beatSyncedPosition({ from: A, to: B, position: 0.2, targetDuration: 300, loop: false })).toBe(1);
+        expect(beatSyncedPosition({ from: A, to: B, position: 0.2, targetDuration: 300 })).toBe(1);
     });
 
-    it('au-delà de la fin de B : modulo sur la zone bouclée si la piste boucle, sinon premier temps', () => {
-        // Z2 = (60.5 − 0.5) × 2 + 1 = 121 ; B dure 41 s, zone bouclée = [1, 41[ (40 s) → 1 + (120 mod 40) = 1
-        expect(beatSyncedPosition({ from: A, to: B, position: 60.5, targetDuration: 41, loop: true })).toBeCloseTo(1);
-        expect(beatSyncedPosition({ from: A, to: B, position: 50.5, targetDuration: 41, loop: true })).toBeCloseTo(21);
-        expect(beatSyncedPosition({ from: A, to: B, position: 60.5, targetDuration: 41, loop: false })).toBe(1);
+    it('au-delà de la fin de B : premier temps de B, même si la piste boucle (#48)', () => {
+        // Z2 = (50.5 − 0.5) × 2 + 1 = 101 ; B dure 41 s → premier temps de B
+        expect(beatSyncedPosition({ from: A, to: B, position: 50.5, targetDuration: 41 })).toBe(1);
+        expect(beatSyncedPosition({ from: A, to: B, position: 15.5, targetDuration: 41 })).toBeCloseTo(31);
     });
 
     it('durée de B inconnue (pas encore chargée) : pas de bornage', () => {
-        expect(beatSyncedPosition({ from: A, to: B, position: 60.5, targetDuration: 0, loop: false })).toBeCloseTo(121);
+        expect(beatSyncedPosition({ from: A, to: B, position: 60.5, targetDuration: 0 })).toBeCloseTo(121);
     });
 });
 

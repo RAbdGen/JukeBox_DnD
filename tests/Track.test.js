@@ -502,7 +502,7 @@ describe('Track — versions découpées (#24)', () => {
         expect(track.getCurrentTime()).toBe(0);
     });
 
-    it('au-delà de la fin du segment cible en boucle unique : on boucle dans la cible (#44)', () => {
+    it('au-delà de la fin du segment cible, même en boucle unique : début de la cible (#48)', () => {
         const track = new Track('t4', 'Inégale', { calm: 'src.mp3', combat: 'src.mp3' }, {
             calm: { start: 0, end: 120 },
             combat: { start: 120, end: 180 }, // 60 s
@@ -515,7 +515,7 @@ describe('Track — versions découpées (#24)', () => {
         track.crossfade('combat', 1);
         vi.runAllTimers();
 
-        expect(track.getCurrentTime()).toBe(40); // 100 modulo 60
+        expect(track.getCurrentTime()).toBe(0); // plus de modulo (100 − 60 = 40 avant #48)
     });
 
     it('reprise après pause : reprend le son en pause, pas le début du segment', () => {
@@ -671,18 +671,20 @@ describe('Track — écarts de position (#35)', () => {
         expect(track.getCurrentTime()).toBe(1);
     });
 
-    it('segment dont la fin dépasse le fichier réel : durée et sprite bornés au chargement', () => {
+    it('durée HTML5 sous-estimée (MP3 VBR sans en-tête) : le segment garde ses bornes et joue (#49)', () => {
+        // FakeHowl annonce 180 s ; le fichier réel (décodé par le Découpage) est plus long
         const track = new Track('t3', 'VBR', { calm: 'src.mp3', combat: 'src.mp3' }, {
             calm: { start: 0, end: 90 },
-            combat: { start: 90, end: 250 }, // le fichier ne fait que 180 s
+            combat: { start: 200, end: 250 }, // commence après la durée annoncée
         });
         track.loadVersions();
 
         track.versions.combat.opts.onload();
         track.play('combat');
 
-        expect(track.getDuration()).toBe(90);
-        expect(track.versions.combat._sprite.segment).toEqual([90000, 90000]);
+        expect(track.getDuration()).toBe(50);
+        expect(track.versions.combat._sprite.segment).toEqual([200000, 50000]);
+        expect(track.versions.combat.lastPlayArg).toBe('segment');
     });
 });
 

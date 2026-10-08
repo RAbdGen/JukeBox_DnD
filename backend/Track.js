@@ -70,24 +70,6 @@ export class Track {
         return this._crossfade !== null;
     }
 
-    /**
-     * Fin de segment au-delà du fichier réel (MP3 VBR, fichier remplacé) : on la
-     * borne dès que la durée est connue, sinon la durée annoncée est trop longue et
-     * le minuteur du sprite laisse un silence avant la piste suivante (#35).
-     */
-    _clampSegmentToFile(versionName) {
-        const segment = this._segmentOf(versionName);
-        const howl = this.versions[versionName];
-        const fileDuration = howl ? howl.duration() : 0;
-        if (!segment || !(fileDuration > 0) || segment.end <= fileDuration) return;
-
-        const end = Math.max(segment.start, fileDuration);
-        this.segments = { ...this.segments, [versionName]: { start: segment.start, end } }; // copie : la config reste intacte
-        // Howler 2.2 n'expose pas de mise à jour de sprite : on corrige sa table
-        // interne, lue à chaque play(sprite)
-        howl._sprite[SPRITE_NAME] = [segment.start * 1000, (end - segment.start) * 1000];
-    }
-
     _segmentOf(versionName) {
         return this.segments[versionName] || null;
     }
@@ -111,7 +93,7 @@ export class Track {
      * à `position` : calée sur les temps si les deux versions ont un tempo (#18),
      * sinon même position relative, versions découpées comprises (#44 : on ne
      * repart plus du début du segment). Au-delà de la fin de la cible : début de
-     * la cible, ou modulo en boucle unique, dans les deux cas.
+     * la cible (son premier temps avec un tempo), quel que soit le mode (#48).
      */
     _startPositionFor(fromVersion, toVersion, position) {
         const bothHaveTempo = this.tempo[fromVersion] && this.tempo[toVersion];
@@ -120,7 +102,6 @@ export class Track {
             to: bothHaveTempo ? this.tempo[toVersion] : SAME_TEMPO,
             position,
             targetDuration: this._versionDuration(toVersion),
-            loop: this.loop,
         });
     }
 
@@ -204,7 +185,10 @@ export class Track {
                 ...(segment ? { sprite: { [SPRITE_NAME]: [segment.start * 1000, (segment.end - segment.start) * 1000] } } : {}),
                 onload: () => {
                     console.log(`✅ Version "${versionName}" de "${this.name}" chargée`);
-                    this._clampSegmentToFile(versionName);
+                    // Pas de bornage du segment sur howl.duration() (#49) : en HTML5 c'est
+                    // une estimation (MP3 VBR sans en-tête : 120 s annoncées 49,7 s) qui
+                    // réduisait un segment à rien ; ses bornes viennent du Découpage,
+                    // qui a décodé le fichier entier
                     this._migrateLegacyCrossfade(this._versionDuration(versionName));
                 },
                 onloaderror: (id, error) => {
