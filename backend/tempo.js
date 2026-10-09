@@ -26,9 +26,13 @@ export function beatSyncedPosition({ from, to, position, targetDuration }) {
     if (position < firstBeatFrom) return firstBeatTo; // switch avant le premier temps
 
     const synced = (position - firstBeatFrom) * (from.bpm / to.bpm) + firstBeatTo;
-    // Au-delà de la fin de la cible : son premier temps, quel que soit le mode de
-    // lecture (#48 : le modulo en boucle unique se lisait comme une soustraction)
-    return !(targetDuration > 0) || synced < targetDuration ? synced : firstBeatTo;
+    if (!(targetDuration > 0) || synced < targetDuration) return synced;
+
+    // Au-delà de la fin de la cible : les versions bouclent, on est dans un tour
+    // suivant. On retranche la zone bouclée (après le premier temps) autant de
+    // fois que nécessaire, dans tous les modes (#50, revient sur #48)
+    const loopedZone = targetDuration - firstBeatTo;
+    return loopedZone > 0 ? firstBeatTo + ((synced - firstBeatTo) % loopedZone) : firstBeatTo;
 }
 
 /**

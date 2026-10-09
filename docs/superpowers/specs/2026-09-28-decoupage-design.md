@@ -20,7 +20,7 @@ Hors scope : détection automatique des sections, time-stretching, édition du f
 
 | Sujet | Décision |
 |---|---|
-| Point de départ au changement de version pendant la lecture | ~~La version cible **découpée** démarre au **début de son segment** (en fondu).~~ **Révisé par #44** : même position relative dans la cible, découpée ou non (comme un tempo identique au premier temps à 0 ms) ; au-delà de la fin de la cible, début de la cible (modulo en boucle unique, retiré par #48 : toujours le début). |
+| Point de départ au changement de version pendant la lecture | ~~La version cible **découpée** démarre au **début de son segment** (en fondu).~~ **Révisé par #44** : même position relative dans la cible, découpée ou non (comme un tempo identique au premier temps à 0 ms) ; au-delà de la fin de la cible, début de la cible (modulo en boucle unique, retiré par #48, puis rétabli dans tous les modes par #50). |
 | Modèle de découpe | **Points de coupe** : le fichier est coupé en tronçons consécutifs ; un tronçon **nommé** devient une version, un tronçon **vide** est ignoré. Pas de chevauchement ni de plages libres. |
 | Retouche | Oui dès cette version : bouton ✂ sur une piste découpée → rouverte dans l'onglet, bouton « Enregistrer ». |
 | Outils de précision | Waveform + **zoom** (＋/－, Ctrl+molette centré souris, jusqu'à ~4 s visibles) + défilement, écoute depuis un point, marqueurs déplaçables, nudge ±0,1 s au clavier, fin de segment éditable au dixième de seconde, écoute d'un segment. |

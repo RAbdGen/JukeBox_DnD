@@ -487,35 +487,34 @@ describe('Track — versions découpées (#24)', () => {
         expect(track.getCurrentTime()).toBe(40);
     });
 
-    it('au-delà de la fin du segment cible : début de la cible, comme avec un tempo (#44)', () => {
+    it('position à plus du double de la cible : on retranche sa durée autant que nécessaire (#50)', () => {
         const track = new Track('t4', 'Inégale', { calm: 'src.mp3', combat: 'src.mp3' }, {
-            calm: { start: 0, end: 120 },
-            combat: { start: 120, end: 180 }, // 60 s
+            calm: { start: 0, end: 150 },
+            combat: { start: 150, end: 210 }, // 60 s
         });
         track.loadVersions();
         track.play('calm');
-        track.versions.calm.setPosition(100);
+        track.versions.calm.setPosition(130);
 
         track.crossfade('combat', 1);
         vi.runAllTimers();
 
-        expect(track.getCurrentTime()).toBe(0);
+        expect(track.getCurrentTime()).toBe(10); // 130 − 60 − 60
     });
 
-    it('au-delà de la fin du segment cible, même en boucle unique : début de la cible (#48)', () => {
+    it('au-delà de la fin du segment cible : même point de sa boucle (#50)', () => {
         const track = new Track('t4', 'Inégale', { calm: 'src.mp3', combat: 'src.mp3' }, {
             calm: { start: 0, end: 120 },
             combat: { start: 120, end: 180 }, // 60 s
         });
         track.loadVersions();
-        track.setLoop(true);
         track.play('calm');
         track.versions.calm.setPosition(100);
 
         track.crossfade('combat', 1);
         vi.runAllTimers();
 
-        expect(track.getCurrentTime()).toBe(0); // plus de modulo (100 − 60 = 40 avant #48)
+        expect(track.getCurrentTime()).toBe(40); // 100 − 60, dans tous les modes
     });
 
     it('reprise après pause : reprend le son en pause, pas le début du segment', () => {
@@ -688,60 +687,72 @@ describe('Track — écarts de position (#35)', () => {
     });
 });
 
-describe('Track — défiler les versions (#46)', () => {
-    // FakeHowl : versions de 180 s, fondu par défaut 5 s → enchaînement à 175 s
-    const FADE_START_MS = 175000;
-
+describe('Track — défiler les versions (#46, enchaînement sec #51)', () => {
     function startCycling(track = createTrack(), version = 'calm') {
         track.setVersionCycle(true);
         track.play(version);
         vi.advanceTimersByTime(0); // démarrage HTML5 (_playLock)
         return track;
     }
+    const endOf = (track, version) => track.versions[version].opts.onend();
 
-    it('lance la version suivante en fondu, à son début, une durée de fondu avant la fin', () => {
+    it('aucun fondu avant la fin : la version joue jusqu\'au bout (#51)', () => {
         const track = startCycling();
 
-        vi.advanceTimersByTime(FADE_START_MS - 10);
-        expect(track.isCrossfading).toBe(false);
-        vi.advanceTimersByTime(10);
+        vi.advanceTimersByTime(180000);
 
-        expect(track.isCrossfading).toBe(true);
-        expect(track.versions.calm.fades).toContainEqual([track.defaultVolume, 0, 5000, undefined]);
-        vi.advanceTimersByTime(6000);
+        expect(track.isCrossfading).toBe(false);
+        expect(track.currentVersion).toBe('calm');
+        expect(track.versions.calm.fades).toEqual([]);
+    });
+
+    it('à la fin, la suivante démarre net : à son début, à plein volume, sans fondu (#51)', () => {
+        const track = startCycling();
+
+        endOf(track, 'calm');
+        vi.advanceTimersByTime(0);
+
         expect(track.currentVersion).toBe('combat');
-        expect(track.versions.combat.seek()).toBe(0); // pas la position relative (#44) : 175 s
-        expect(track.versions.combat.lostSeeks).toEqual([]);
+        expect(playingVersions(track)).toEqual(['combat']);
+        expect(track.versions.combat.seek()).toBe(0);
+        expect(track.versions.combat.volume()).toBe(track.defaultVolume);
+        expect(track.versions.combat.fades).toEqual([]);
     });
 
     it('après la dernière version, revient à la première', () => {
         const track = startCycling(createTrack(), 'tension');
 
-        vi.advanceTimersByTime(FADE_START_MS + 6000);
+        endOf(track, 'tension');
 
         expect(track.currentVersion).toBe('calm');
     });
 
-    it('continue de défiler après un premier enchaînement', () => {
-        const track = startCycling();
-
-        vi.advanceTimersByTime(FADE_START_MS + 6000);
-        vi.advanceTimersByTime(FADE_START_MS);
-
-        expect(track.isCrossfading).toBe(true);
-        vi.advanceTimersByTime(6000);
-        expect(track.currentVersion).toBe('tension');
-    });
-
-    it('prévient quand une version a été enchaînée', () => {
+    it('continue de défiler, et ne passe jamais à la piste suivante', () => {
         const track = createTrack();
+        const onEnd = vi.fn();
         const cycled = vi.fn();
+        track.onEndCallback = onEnd;
         track.onVersionCycled = cycled;
         startCycling(track);
 
-        vi.advanceTimersByTime(FADE_START_MS + 6000);
+        endOf(track, 'calm');
+        endOf(track, 'combat');
 
-        expect(cycled).toHaveBeenCalledOnce();
+        expect(track.currentVersion).toBe('tension');
+        expect(cycled).toHaveBeenCalledTimes(2);
+        expect(onEnd).not.toHaveBeenCalled();
+    });
+
+    it('après un changement manuel (en fondu, inchangé), le défilement repart de la version choisie', () => {
+        const track = startCycling();
+
+        track.crossfade('tension', 1);
+        vi.advanceTimersByTime(2000);
+        expect(track.currentVersion).toBe('tension');
+        expect(track.versions.calm.fades.length).toBeGreaterThan(0); // le changement manuel garde son fondu
+
+        endOf(track, 'tension');
+        expect(track.currentVersion).toBe('calm');
     });
 
     it('une piste à une seule version boucle', () => {
@@ -750,99 +761,17 @@ describe('Track — défiler les versions (#46)', () => {
         startCycling(track);
 
         expect(track.versions.calm.loop()).toBe(true);
-        vi.advanceTimersByTime(FADE_START_MS + 6000);
-        expect(track.isCrossfading).toBe(false);
     });
 
-    it('la pause annule l\'enchaînement, la reprise le reprogramme', () => {
-        const track = startCycling();
-
-        track.pause();
-        vi.advanceTimersByTime(FADE_START_MS + 6000);
-        expect(track.isCrossfading).toBe(false);
-        expect(track.currentVersion).toBe('calm');
-
-        track.resume();
-        vi.advanceTimersByTime(FADE_START_MS);
-        expect(track.isCrossfading).toBe(true);
-    });
-
-    it('un déplacement dans la piste reprogramme l\'enchaînement', () => {
-        const track = startCycling();
-
-        track.seek(170);
-        vi.advanceTimersByTime(5000);
-
-        expect(track.isCrossfading).toBe(true);
-    });
-
-    it('un changement de version manuel : le défilement repart de la version choisie', () => {
-        const track = startCycling();
-
-        track.crossfade('tension', 1);
-        vi.advanceTimersByTime(2000);
-        expect(track.currentVersion).toBe('tension');
-
-        vi.advanceTimersByTime(FADE_START_MS + 6000);
-        expect(track.currentVersion).toBe('calm');
-    });
-
-    it('désactiver le mode : plus rien n\'est programmé', () => {
-        const track = startCycling();
-
-        track.setVersionCycle(false);
-        vi.advanceTimersByTime(FADE_START_MS + 6000);
-
-        expect(track.isCrossfading).toBe(false);
-        expect(track.currentVersion).toBe('calm');
-    });
-
-    it('activer le mode pendant la lecture programme l\'enchaînement', () => {
-        const track = createTrack();
-        track.play('calm');
-        vi.advanceTimersByTime(0);
-
-        track.setVersionCycle(true);
-        vi.advanceTimersByTime(FADE_START_MS);
-
-        expect(track.isCrossfading).toBe(true);
-    });
-
-    it('version courte : fondu plafonné à la moitié de la version', () => {
-        const track = new Track('t3', 'Court', { calm: 'src.mp3', combat: 'src.mp3' }, {
-            calm: { start: 0, end: 6 },
-            combat: { start: 6, end: 12 },
-        });
-        track.loadVersions();
-        startCycling(track);
-
-        vi.advanceTimersByTime(2990);
-        expect(track.isCrossfading).toBe(false);
-        vi.advanceTimersByTime(10);
-
-        expect(track.isCrossfading).toBe(true);
-        expect(track.versions.calm.fades).toContainEqual([track.defaultVolume, 0, 3000, undefined]);
-    });
-
-    it('fin de version malgré tout : version suivante tout de suite, jamais la piste suivante', () => {
+    it('mode désactivé : la fin de la version redevient la fin de la piste', () => {
         const track = startCycling();
         const onEnd = vi.fn();
         track.onEndCallback = onEnd;
-        track.setVersionCycle(true);
 
-        track.versions.calm.opts.onend();
+        track.setVersionCycle(false);
+        endOf(track, 'calm');
 
-        expect(onEnd).not.toHaveBeenCalled();
-        expect(track.currentVersion).toBe('combat');
-        expect(track.versions.combat.playing()).toBe(true);
-    });
-
-    it('stop : plus rien n\'est programmé', () => {
-        const track = startCycling();
-
-        track.stop();
-        vi.advanceTimersByTime(FADE_START_MS + 6000);
-
-        expect(playingVersions(track)).toEqual([]);
+        expect(onEnd).toHaveBeenCalledOnce();
+        expect(track.currentVersion).toBe('calm');
     });
 });
