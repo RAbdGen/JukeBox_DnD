@@ -7,7 +7,7 @@ En anglais, l'application s'appelle **Jukebox RPG**.
 ![Electron](https://img.shields.io/badge/Electron-44-47848F?style=flat&logo=electron)
 ![Node.js](https://img.shields.io/badge/Node.js-24_LTS-339933?style=flat&logo=node.js)
 ![Howler.js](https://img.shields.io/badge/Howler.js-2.2.4-E85D75?style=flat)
-![Vitest](https://img.shields.io/badge/Vitest-307_tests-6E9F18?style=flat)
+![Vitest](https://img.shields.io/badge/Vitest-313_tests-6E9F18?style=flat)
 
 ## 📥 Installer l'application
 
@@ -21,7 +21,7 @@ Les données (bibliothèque, playlists, réglages et fichiers audio copiés) son
 ## ✨ Fonctionnalités
 
 ### Musique et versions
-- 🎵 **Plusieurs versions par musique**, avec un fondu réglable par piste (de 0,5 à 10 s)
+- 🎵 **Plusieurs versions par musique**, avec un fondu réglable par piste (de 0 à 10 s, 0 pour aucun fondu)
 - ✂️ **Onglet Découpage** : on découpe un ou plusieurs fichiers en versions à la main, sur une waveform zoomable, un onglet par fichier (ex. `exploration.mp3` → calme + tension, `boss.mp3` → combat). Le bouton ✂ ajoute aussi un fichier découpé à une piste existante. Les fichiers d'origine ne sont jamais modifiés. Un fichier d'1 h s'analyse en quelques secondes, sans saturer la mémoire
 - 🥁 **Synchronisation au tempo** (mode avancé) : avec un BPM et un premier temps par version, le changement reprend sur le même temps de la mesure
 - 🎯 **Version de lancement** : choisie par piste, d'un clic sur son nom de version
@@ -137,7 +137,7 @@ Les conventions du projet (thèmes, i18n, pièges de Howler, règles d'interface
 make test
 ```
 
-307 tests, dont :
+313 tests, dont :
 - **Lecture** : fondus et actions pendant un fondu, pause et reprise en fondu, positions au changement de version, avec un faux Howler qui reproduit le comportement HTML5 ;
 - **Données** : bibliothèque, playlists, versions découpées, import et export, migrations ;
 - **Logique pure** : tempo, raccourcis, découpage, waveform, placement des bulles d'aide, navigation au clavier ;

@@ -10,7 +10,7 @@
  */
 
 export const DEFAULT_CROSSFADE_DURATION_SECONDS = 5;
-export const MIN_CROSSFADE_DURATION_SECONDS = 0.5;
+export const MIN_CROSSFADE_DURATION_SECONDS = 0; // 0 = aucun fondu (bascule immédiate)
 export const MAX_CROSSFADE_DURATION_SECONDS = 10;
 export const CROSSFADE_DURATION_STEP_SECONDS = 0.5;
 
@@ -24,7 +24,7 @@ const LEGACY_FALLBACK_TRACK_SECONDS = 30; // durée supposée si inconnue (compo
 
 /**
  * Garantit qu'une durée stockée ou importée reste dans la plage proposée
- * par l'interface (0,5–10 s). Toute valeur invalide retombe sur la valeur par défaut.
+ * par l'interface (0–10 s, 0 = aucun fondu). Toute valeur invalide retombe sur la valeur par défaut.
  */
 export function normalizeCrossfadeDurationSeconds(value) {
     const numericValue = Number(value);

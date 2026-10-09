@@ -708,6 +708,38 @@ describe('Track — écarts de position (#35)', () => {
     });
 });
 
+describe('Track — fondu à 0 s (aucun fondu)', () => {
+    it('changement de version : bascule immédiate, à plein volume', () => {
+        const track = createTrack();
+        track.crossfadeDurationSeconds = 0;
+        track.play('calm');
+        vi.advanceTimersByTime(0);
+
+        track.crossfade('combat');
+        vi.advanceTimersByTime(60);
+
+        expect(track.currentVersion).toBe('combat');
+        expect(playingVersions(track)).toEqual(['combat']);
+        expect(track.versions.combat.volume()).toBe(track.defaultVolume);
+    });
+
+    it('pause et reprise : immédiates', () => {
+        const track = createTrack();
+        track.crossfadeDurationSeconds = 0;
+        track.play('calm');
+        vi.advanceTimersByTime(0);
+
+        track.pause();
+        vi.advanceTimersByTime(0);
+        expect(playingVersions(track)).toEqual([]);
+
+        track.resume();
+        vi.advanceTimersByTime(0);
+        expect(playingVersions(track)).toEqual(['calm']);
+        expect(track.versions.calm.volume()).toBe(track.defaultVolume);
+    });
+});
+
 describe('Track — défiler les versions (#46, enchaînement sec #51)', () => {
     function startCycling(track = createTrack(), version = 'calm') {
         track.setVersionCycle(true);
