@@ -5,7 +5,7 @@ import {
     normalizeCrossfadeDurationSeconds,
 } from './crossfadeDuration.js';
 import { trackSignature } from './segments.js';
-import { beatSyncedPosition } from './tempo.js';
+import { beatSyncedPosition, wrapIntoLoop } from './tempo.js';
 
 // Nom du sprite Howler d'une version découpée (#24)
 const SPRITE_NAME = 'segment';
@@ -51,6 +51,9 @@ export class Track {
         // Position à laquelle reprendre currentVersion (pause pendant un chargement,
         // changement de version en pause)
         this._resumeSeek = null;
+        // Premier temps de la cible si _resumeSeek a été calculée avant que sa durée
+        // soit connue (cible pas encore chargée) : bouclée au démarrage (#50)
+        this._resumeFirstBeat = null;
         // Id du dernier son lancé par version : la reprise se fait par id, jamais par
         // play(sprite) qui repartirait du début du segment
         this._soundIds = {};
@@ -60,7 +63,7 @@ export class Track {
         this._pauseFade = null;
         // Synchronisation BPM (#18) : { versionName: { bpm, offsetMs } }, appliqué par AudioManager
         this.tempo = {};
-        // Défiler les versions (#46) : enchaînement programmé de la version suivante
+        // Défiler les versions (#46) : enchaînement à la fin de chaque version (#51)
         this.versionCycle = false;
         this.onVersionCycled = null; // () => void, une version a été enchaînée automatiquement
     }
@@ -103,6 +106,24 @@ export class Track {
             position,
             targetDuration: this._versionDuration(toVersion),
         });
+    }
+
+    /**
+     * Position de reprise de `toVersion` (pause, fondu terminé avant chargement).
+     * Si sa durée n'est pas encore connue, le bouclage de #50 est fait au démarrage.
+     */
+    _setResumeFor(fromVersion, toVersion, position) {
+        this._resumeSeek = this._startPositionFor(fromVersion, toVersion, position);
+        const bothHaveTempo = this.tempo[fromVersion] && this.tempo[toVersion];
+        this._resumeFirstBeat = this._versionDuration(toVersion) > 0
+            ? null
+            : (bothHaveTempo ? this.tempo[toVersion].offsetMs / 1000 : 0);
+    }
+
+    /** _resumeSeek, bouclée dans la cible si elle a été calculée sans sa durée */
+    _pendingResume() {
+        if (this._resumeSeek === null || this._resumeFirstBeat === null) return this._resumeSeek;
+        return wrapIntoLoop(this._resumeSeek, this._versionDuration(this.currentVersion), this._resumeFirstBeat);
     }
 
     /** Lance un nouveau son (le sprite du segment pour une version découpée) */
@@ -206,7 +227,19 @@ export class Track {
                     // Défilement (#46) : enchaînement sec à la fin de la version (#51 : un
                     // fondu anticipé mangeait le début de la suivante), jamais la piste suivante
                     if (this._cyclesVersions()) {
-                        this.play(this._nextCycleVersion());
+                        // Suivante de celle qui vient de finir : pendant un fondu manuel,
+                        // currentVersion est encore la version de départ
+                        const next = this._nextCycleVersion(versionName);
+                        if (this.isPlaying) {
+                            this.play(next);
+                        } else {
+                            // Finie pendant le fondu de pause : la suivante attend la reprise
+                            this._cancelCrossfade();
+                            this.stopAllVersions();
+                            this.currentVersion = next;
+                            this._resumeSeek = 0;
+                            this._resumeFirstBeat = null;
+                        }
                         if (this.onVersionCycled) this.onVersionCycled();
                         return;
                     }
@@ -267,6 +300,7 @@ export class Track {
 
         this.currentVersion = versionName;
         this._resumeSeek = null;
+        this._resumeFirstBeat = null;
         this.isPlaying = true;
 
         this._startWhenLoaded(howl, () => this._playCurrent());
@@ -484,7 +518,7 @@ export class Track {
             toHowl.volume(this.defaultVolume); // Interrompt un fade-in éventuellement en cours
         } else {
             toHowl.off('load', cf.loadListener);
-            this._resumeSeek = this._startPositionFor(cf.fromVersion, cf.toVersion, cf.currentSeek);
+            this._setResumeFor(cf.fromVersion, cf.toVersion, cf.currentSeek);
             this._startWhenLoaded(toHowl, () => this._playCurrent());
         }
 
@@ -516,8 +550,9 @@ export class Track {
         const howl = this.versions[versionName];
         howl.volume(fadeIn ? 0 : this.defaultVolume);
 
-        const resumeSeek = this._resumeSeek;
+        const resumeSeek = this._pendingResume();
         this._resumeSeek = null;
+        this._resumeFirstBeat = null;
 
         let id;
         if (this._pausedVersion === versionName && this._soundIds[versionName] !== undefined) {
@@ -632,8 +667,8 @@ export class Track {
         this._cancelPendingStart();
         this.stopAllVersions();
         this.currentVersion = toVersion;
-        // Tempo (#18), sinon même position relative (#44)
-        this._resumeSeek = this._startPositionFor(fromVersion, toVersion, position);
+        // Tempo (#18), sinon même position relative (#44), dans la boucle de la cible (#50)
+        this._setResumeFor(fromVersion, toVersion, position);
         return true;
     }
 
@@ -649,6 +684,7 @@ export class Track {
         if (this._pendingStart || this._resumeSeek !== null) {
             // Pas encore démarrée : appliquée au démarrage / à la reprise
             this._resumeSeek = position;
+            this._resumeFirstBeat = null; // position choisie dans la version : rien à boucler
         } else {
             // Toujours avec l'id : un argument unique égal à l'id d'un son vivant serait
             // lu par Howler comme un getter et la position ignorée (#35)
@@ -666,6 +702,7 @@ export class Track {
         this.isPlaying = false;
         this.currentVersion = null;
         this._resumeSeek = null;
+        this._resumeFirstBeat = null;
         console.log(`⏹️ Stop "${this.name}"`);
     }
 
@@ -715,13 +752,14 @@ export class Track {
         this._applyHowlLoop();
     }
 
+    // Même source que _howlLoop() (versionPaths) : les deux doivent toujours s'accorder
     _cyclesVersions() {
-        return this.versionCycle && Object.keys(this.versions).length > 1;
+        return this.versionCycle && Object.keys(this.versionPaths).length > 1;
     }
 
-    _nextCycleVersion() {
+    _nextCycleVersion(from = this.currentVersion) {
         const names = Object.keys(this.versions);
-        return names[(names.indexOf(this.currentVersion) + 1) % names.length];
+        return names[(names.indexOf(from) + 1) % names.length];
     }
 
     /**
@@ -729,7 +767,7 @@ export class Track {
      * @returns {number} Position en secondes
      */
     getCurrentTime() {
-        if (this._resumeSeek !== null) return this._resumeSeek;
+        if (this._resumeSeek !== null) return this._pendingResume();
         const howl = this.currentVersion && this.versions[this.currentVersion];
         if (!howl) return 0;
         // Getter sans argument : un id périmé serait pris pour une position.

@@ -487,6 +487,27 @@ describe('Track — versions découpées (#24)', () => {
         expect(track.getCurrentTime()).toBe(40);
     });
 
+    it('changement en pause vers une version pas encore chargée : même point de sa boucle à la reprise (revue #50)', () => {
+        const track = new Track('t5', 'Pause', { calm: 'a.mp3', combat: 'b.mp3' });
+        track.loadVersions();
+        const combat = track.versions.combat;
+        combat._state = 'unloaded';
+        combat.duration = () => (combat._state === 'loaded' ? 60 : 0); // durée inconnue avant chargement
+        track.play('calm');
+        vi.advanceTimersByTime(0);
+        track.versions.calm.setPosition(100);
+        track.pause();
+        vi.runAllTimers();
+
+        track.switchVersionWhilePaused('combat');
+        track.resume();
+        combat.finishLoading();
+        vi.runAllTimers();
+
+        expect(combat.seek()).toBe(40); // 100 − 60
+        expect(track.getCurrentTime()).toBe(40);
+    });
+
     it('position à plus du double de la cible : on retranche sa durée autant que nécessaire (#50)', () => {
         const track = new Track('t4', 'Inégale', { calm: 'src.mp3', combat: 'src.mp3' }, {
             calm: { start: 0, end: 150 },
@@ -753,6 +774,36 @@ describe('Track — défiler les versions (#46, enchaînement sec #51)', () => {
 
         endOf(track, 'tension');
         expect(track.currentVersion).toBe('calm');
+    });
+
+    it('pause juste avant la fin : la suivante attend la reprise, à son début (revue)', () => {
+        const track = startCycling();
+        const cycled = vi.fn();
+        track.onVersionCycled = cycled;
+
+        track.pause(); // fondu de sortie en cours…
+        endOf(track, 'calm'); // …et la version se termine pendant ce fondu
+        vi.runAllTimers();
+
+        expect(track.isPlaying).toBe(false);
+        expect(playingVersions(track)).toEqual([]);
+        expect(track.currentVersion).toBe('combat');
+        expect(cycled).toHaveBeenCalledOnce();
+
+        track.resume();
+        vi.runAllTimers();
+        expect(playingVersions(track)).toEqual(['combat']);
+        expect(track.versions.combat.seek()).toBe(0);
+    });
+
+    it('la cible d\'un changement manuel finit pendant le fondu : on passe à celle d\'après (revue)', () => {
+        const track = startCycling();
+
+        track.crossfade('combat', 1);
+        vi.advanceTimersByTime(60); // cible lancée, fondu en cours
+        endOf(track, 'combat');
+
+        expect(track.currentVersion).toBe('tension');
     });
 
     it('une piste à une seule version boucle', () => {

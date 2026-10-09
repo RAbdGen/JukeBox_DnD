@@ -32,7 +32,10 @@ audioManager.on('trackChange', () => {
     updateUI();
     if (!audioManager.isPlaying()) stopProgressUpdate();
 });
-audioManager.on('versionChange', () => updateUI());
+audioManager.on('versionChange', () => {
+    updateUI();
+    updateProgress(); // en pause, le minuteur de progression ne tourne pas (version enchaînée pendant une pause)
+});
 // Version de lancement choisie depuis les boutons du lecteur à l'arrêt (#25)
 audioManager.on('launchVersionChange', (trackId, version) => persistLaunchVersion(trackId, version));
 // Ancien réglage de fondu en % converti en secondes dès que la durée du fichier
