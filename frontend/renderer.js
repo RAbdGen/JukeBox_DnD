@@ -100,7 +100,7 @@ function applyTranslations() {
     });
 
     const footer = document.getElementById('app-footer');
-    if (footer) footer.textContent = `V 2.1 · ${t('app.name')} · ${t('app.footerTagline')}`;
+    if (footer) footer.textContent = `V 2.2 · ${t('app.name')} · ${t('app.footerTagline')}`;
 
     document.querySelectorAll('#language-grid .theme-card').forEach(card => {
         card.classList.toggle('active', card.dataset.lang === currentLanguage);
