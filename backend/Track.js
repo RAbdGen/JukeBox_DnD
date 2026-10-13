@@ -48,6 +48,8 @@ export class Track {
         this._crossfade = null;
         // Lecture en attente de chargement : { howl, listener }
         this._pendingStart = null;
+        // Préchargement des autres versions en cours (#52)
+        this._preloading = false;
         // Position à laquelle reprendre currentVersion (pause pendant un chargement,
         // changement de version en pause)
         this._resumeSeek = null;
@@ -303,7 +305,44 @@ export class Track {
         this._resumeFirstBeat = null;
         this.isPlaying = true;
 
-        this._startWhenLoaded(howl, () => this._playCurrent());
+        this._startWhenLoaded(howl, () => {
+            this._playCurrent();
+            this._preloadVersions();
+        });
+    }
+
+    /**
+     * Charge les autres versions pendant que la première joue (#52). Avec
+     * preload:false + html5, une version jamais jouée se chargeait au changement
+     * (Howler attend « canplaythrough ») : retard audible sur une machine lente.
+     * Une à la fois, pour ne pas concurrencer la lecture sur le disque.
+     */
+    _preloadVersions() {
+        if (this._preloading) return;
+        this._preloading = true;
+        const queue = Object.keys(this.versions);
+        const next = () => {
+            const name = queue.shift();
+            if (name === undefined) {
+                this._preloading = false;
+                return;
+            }
+            const howl = this.versions[name];
+            if (!howl || howl.state() !== 'unloaded') {
+                next();
+                return;
+            }
+            let advanced = false;
+            const advance = () => {
+                if (advanced) return;
+                advanced = true;
+                next();
+            };
+            howl.once('load', advance);
+            howl.once('loaderror', advance);
+            howl.load();
+        };
+        next();
     }
 
     /**

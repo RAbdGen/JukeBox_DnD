@@ -610,6 +610,45 @@ describe('Track — versions découpées (#24)', () => {
     });
 });
 
+describe('Track — préchargement des versions (#52)', () => {
+    // preload:false + html5 : une version jamais jouée se charge au changement (Howler
+    // attend « canplaythrough »), d'où un retard audible sur une machine lente
+    it('une fois la version lancée, les autres se chargent une par une', () => {
+        const track = createTrack();
+        track.versions.combat._state = 'unloaded';
+        track.versions.tension._state = 'unloaded';
+
+        track.play('calm');
+        expect(track.versions.combat.state()).toBe('loading');
+        expect(track.versions.tension.state()).toBe('unloaded'); // pas deux lectures disque en même temps
+
+        track.versions.combat.finishLoading();
+        expect(track.versions.tension.state()).toBe('loading');
+    });
+
+    it('ne touche pas une version déjà chargée ou en cours de chargement', () => {
+        const track = createTrack();
+        track.versions.combat._state = 'loading';
+        const loadSpy = vi.spyOn(track.versions.combat, 'load');
+
+        track.play('calm');
+
+        expect(loadSpy).not.toHaveBeenCalled();
+    });
+
+    it('un lancement qui attend son propre chargement ne précharge rien avant', () => {
+        const track = createTrack();
+        track.versions.calm._state = 'unloaded';
+        track.versions.combat._state = 'unloaded';
+
+        track.play('calm');
+        expect(track.versions.combat.state()).toBe('unloaded');
+
+        track.versions.calm.finishLoading();
+        expect(track.versions.combat.state()).toBe('loading');
+    });
+});
+
 describe('Track — synchronisation BPM (#18)', () => {
     it('fondu entre versions fichier entier : reprise calée sur les temps', () => {
         const track = createTrack();
