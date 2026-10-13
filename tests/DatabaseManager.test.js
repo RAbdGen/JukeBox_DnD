@@ -410,7 +410,7 @@ describe('DatabaseManager.updateSources (#45)', () => {
             { localPath: '/b', segments: { combat: { start: 0, end: 4 } } },
             { localPath: '/new', originalPath: '/home/new.mp3', segments: { victoire: { start: 0, end: 3 } } },
         ], { newLocalPaths: ['/new'] });
-        expect(Object.keys(result.localPaths)).toEqual(['calm', 'combat', 'victoire', 'boss']);
+        expect(Object.keys(result.localPaths)).toEqual(['calm', 'combat', 'boss', 'victoire']);
         expect(result.originalPaths.victoire).toBe('/home/new.mp3');
         expect(result.originalPaths.combat).toBe('/ob');
         expect(unusedPaths).toEqual([]);

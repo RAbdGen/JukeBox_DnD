@@ -124,14 +124,15 @@ export function applySourcesUpdate(track, sources) {
     assertUniqueNames([...entries.map(entry => entry.name), ...fullFileNames]);
     if (entries.length + fullFileNames.length === 0) throw new Error(`La piste ${track.id} n'aurait plus aucune version`);
 
-    track.localPaths = {
-        ...Object.fromEntries(entries.map(({ name, source }) => [name, source.localPath])),
-        ...Object.fromEntries(fullFileNames.map(name => [name, oldLocal[name]])),
-    };
-    track.originalPaths = {
-        ...Object.fromEntries(entries.map(({ name, source }) => [name, source.originalPath ?? source.localPath])),
-        ...Object.fromEntries(fullFileNames.map(name => [name, oldOriginal[name] ?? oldLocal[name]])),
-    };
+    const local = { ...Object.fromEntries(entries.map(({ name, source }) => [name, source.localPath])),
+        ...Object.fromEntries(fullFileNames.map(name => [name, oldLocal[name]])) };
+    const original = { ...Object.fromEntries(entries.map(({ name, source }) => [name, source.originalPath ?? source.localPath])),
+        ...Object.fromEntries(fullFileNames.map(name => [name, oldOriginal[name] ?? oldLocal[name]])) };
+    // L'ordre des versions de la piste est celui que l'utilisateur a choisi (#55) :
+    // les versions restantes gardent leur place, les nouvelles viennent à la suite
+    const order = [...Object.keys(oldLocal).filter(name => name in local), ...Object.keys(local).filter(name => !(name in oldLocal))];
+    track.localPaths = Object.fromEntries(order.map(name => [name, local[name]]));
+    track.originalPaths = Object.fromEntries(order.map(name => [name, original[name]]));
     if (entries.length > 0) {
         track.segments = Object.fromEntries(entries.map(({ name, segment }) => [name, copySegment(segment)]));
     } else {

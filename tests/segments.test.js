@@ -117,9 +117,24 @@ describe('applySourcesUpdate (#45)', () => {
             { localPath: '/a', originalPath: '/oa', segments: { calm: { start: 0, end: 5 }, tension: { start: 5, end: 9 } } },
             { localPath: '/b', originalPath: '/ob', segments: { combat: { start: 0, end: 4 } } },
         ]);
-        expect(Object.keys(next.localPaths)).toEqual(['calm', 'tension', 'combat', 'boss']);
+        expect(Object.keys(next.localPaths)).toEqual(['calm', 'tension', 'boss', 'combat']);
         expect(next.originalPaths).toEqual({ calm: '/oa', tension: '/oa', combat: '/ob', boss: '/ofull' });
         expect(next.segments.combat).toEqual({ start: 0, end: 4 });
+    });
+
+    it('garde l\'ordre des versions de la piste (#55) : les nouvelles viennent en fin, les retirées disparaissent', () => {
+        const reordered = {
+            id: 't1',
+            originalPaths: { boss: '/ofull', tension: '/oa', calm: '/oa' },
+            localPaths: { boss: '/full', tension: '/a', calm: '/a' },
+            segments: { calm: { start: 0, end: 5 }, tension: { start: 5, end: 9 } },
+        };
+        const next = applySourcesUpdate(reordered, [
+            { localPath: '/a', originalPath: '/oa', segments: { tension: { start: 5, end: 9 }, calm: { start: 0, end: 5 }, extra: { start: 9, end: 12 } } },
+        ]);
+        expect(Object.keys(next.localPaths)).toEqual(['boss', 'tension', 'calm', 'extra']);
+        expect(Object.keys(next.originalPaths)).toEqual(['boss', 'tension', 'calm', 'extra']);
+        expect(Object.keys(next.segments).sort()).toEqual(['calm', 'extra', 'tension']);
     });
 
     it('retirer toutes les sources : il reste les versions entières, plus de segments', () => {
