@@ -74,7 +74,7 @@ const fr = {
     'library.empty': 'Bibliothèque vide. Cliquez sur "Ajouter une piste" pour commencer.',
     'library.noSearchResults': 'Aucune piste ne correspond à la recherche.',
     'library.addToPlaylist': 'Ajouter à la playlist active',
-    'library.editTrack': 'Modifier le volume',
+    'library.editTrack': 'Modifier la piste',
     'library.splitTrack': 'Découper des fichiers dans cette piste',
     'library.versionsCount': '{versions} version(s) • {playlists} playlist(s)',
 
@@ -282,7 +282,7 @@ const en = {
     'library.empty': 'Empty library. Click "Add a track" to get started.',
     'library.noSearchResults': 'No track matches your search.',
     'library.addToPlaylist': 'Add to the active playlist',
-    'library.editTrack': 'Edit volume',
+    'library.editTrack': 'Edit track',
     'library.splitTrack': 'Split files into this track',
     'library.versionsCount': '{versions} version(s) • {playlists} playlist(s)',
 

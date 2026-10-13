@@ -207,9 +207,14 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#60 — Changement de version avant le premier temps : arriver le même nombre de temps avant celui de la cible](https://github.com/RAbdGen/JukeBox_DnD/issues/60) — plus de saut au premier temps, position plafonnée au début de la cible
 - [#52 — Lag audible au changement de version (retour utilisateur)](https://github.com/RAbdGen/JukeBox_DnD/issues/52) — les autres versions se chargent pendant la lecture de la première
 - [#55 — Ordre des versions réinitialisé après un découpage](https://github.com/RAbdGen/JukeBox_DnD/issues/55) — `applySourcesUpdate` garde l'ordre des versions de la piste
+- [#59 — Info-bulle du bouton ✎ : « Modifier le volume » alors qu'il édite toute la piste](https://github.com/RAbdGen/JukeBox_DnD/issues/59) — « Modifier la piste » / « Edit track »
+- [#57 — Bibliothèque : les boutons d'action d'une piste passent à la ligne](https://github.com/RAbdGen/JukeBox_DnD/issues/57) — `.track-actions` sans retour à la ligne, le titre se replie (`min-width: 0`)
 
 **À faire (`Todo`) :**
-- (rien pour l'instant)
+- [#53 — Découpage : pouvoir découper une version ajoutée comme fichier entier, dans la même piste](https://github.com/RAbdGen/JukeBox_DnD/issues/53)
+- [#54 — Windows : barre de titre personnalisée, fondue dans l'application](https://github.com/RAbdGen/JukeBox_DnD/issues/54)
+- [#56 — Tap tempo : mesurer le BPM dans la section « Avancé »](https://github.com/RAbdGen/JukeBox_DnD/issues/56)
+- [#58 — Interface non responsive : rétrécissement de la fenêtre](https://github.com/RAbdGen/JukeBox_DnD/issues/58)
 
 ### Pour la prochaine release
 Changements déjà sur `master` mais sans issue, à reprendre dans la description de la prochaine release (section « 🔧 Technique » ou « Qualité »), puis à vider ici une fois publiée :
