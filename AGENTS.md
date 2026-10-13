@@ -97,6 +97,7 @@ Français/anglais, fichiers maison (pas de lib i18n) dans `backend/i18n.js` — 
 - Mouvement : durées et pulsations via les jetons de `:root` (`frontend/styles/base.css`) : `--duration-fast/base/slow` (150/200/300 ms) et `--pulse-fast/medium/slow` (1,2/2,5/3 s). Jamais de durée en dur ni de `transition: all` : nommer les propriétés que les états changent vraiment. Le garde `prefers-reduced-motion` (fin de `base.css`) rend tout quasi instantané sauf `.toast-progress`. Score transitions-agent : 55 → 84 ; ses deux remarques restantes sur les survols sont voulues (dégradé non animable, largeur de bordure)
 - CSS découpé (depuis la passe « motion ») : `frontend/styles.css` ne contient que des `@import` vers `frontend/styles/*.css`, regroupés par Vite. **L'ordre des `@import` est l'ordre de la cascade.** Chaque fichier reste < 40 000 octets (limite au-delà de laquelle transitions-agent ignore un fichier en silence), vérifié par `tests/styles-split.test.js`. Les tests qui lisent le CSS passent par `readStyles()` (`tests/helpers/readStyles.js`), jamais par `readFileSync('styles.css')`
 - Scrollbars (depuis #30) : un seul style global dans `frontend/styles/base.css` (`scrollbar-width: thin` + `scrollbar-color` via `--scroll-thumb`/`--scroll-thumb-hover`/`--scroll-track`), jamais masquées ; toute zone `overflow: auto` déclare `scrollbar-gutter: stable` (pas de saut de mise en page). Pas de `::-webkit-scrollbar` : ignoré par le Chromium d'Electron dès que `scrollbar-color` est défini. Vérifié par `tests/scrollbar.test.js`
+- Fenêtre étroite (depuis #58) : `frontend/styles/responsive.css`, **toujours le dernier `@import`** (il resserre les règles des autres), deux paliers : ≤ 720 px (lecteur sur une colonne, lignes de bibliothèque empilées, marges réduites) et ≤ 480 px (onglets en 2×2, thèmes sur 2 colonnes, boutons compacts, ligne de Découpage sur deux rangées). `BrowserWindow` a un `minWidth: 360` / `minHeight: 480`. Toute nouvelle mise en page à colonnes fixes doit prévoir son palier ici. Vérifié par `tests/responsive.test.js` ; aucune barre de défilement horizontale à 360 et 600 px
 - Inputs avec labels clairs et taille de texte lisible (bug de l'input trop petit pour nom de version/musique)
 - Popup d'ajout de musique modale propre, pas inline (`<dialog>`, voir « Modals »)
 - Pas de layout qui "saute" quand une modal s'ouvre
@@ -209,12 +210,12 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#55 — Ordre des versions réinitialisé après un découpage](https://github.com/RAbdGen/JukeBox_DnD/issues/55) — `applySourcesUpdate` garde l'ordre des versions de la piste
 - [#59 — Info-bulle du bouton ✎ : « Modifier le volume » alors qu'il édite toute la piste](https://github.com/RAbdGen/JukeBox_DnD/issues/59) — « Modifier la piste » / « Edit track »
 - [#57 — Bibliothèque : les boutons d'action d'une piste passent à la ligne](https://github.com/RAbdGen/JukeBox_DnD/issues/57) — `.track-actions` sans retour à la ligne, le titre se replie (`min-width: 0`)
+- [#58 — Interface non responsive : rétrécissement de la fenêtre](https://github.com/RAbdGen/JukeBox_DnD/issues/58) — `responsive.css` (paliers 720/480 px) et taille minimale de fenêtre
 
 **À faire (`Todo`) :**
 - [#53 — Découpage : pouvoir découper une version ajoutée comme fichier entier, dans la même piste](https://github.com/RAbdGen/JukeBox_DnD/issues/53)
 - [#54 — Windows : barre de titre personnalisée, fondue dans l'application](https://github.com/RAbdGen/JukeBox_DnD/issues/54)
 - [#56 — Tap tempo : mesurer le BPM dans la section « Avancé »](https://github.com/RAbdGen/JukeBox_DnD/issues/56)
-- [#58 — Interface non responsive : rétrécissement de la fenêtre](https://github.com/RAbdGen/JukeBox_DnD/issues/58)
 
 ### Pour la prochaine release
 Changements déjà sur `master` mais sans issue, à reprendre dans la description de la prochaine release (section « 🔧 Technique » ou « Qualité »), puis à vider ici une fois publiée :

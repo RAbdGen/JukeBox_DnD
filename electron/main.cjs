@@ -82,6 +82,8 @@ function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1400,
         height: 950,
+        minWidth: 360, // en dessous, la mise en page (responsive.css, #58) ne tient plus
+        minHeight: 480,
         show: false, // Affiché seulement via ready-to-show, évite le flash blanc
         icon: path.join(__dirname, '..', 'build', 'icon.png'),
         autoHideMenuBar: true,

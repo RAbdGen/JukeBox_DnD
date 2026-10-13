@@ -1,0 +1,100 @@
+/* ============================================
+   Fenêtre étroite (#58) — dernier fichier importé : il ne fait que resserrer
+   les règles des autres. Deux paliers : ≤ 720px (une colonne, lignes empilées, marges réduites)
+   et ≤ 480px (onglets sur deux lignes, boutons compacts).
+   ============================================ */
+
+@media (max-width: 720px) {
+    main {
+        padding: 1rem;
+    }
+
+    .container {
+        padding: 1rem;
+    }
+
+    header {
+        padding: 1rem;
+    }
+
+    header h1 {
+        font-size: 2.2rem;
+    }
+
+    header::before,
+    header::after {
+        display: none;
+    }
+
+    #view-tabs {
+        margin-bottom: 1rem;
+    }
+
+    .tab-btn {
+        min-width: 0;
+        padding: 10px 4px;
+        font-size: 0.75rem;
+        letter-spacing: 0;
+    }
+
+    .lecture-layout {
+        grid-template-columns: minmax(0, 1fr);
+    }
+
+    .library-track {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 0.75rem;
+    }
+
+    .track-actions {
+        margin-left: 0;
+    }
+}
+
+@media (max-width: 480px) {
+    main {
+        padding: 0.5rem;
+    }
+
+    .container {
+        padding: 0.75rem;
+    }
+
+    header h1 {
+        font-size: 1.8rem;
+    }
+
+    .track-actions button {
+        flex: 1 1 0;
+        min-width: 0;
+        padding-inline: 0;
+    }
+
+    #view-tabs {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 4px;
+    }
+
+    .tab-btn {
+        font-size: 0.8rem;
+    }
+
+    #theme-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    /* Découpage : bornes sur une ligne, nom et boutons en dessous */
+    .split-segment {
+        grid-template-columns: 2rem minmax(0, 1fr) 1rem minmax(0, 1fr);
+    }
+
+    .split-segment > :nth-child(5) {
+        grid-column: 1 / -1;
+    }
+
+    .shortcut-row {
+        grid-template-columns: minmax(0, 1fr);
+    }
+}
