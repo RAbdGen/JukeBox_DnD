@@ -16,17 +16,17 @@ export const MAX_BPM = 400;
  * @param {{ bpm: number, offsetMs: number }} [params.to] - Tempo de la version cible
  * @param {number} params.position - Z1 : position dans la version quittée (s)
  * @param {number} params.targetDuration - Durée jouée de la cible (s), 0 si inconnue
- * @returns {number|null} Z2, ou null si l'une des deux versions n'a pas de tempo
+ * @returns {number|null} Z2 (≥ 0), ou null si l'une des deux versions n'a pas de tempo
  */
 export function beatSyncedPosition({ from, to, position, targetDuration }) {
     if (!from || !to) return null;
 
     const firstBeatFrom = from.offsetMs / 1000;
     const firstBeatTo = to.offsetMs / 1000;
-    if (position < firstBeatFrom) return firstBeatTo; // switch avant le premier temps
-
+    // Le premier temps n'est qu'un repère (#60) : avant lui l'écart est négatif et
+    // se reporte tel quel avant le premier temps de la cible, plafonné à son début
     const synced = (position - firstBeatFrom) * (from.bpm / to.bpm) + firstBeatTo;
-    return wrapIntoLoop(synced, targetDuration, firstBeatTo);
+    return wrapIntoLoop(Math.max(0, synced), targetDuration, firstBeatTo);
 }
 
 /**

@@ -623,6 +623,18 @@ describe('Track — synchronisation BPM (#18)', () => {
         expect(track.versions.combat.seek()).toBeCloseTo(21);
     });
 
+    it('changement avant le premier temps : même écart avant celui de la cible (#60)', () => {
+        const track = createTrack();
+        track.tempo = { calm: { bpm: 120, offsetMs: 4500 }, combat: { bpm: 60, offsetMs: 5000 } };
+        track.play('calm');
+        track.versions.calm.setPosition(4.1); // 0,4 s = 0,8 temps avant le premier temps
+
+        track.crossfade('combat', 1);
+
+        vi.advanceTimersByTime(0);
+        expect(track.versions.combat.seek()).toBeCloseTo(4.2); // 0,8 s avant 5 s
+    });
+
     it('prime sur « début du segment » quand les deux versions découpées ont un tempo', () => {
         const track = createSplitTrack();
         track.tempo = { calm: { bpm: 120, offsetMs: 0 }, combat: { bpm: 60, offsetMs: 0 } };

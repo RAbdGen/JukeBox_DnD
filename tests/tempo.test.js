@@ -15,8 +15,16 @@ describe('beatSyncedPosition (#18)', () => {
         expect(beatSyncedPosition({ from: null, to: B, position: 10, targetDuration: 300 })).toBeNull();
     });
 
-    it('switch avant le premier temps de A : reprise au premier temps de B', () => {
-        expect(beatSyncedPosition({ from: A, to: B, position: 0.2, targetDuration: 300 })).toBe(1);
+    it('switch avant le premier temps de A : même écart en temps avant celui de B (#60)', () => {
+        // A (120 BPM, 1er temps à 0,5 s) à 0,2 s : 0,3 s avant = 0,6 temps → 0,6 s avant le 1er temps de B (60 BPM, 1 s)
+        expect(beatSyncedPosition({ from: A, to: B, position: 0.2, targetDuration: 300 })).toBeCloseTo(0.4);
+    });
+
+    it('avant le premier temps, résultat négatif : plafonné au début de la cible (#60)', () => {
+        const from = { bpm: 120, offsetMs: 60000 };
+        const to = { bpm: 120, offsetMs: 2000 };
+        // 59 s avant le 1er temps de A → 57 s avant celui de B, soit −57 s : début de B
+        expect(beatSyncedPosition({ from, to, position: 1, targetDuration: 300 })).toBe(0);
     });
 
     it('au-delà de la fin de B : on retranche la zone après son premier temps autant que nécessaire (#50)', () => {
