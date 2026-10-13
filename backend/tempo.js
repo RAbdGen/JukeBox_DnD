@@ -43,6 +43,24 @@ export function wrapIntoLoop(position, targetDuration, firstBeat = 0) {
 }
 
 /**
+ * Tap tempo (#56) : à chaque tap, le BPM moyen des derniers intervalles, arrondi
+ * au dixième, ou null (premier tap, résultat hors 20–400 BPM). Une pause plus
+ * longue que `resetAfterMs` recommence le comptage ; seuls les `maxTaps`
+ * derniers taps comptent, pour qu'un début approximatif soit oublié.
+ * @returns {(now: number) => number|null} Appeler avec l'horodatage du tap (ms)
+ */
+export function createTapTempo({ maxTaps = 8, resetAfterMs = 3000 } = {}) {
+    let taps = [];
+    return now => {
+        if (taps.length > 0 && now - taps.at(-1) > resetAfterMs) taps = [];
+        taps = [...taps, now].slice(-maxTaps);
+        if (taps.length < 2) return null;
+        const bpm = Math.round((60000 * (taps.length - 1) / (now - taps[0])) * 10) / 10;
+        return bpm >= MIN_BPM && bpm <= MAX_BPM ? bpm : null;
+    };
+}
+
+/**
  * Garde les tempos valides (BPM 20–400, décalage ≥ 0, absent = 0) des versions
  * existantes. Undefined s'il ne reste rien.
  */

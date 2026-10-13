@@ -2,6 +2,7 @@ import { Howl } from 'howler';
 import { AudioManager } from '../backend/AudioManager.js';
 import { DEFAULT_CROSSFADE_DURATION_SECONDS, legacyPercentToSeconds } from '../backend/crossfadeDuration.js';
 import { normalizeLanguage, t as translate } from '../backend/i18n.js';
+import { createTapTempo } from '../backend/tempo.js';
 import {
     SHORTCUT_ACTIONS,
     acceleratorFromKeyEvent,
@@ -420,10 +421,10 @@ function renderTempoList() {
     // En-têtes de colonnes : un texte indicatif trop long serait tronqué dans le champ
     const header = document.createElement('div');
     header.className = 'tempo-row tempo-header';
-    const [blank, bpmHeader, offsetHeader] = [0, 1, 2].map(() => document.createElement('span'));
+    const [blank, bpmHeader, offsetHeader, tapHeader] = [0, 1, 2, 3].map(() => document.createElement('span'));
     bpmHeader.textContent = t('modal.editTrack.tempoBpm');
     offsetHeader.textContent = t('modal.editTrack.tempoOffset');
-    header.append(blank, bpmHeader, offsetHeader);
+    header.append(blank, bpmHeader, offsetHeader, tapHeader);
     container.append(header);
 
     editingVersions.forEach(({ name }) => {
@@ -451,10 +452,28 @@ function renderTempoList() {
             return input;
         };
 
+        const bpmInput = field('bpm', 'modal.editTrack.tempoBpm', 20, 400, 'any', '120');
+
+        // Tap tempo (#56) : taper en rythme remplit le BPM de cette version
+        const tapBtn = document.createElement('button');
+        tapBtn.type = 'button';
+        tapBtn.className = 'secondary-btn tempo-tap-btn';
+        tapBtn.textContent = t('modal.editTrack.tempoTap');
+        setTooltip(tapBtn, t('modal.editTrack.tempoTapHint'));
+        tapBtn.setAttribute('aria-label', `${name} — ${t('modal.editTrack.tempoTapHint')}`);
+        const tap = createTapTempo();
+        tapBtn.addEventListener('click', () => {
+            const bpm = tap(performance.now());
+            if (bpm === null) return;
+            bpmInput.value = String(bpm);
+            values.bpm = String(bpm);
+        });
+
         row.append(
             label,
-            field('bpm', 'modal.editTrack.tempoBpm', 20, 400, 'any', '120'),
+            bpmInput,
             field('offsetMs', 'modal.editTrack.tempoOffset', 0, null, 1, '0'),
+            tapBtn,
         );
         container.append(row);
     });

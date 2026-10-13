@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { beatSyncedPosition, sanitizeTempo } from '../backend/tempo.js';
+import { beatSyncedPosition, createTapTempo, sanitizeTempo } from '../backend/tempo.js';
 
 const A = { bpm: 120, offsetMs: 500 };
 const B = { bpm: 60, offsetMs: 1000 };
@@ -70,5 +70,42 @@ describe('sanitizeTempo (#18)', () => {
             boss: { bpm: 120, offsetMs: 0 },
         }, ['calm', 'combat'])).toBeUndefined();
         expect(sanitizeTempo('nope', ['calm'])).toBeUndefined();
+    });
+});
+
+describe('createTapTempo (#56)', () => {
+    it('un seul tap ne donne rien, le deuxième donne le BPM de l\'intervalle', () => {
+        const tap = createTapTempo();
+        expect(tap(1000)).toBeNull();
+        expect(tap(1500)).toBe(120);
+    });
+
+    it('moyenne tous les intervalles (derniers taps), arrondie au dixième', () => {
+        const tap = createTapTempo();
+        [0, 510, 1000].forEach(at => tap(at));
+        expect(tap(1500)).toBe(120); // 4 taps : 1500 ms pour 3 intervalles
+        expect(tap(2010)).toBe(119.4); // 60000 × 4 / 2010 = 119,40…
+    });
+
+    it('ne garde que les derniers taps : un début approximatif finit par être oublié', () => {
+        const tap = createTapTempo({ maxTaps: 4 });
+        [0, 900, 1400, 1900].forEach(at => tap(at)); // 900 ms puis 500 ms
+        expect(tap(2400)).toBe(120); // il ne reste que 900, 1400, 1900, 2400
+    });
+
+    it('une pause trop longue recommence le comptage', () => {
+        const tap = createTapTempo({ resetAfterMs: 3000 });
+        tap(0); tap(500);
+        expect(tap(10000)).toBeNull();
+        expect(tap(10600)).toBe(100);
+    });
+
+    it('hors de 20–400 BPM : rien (le champ reste tel quel)', () => {
+        const tap = createTapTempo({ resetAfterMs: 10000 });
+        tap(0);
+        expect(tap(100)).toBeNull(); // 600 BPM
+        const slow = createTapTempo({ resetAfterMs: 10000 });
+        slow(0);
+        expect(slow(4000)).toBeNull(); // 15 BPM
     });
 });

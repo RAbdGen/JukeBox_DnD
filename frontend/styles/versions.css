@@ -65,13 +65,15 @@ button.playlist-track-version:focus-visible {
 
 .tempo-row {
     display: grid;
-    grid-template-columns: 1fr 7rem 7rem;
+    grid-template-columns: 1fr 7rem 7rem auto;
     align-items: center;
     gap: 0.5rem;
     color: var(--bone);
 }
 
 .tempo-row input { width: 100%; }
+
+.tempo-tap-btn { padding: 8px 14px; }
 
 .tempo-header {
     color: var(--bone-dim);
