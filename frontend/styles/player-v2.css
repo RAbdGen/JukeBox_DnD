@@ -87,7 +87,7 @@ header {
 }
 
 .playlist-name-display {
-    font-family: 'IM Fell English', serif;
+    font-family: 'EB Garamond', 'IM Fell English', serif;
     font-size: 1rem;
     font-style: italic;
     color: var(--bone);
@@ -135,7 +135,7 @@ header {
     background: none;
     border: none;
     color: var(--bone-dim);
-    font-family: 'IM Fell English', serif;
+    font-family: 'EB Garamond', 'IM Fell English', serif;
     font-size: 0.95rem;
     font-style: italic;
     text-align: left;
@@ -256,7 +256,7 @@ header {
 .player-card .track-number {
     font-size: 0.7rem;
     color: var(--bone-dim);
-    font-family: 'IM Fell English', serif;
+    font-family: 'EB Garamond', 'IM Fell English', serif;
     font-style: italic;
     letter-spacing: .04em;
     text-transform: none;
@@ -605,7 +605,7 @@ header {
 }
 
 .stub-desc {
-    font-family: 'IM Fell English', serif;
+    font-family: 'EB Garamond', 'IM Fell English', serif;
     font-style: italic;
     font-size: 0.9rem;
     color: var(--bone-dim);

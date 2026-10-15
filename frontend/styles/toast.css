@@ -40,7 +40,7 @@
 .toast-message {
     flex: 1;
     color: var(--bone);
-    font-family: 'IM Fell English', serif;
+    font-family: 'EB Garamond', 'IM Fell English', serif;
     font-size: 0.95rem;
 }
 

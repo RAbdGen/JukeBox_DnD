@@ -38,7 +38,7 @@
 }
 
 .settings-description {
-    font-family: 'IM Fell English', serif;
+    font-family: 'EB Garamond', 'IM Fell English', serif;
     font-size: 0.9rem;
     line-height: 1.5;
     color: var(--bone-dim);
@@ -54,7 +54,7 @@
 
 .settings-status {
     margin-top: 1rem;
-    font-family: 'IM Fell English', serif;
+    font-family: 'EB Garamond', 'IM Fell English', serif;
     font-size: 0.85rem;
     color: var(--gold-3);
     min-height: 1.2em;

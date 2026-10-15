@@ -6,6 +6,7 @@
    les relit dans cet ordre.
    ============================================ */
 
+@import url('https://fonts.googleapis.com/css2?family=EB+Garamond:ital@0;1&text=0123456789&display=swap'); /* chiffres seuls (#62) : ceux d'IM Fell English sont illisibles */
 @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=IM+Fell+English:ital@0;1&family=JetBrains+Mono:wght@400;500&display=swap');
 
 @import './styles/base.css';       /* variables, scrollbars, grain, en-tête, onglets */

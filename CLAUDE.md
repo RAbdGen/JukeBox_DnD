@@ -63,6 +63,7 @@ L'application est utilisée dans une ambiance tamisée, en soirée, pendant une 
 
 - **Palette :** fonds très sombres (presque noirs, pas noirs purs), accents dorés/ambrés (`#C9A84C`, `#E8C96A`), texte crème (`#F0E6C8`)
 - **Typographie :** une font display avec caractère (ex : *Cinzel*, *IM Fell English*, *Philosopher*) pour les titres/labels importants ; une font lisible pour le corps
+- **Chiffres (#62)** : ceux d'IM Fell English sont elzéviriens et illisibles (« 10 » se lit « Io »). Toute pile `font-family` qui commence par IM Fell English commence par `'EB Garamond', 'IM Fell English'` : EB Garamond n'est chargée que pour les chiffres (`text=0123456789`, second `@import` de `frontend/styles.css`), les lettres restent en IM Fell English (repli glyphe par glyphe) ; `body` pose `font-feature-settings: 'lnum'` (chiffres alignés). Vérifié par `tests/digits.test.js`
 - **Effets :** légères textures (grain, vignette), transitions douces, pas d'animations agressives (l'app tourne en arrière-plan pendant une session)
 - **Layout :** 2 panneaux principaux (Player | Bibliothèque), navigation sobre, modals claires
 
@@ -214,6 +215,7 @@ Le [project « JukeBox_DnD Backlog »](https://github.com/users/RAbdGen/projects
 - [#58 — Interface non responsive : rétrécissement de la fenêtre](https://github.com/RAbdGen/JukeBox_DnD/issues/58) — `responsive.css` (paliers 720/480 px) et taille minimale de fenêtre
 - [#56 — Tap tempo : mesurer le BPM dans la section « Avancé »](https://github.com/RAbdGen/JukeBox_DnD/issues/56) — bouton « Tap » par version, `createTapTempo()`
 - [#61 — Tap tempo : moyenne sur 20 taps par régression linéaire](https://github.com/RAbdGen/JukeBox_DnD/issues/61) — prévu pour la 2.3.1
+- [#62 — Chiffres illisibles avec IM Fell English (« 10 » se lit « Io »)](https://github.com/RAbdGen/JukeBox_DnD/issues/62) — chiffres en EB Garamond (lnum), prévu pour la 2.3.1
 - [#54 — Windows : barre de titre personnalisée, fondue dans l'application](https://github.com/RAbdGen/JukeBox_DnD/issues/54) — `#titlebar` + `titleBarOverlay` aux couleurs du thème
 - [#53 — Découpage : pouvoir découper une version ajoutée comme fichier entier, dans la même piste](https://github.com/RAbdGen/JukeBox_DnD/issues/53) — bouton « ✂ nom » ; la version entière est conservée
 

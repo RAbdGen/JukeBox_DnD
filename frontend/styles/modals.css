@@ -32,7 +32,7 @@
 }
 
 .loading-text {
-    font-family: 'IM Fell English', serif;
+    font-family: 'EB Garamond', 'IM Fell English', serif;
     color: var(--text-muted);
 }
 
@@ -186,7 +186,7 @@ body.modal-open {
     border: 1px solid var(--ink-3);
     background: var(--ink-0);
     color: var(--bone);
-    font-family: 'IM Fell English', serif;
+    font-family: 'EB Garamond', 'IM Fell English', serif;
     font-size: 1rem;
     transition-property: border-color, box-shadow;
     transition-duration: var(--duration-base);
@@ -217,7 +217,7 @@ body.modal-open {
 
 .edit-version-row-name {
     flex: 1;
-    font-family: 'IM Fell English', serif;
+    font-family: 'EB Garamond', 'IM Fell English', serif;
     font-size: 0.95rem;
     color: var(--bone);
 }
@@ -316,7 +316,7 @@ body.modal-open {
     cursor: pointer;
     font-size: 0.9rem;
     color: var(--bone);
-    font-family: 'IM Fell English', serif;
+    font-family: 'EB Garamond', 'IM Fell English', serif;
 }
 
 .checkbox-label input[type="checkbox"] {

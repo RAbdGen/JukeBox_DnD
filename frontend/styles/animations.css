@@ -60,7 +60,7 @@
 
 /* Empty state */
 .empty-message {
-    font-family: 'IM Fell English', serif;
+    font-family: 'EB Garamond', 'IM Fell English', serif;
     font-style: italic;
     color: var(--bone-dim);
     text-align: center;

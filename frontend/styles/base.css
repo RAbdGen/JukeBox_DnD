@@ -112,12 +112,13 @@ html {
 }
 
 body {
-    font-family: 'IM Fell English', 'Iowan Old Style', Georgia, serif;
+    font-family: 'EB Garamond', 'IM Fell English', 'Iowan Old Style', Georgia, serif;
     background: var(--ink-0);
     background-image:
         radial-gradient(ellipse 120% 80% at 50% -10%, var(--ink-top) 0%, var(--ink-0) 55%, var(--ink-dark) 100%),
         linear-gradient(180deg, var(--ink-0) 0%, var(--ink-1) 50%, var(--ink-0) 100%);
     color: var(--bone);
+    font-feature-settings: 'lnum'; /* chiffres alignés : ceux d'EB Garamond sont elzéviriens par défaut (#62) */
     min-height: 100vh;
     display: flex;
     flex-direction: column;
@@ -199,7 +200,7 @@ header::before { left: 2rem; }
 header::after  { right: 2rem; }
 
 header h1 {
-    font-family: 'IM Fell English', serif;
+    font-family: 'EB Garamond', 'IM Fell English', serif;
     font-size: 2.8rem;
     font-weight: 400;
     font-style: italic;
@@ -227,7 +228,7 @@ header h1 {
 #playlist-tracks-container h3,
 .library-header h3,
 .modal-header h2 {
-    font-family: 'IM Fell English', serif;
+    font-family: 'EB Garamond', 'IM Fell English', serif;
     font-weight: 400;
 }
 
