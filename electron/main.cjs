@@ -78,6 +78,11 @@ async function initManagers() {
     managersReadyResolve();
 }
 
+// Couleurs avant que le renderer envoie celles du thème (palette « nuit ») et hauteur de #titlebar
+const TITLEBAR_FALLBACK = { color: '#100f0c', symbolColor: '#a99f86' };
+const TITLEBAR_HEIGHT = 32;
+const HEX_COLOR = /^#(?:[0-9a-f]{3}|[0-9a-f]{6})$/i;
+
 function createWindow() {
     mainWindow = new BrowserWindow({
         width: 1400,
@@ -87,6 +92,12 @@ function createWindow() {
         show: false, // Affiché seulement via ready-to-show, évite le flash blanc
         icon: path.join(__dirname, '..', 'build', 'icon.png'),
         autoHideMenuBar: true,
+        // Barre de titre propre au thème (#54) : le système ne dessine plus que ses boutons
+        // (réduire/agrandir/fermer, y compris la disposition Windows 11), par-dessus #titlebar
+        ...(process.platform === 'darwin' ? {} : {
+            titleBarStyle: 'hidden',
+            titleBarOverlay: { color: TITLEBAR_FALLBACK.color, symbolColor: TITLEBAR_FALLBACK.symbolColor, height: TITLEBAR_HEIGHT },
+        }),
         webPreferences: {
             preload: path.join(__dirname, 'preload.cjs'),
             contextIsolation: true,
@@ -662,6 +673,14 @@ ipcHandle('playlist:reorderTracks', async (event, playlistId, orderedTrackIds) =
 // ========================================
 // IPC HANDLERS - Settings
 // ========================================
+
+ipcHandle('window:setTitleBarTheme', async (event, { color, symbolColor } = {}) => {
+    // Valeurs venues du renderer : uniquement des couleurs hexadécimales
+    if (!HEX_COLOR.test(color) || !HEX_COLOR.test(symbolColor)) return false;
+    if (!mainWindow || mainWindow.isDestroyed() || process.platform === 'darwin') return false;
+    mainWindow.setTitleBarOverlay({ color, symbolColor, height: TITLEBAR_HEIGHT });
+    return true;
+});
 
 ipcHandle('settings:save', async (event, settings) => {
     try {

@@ -9,6 +9,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // DIALOGUES
     // ========================================
 
+    setTitleBarTheme: (colors) => ipcRenderer.invoke('window:setTitleBarTheme', colors),
     openFiles: () => ipcRenderer.invoke('dialog:openFiles'),
     openFolder: () => ipcRenderer.invoke('dialog:openFolder'),
     scanFolder: (folderPath) => ipcRenderer.invoke('dialog:scanFolder', folderPath),

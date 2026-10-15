@@ -143,6 +143,32 @@ body::before {
 }
 
 /* ============================================
+   Barre de titre (#54) : le système ne dessine que ses boutons, à droite
+   (titleBarOverlay) ; la zone libre déplace la fenêtre. Même fond que le haut
+   de l'en-tête pour s'y fondre.
+   ============================================ */
+
+#titlebar {
+    height: 32px; /* = TITLEBAR_HEIGHT d'electron/main.cjs */
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    padding-left: max(0.9rem, env(titlebar-area-x, 0px));
+    padding-right: calc(100vw - env(titlebar-area-x, 0px) - env(titlebar-area-width, 100vw));
+    background: var(--ink-warm);
+    -webkit-app-region: drag;
+    user-select: none;
+}
+
+.titlebar-title {
+    font-family: 'Cinzel', serif;
+    font-size: 0.72rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--bone-dim);
+}
+
+/* ============================================
    Header
    ============================================ */
 

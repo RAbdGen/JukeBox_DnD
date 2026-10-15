@@ -162,6 +162,15 @@ function applyTheme(theme) {
     document.querySelectorAll('.theme-card').forEach(card => {
         card.classList.toggle('active', card.dataset.theme === t);
     });
+    syncTitleBar();
+}
+
+/** Boutons système de la fenêtre (#54) : mêmes couleurs que la barre de titre du thème */
+function syncTitleBar() {
+    const style = getComputedStyle(document.documentElement);
+    const color = style.getPropertyValue('--ink-warm').trim();
+    const symbolColor = style.getPropertyValue('--bone-dim').trim();
+    window.electronAPI.setTitleBarTheme?.({ color, symbolColor }).catch(() => {});
 }
 
 async function init() {
