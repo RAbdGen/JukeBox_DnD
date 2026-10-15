@@ -177,3 +177,23 @@ export function fileLabels(paths) {
         return clash && segments.length > 1 ? `${segments.at(-2)}/${names[i]}` : names[i];
     });
 }
+
+/**
+ * Fichiers des versions « fichier entier » qu'on peut découper sans quitter la
+ * piste (#53) : un par fichier (versions du même fichier regroupées), hors
+ * fichiers déjà ouverts dans un onglet. Les versions entières restent entières.
+ */
+export function wholeVersionFiles(track, tabs) {
+    if (!track) return [];
+    const segments = track.segments || {};
+    const open = new Set(tabs.map(tab => tab.localPath));
+    const files = new Map();
+    for (const [name, localPath] of Object.entries(track.localPaths || {})) {
+        if (segments[name] || open.has(localPath)) continue;
+        if (!files.has(localPath)) {
+            files.set(localPath, { localPath, originalPath: track.originalPaths?.[name] ?? localPath, names: [] });
+        }
+        files.get(localPath).names.push(name);
+    }
+    return [...files.values()];
+}

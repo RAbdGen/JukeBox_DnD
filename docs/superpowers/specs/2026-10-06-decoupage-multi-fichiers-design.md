@@ -11,7 +11,7 @@ Critères de succès :
 - ✂ disponible sur **toute** piste, y compris une piste « fichiers entiers » (on peut lui ajouter un fichier découpé) ;
 - aucune migration de `data.json`, aucune régression sur les pistes existantes.
 
-Hors périmètre : découper un fichier déjà présent comme version entière (il reste entier), mettre des fichiers bout à bout.
+Hors périmètre (repris par #53 : bouton « ✂ nom » par version entière, la version reste entière en plus de ses plages) : découper un fichier déjà présent comme version entière (il reste entier), mettre des fichiers bout à bout.
 
 ## 1. Données
 

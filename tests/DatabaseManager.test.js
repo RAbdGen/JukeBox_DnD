@@ -417,6 +417,28 @@ describe('DatabaseManager.updateSources (#45)', () => {
         expect(manager.db.write).toHaveBeenCalledOnce();
     });
 
+    it('découpe le fichier d\'une version entière en la gardant (#53)', async () => {
+        const manager = createDatabaseManager(library());
+        const { result, unusedPaths } = await manager.updateSources('t1', [
+            { localPath: '/a', segments: { calm: { start: 0, end: 5 } } },
+            { localPath: '/b', segments: { combat: { start: 0, end: 4 } } },
+            { localPath: '/full', segments: { extrait: { start: 2, end: 9 } } },
+        ]);
+        expect(Object.keys(result.localPaths)).toEqual(['calm', 'combat', 'boss', 'extrait']);
+        expect(result.localPaths.extrait).toBe('/full');
+        expect(result.originalPaths.extrait).toBe('/ofull');
+        expect(result.segments).toEqual({ calm: { start: 0, end: 5 }, combat: { start: 0, end: 4 }, extrait: { start: 2, end: 9 } });
+        expect(result.segments).not.toHaveProperty('boss'); // la version entière reste entière
+        expect(unusedPaths).toEqual([]);
+    });
+
+    it('une plage du fichier d\'une version entière ne peut pas porter son nom (#53)', async () => {
+        const manager = createDatabaseManager(library());
+        await expect(manager.updateSources('t1', [
+            { localPath: '/full', segments: { boss: { start: 0, end: 5 } } },
+        ])).rejects.toThrow(/boss/i);
+    });
+
     it('retirer une source : son fichier, sa version de lancement et son tempo disparaissent', async () => {
         const manager = createDatabaseManager(library());
         const { result, unusedPaths } = await manager.updateSources('t1', [{ localPath: '/a', segments: { calm: { start: 0, end: 5 } } }]);
@@ -435,10 +457,9 @@ describe('DatabaseManager.updateSources (#45)', () => {
         expect(result.launchVersion).toBe('assaut');
     });
 
-    it('refuse sans rien modifier : chemin étranger, chemin de version entière, bornes invalides, doublon', async () => {
+    it('refuse sans rien modifier : chemin étranger, bornes invalides, doublon', async () => {
         for (const sources of [
             [{ localPath: '/elsewhere', segments: { a: { start: 0, end: 1 } } }],
-            [{ localPath: '/full', segments: { a: { start: 0, end: 1 } } }],
             [{ localPath: '/a', segments: { calm: { start: 5, end: 1 } } }],
             [{ localPath: '/a', segments: { Boss: { start: 0, end: 1 } } }],
         ]) {

@@ -14,6 +14,7 @@ import {
     splitNames,
     stateFromSegments,
     validateSources,
+    wholeVersionFiles,
 } from '../frontend/segmentModel.js';
 
 describe('coupes et plages', () => {
@@ -171,5 +172,28 @@ describe('fileLabels (#45)', () => {
         expect(fileLabels(['/home/a/theme.wav', 'C:\\Musique\\b\\theme.wav', '/x/boss.mp3']))
             .toEqual(['a/theme.wav', 'b/theme.wav', 'boss.mp3']);
         expect(fileLabels(['/x/Boss.mp3'])).toEqual(['Boss.mp3']);
+    });
+});
+
+describe('wholeVersionFiles (#53)', () => {
+    const track = {
+        localPaths: { calm: '/a', combat: '/a', boss: '/full', victoire: '/full2', Bis: '/full' },
+        originalPaths: { boss: '/home/boss.mp3', victoire: '/home/v.mp3', Bis: '/home/boss.mp3' },
+        segments: { calm: { start: 0, end: 5 }, combat: { start: 5, end: 9 } },
+    };
+
+    it('un fichier par version entière, versions du même fichier regroupées, hors fichiers déjà ouverts', () => {
+        expect(wholeVersionFiles(track, [])).toEqual([
+            { localPath: '/full', originalPath: '/home/boss.mp3', names: ['boss', 'Bis'] },
+            { localPath: '/full2', originalPath: '/home/v.mp3', names: ['victoire'] },
+        ]);
+        expect(wholeVersionFiles(track, [{ localPath: '/full' }]).map(file => file.localPath)).toEqual(['/full2']);
+    });
+
+    it('un fichier déjà découpé n\'est pas proposé (son onglet existe), piste sans version entière : rien', () => {
+        const mixed = { localPaths: { calm: '/a', boss: '/a' }, segments: { calm: { start: 0, end: 5 } } };
+        expect(wholeVersionFiles(mixed, [{ localPath: '/a' }])).toEqual([]);
+        expect(wholeVersionFiles({ localPaths: { calm: '/a' }, segments: { calm: { start: 0, end: 1 } } }, [])).toEqual([]);
+        expect(wholeVersionFiles(null, [])).toEqual([]);
     });
 });

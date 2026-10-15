@@ -79,6 +79,9 @@ const fr = {
     'library.versionsCount': '{versions} version(s) • {playlists} playlist(s)',
 
     'split.addFile': '＋ Ajouter un fichier',
+    'split.wholeLabel': 'Découper une version entière',
+    'split.wholeVersion': '✂ {names}',
+    'split.wholeVersionHint': 'Découper le fichier de « {names} » (la version entière est conservée)',
     'split.removeFile': 'Retirer ce fichier',
     'split.confirmRemoveFile': 'Retirer « {file} » et ses versions ?',
     'split.filesLabel': 'Fichiers découpés',
@@ -289,6 +292,9 @@ const en = {
     'library.versionsCount': '{versions} version(s) • {playlists} playlist(s)',
 
     'split.addFile': '＋ Add a file',
+    'split.wholeLabel': 'Cut a whole version',
+    'split.wholeVersion': '✂ {names}',
+    'split.wholeVersionHint': 'Cut the file of "{names}" (the whole version is kept)',
     'split.removeFile': 'Remove this file',
     'split.confirmRemoveFile': 'Remove "{file}" and its versions?',
     'split.filesLabel': 'Split files',

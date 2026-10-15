@@ -12,6 +12,7 @@ import {
     splitNames,
     stateFromSegments,
     validateSources,
+    wholeVersionFiles,
 } from './segmentModel.js';
 import {
     decodeChunks,
@@ -151,6 +152,7 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
         errorEl.textContent = state.error ? t(state.error.key, state.error.vars) : '';
         errorEl.classList.toggle('hidden', !state.error);
         renderTabs();
+        renderWholeVersions();
         renderSummary();
         renderListenButton();
         if (!loaded) return;
@@ -178,6 +180,37 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
         }));
         const current = tab();
         if (current) $('split-editor').setAttribute('aria-labelledby', `split-tab-${current.key}`);
+    }
+
+    /** Versions entières dont on peut découper le fichier, sans quitter la piste (#53) */
+    function renderWholeVersions() {
+        const container = $('split-whole-versions');
+        const files = wholeVersionFiles(state.editingTrack, state.tabs);
+        container.classList.toggle('hidden', files.length === 0);
+        container.replaceChildren(...files.map(file => {
+            const names = file.names.join(', ');
+            const button = document.createElement('button');
+            button.type = 'button';
+            button.className = 'secondary-btn';
+            button.textContent = t('split.wholeVersion', { names }); // nom de version utilisateur : jamais innerHTML
+            setTooltip(button, t('split.wholeVersionHint', { names }));
+            button.addEventListener('click', () => openWholeVersion(file));
+            return button;
+        }));
+    }
+
+    /** Ouvre le fichier d'une version entière comme un onglet de plus ; la version reste entière (#53) */
+    function openWholeVersion(file) {
+        stopAudition();
+        const session = loads.current();
+        const target = { ...emptyTab(), localPath: file.localPath, readPath: file.localPath, originalPath: file.originalPath };
+        state.tabs.push(target);
+        relabelTabs();
+        state.active = state.tabs.length - 1;
+        state.error = null;
+        state.dirty = true;
+        refresh();
+        loadTab(target, session);
     }
 
     /** Toutes les versions de la piste, sans changer d'onglet (#45) */

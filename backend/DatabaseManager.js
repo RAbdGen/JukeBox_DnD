@@ -395,6 +395,12 @@ export class DatabaseManager {
         if (!Array.isArray(sources)) throw new Error(`Sources invalides pour ${trackId}`);
 
         const existing = new Map(sourceGroups(track).map(group => [group.localPath, group.originalPath]));
+        // Le fichier d'une version entière peut aussi être découpé (#53) ; la version reste entière
+        for (const [name, localPath] of Object.entries(track.localPaths || {})) {
+            if (!track.segments?.[name] && !existing.has(localPath)) {
+                existing.set(localPath, track.originalPaths?.[name] ?? localPath);
+            }
+        }
         const clean = sources.map(source => {
             const isNew = newLocalPaths.includes(source?.localPath);
             if (!isNew && !existing.has(source?.localPath)) throw new Error(`Fichier inconnu pour ${trackId}`);

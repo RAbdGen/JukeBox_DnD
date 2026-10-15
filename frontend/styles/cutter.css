@@ -10,6 +10,7 @@
 }
 
 .split-header,
+.split-whole-versions,
 .split-toolbar,
 .split-actions {
     display: flex;
@@ -45,7 +46,8 @@
 .split-editor.hidden,
 .split-form.hidden,
 .split-field.hidden,
-.split-error.hidden { display: none; }
+.split-error.hidden,
+.split-whole-versions.hidden { display: none; }
 
 .split-wave-wrap {
     height: 140px;
