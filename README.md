@@ -1,135 +1,136 @@
-# 🎵 Jukebox JDR 🎲
+# 🎵 Jukebox RPG 🎲
 
-Application desktop de musique d'ambiance pour les sessions de jeu de rôle. Une musique peut avoir plusieurs *versions* (`calm`, `combat`, `tension`…) : le MJ passe de l'une à l'autre en fondu, sans quitter le jeu des yeux, et la musique reprend au même moment (ou sur le même temps de la mesure).
+Desktop ambient-music player for tabletop role-playing sessions. A track can have several *versions* (`calm`, `combat`, `tension`…): the game master switches between them with a crossfade, without taking their eyes off the game, and the music picks up at the same moment (or on the same beat of the bar).
 
-En anglais, l'application s'appelle **Jukebox RPG**.
+In French, the app is called **Jukebox JDR**. The interface is available in both languages.
 
 ![Electron](https://img.shields.io/badge/Electron-44-47848F?style=flat&logo=electron)
 ![Node.js](https://img.shields.io/badge/Node.js-24_LTS-339933?style=flat&logo=node.js)
 ![Howler.js](https://img.shields.io/badge/Howler.js-2.2.4-E85D75?style=flat)
-![Vitest](https://img.shields.io/badge/Vitest-313_tests-6E9F18?style=flat)
+![Vitest](https://img.shields.io/badge/Vitest-346_tests-6E9F18?style=flat)
 
-## 📥 Installer l'application
+## 📥 Install
 
-Télécharger la dernière version sur la page [Releases](https://github.com/RAbdGen/JukeBox_DnD/releases/latest) :
+Download the latest version from the [Releases](https://github.com/RAbdGen/JukeBox_DnD/releases/latest) page:
 
-- **Windows** : `Jukebox.JDR-Setup-x.y.z.exe`, un installeur sans droits administrateur. Une mise à jour s'installe par-dessus l'ancienne version.
-- **Linux** : `Jukebox.JDR-x.y.z.AppImage`, à rendre exécutable puis à lancer.
+- **Windows**: `Jukebox.JDR-Setup-x.y.z.exe`, an installer that needs no administrator rights. An update installs over the previous version.
+- **Linux**: `Jukebox.JDR-x.y.z.AppImage`, to make executable and run.
 
-Les données (bibliothèque, playlists, réglages et fichiers audio copiés) sont conservées entre les versions, dans `%APPDATA%\jukebox\` sous Windows et `~/.config/jukebox/` sous Linux. La désinstallation n'y touche pas.
+Your data (library, playlists, settings and the copied audio files) is kept between versions, in `%APPDATA%\jukebox\` on Windows and `~/.config/jukebox/` on Linux. Uninstalling does not touch it.
 
-## ✨ Fonctionnalités
+## ✨ Features
 
-### Musique et versions
-- 🎵 **Plusieurs versions par musique**, avec un fondu réglable par piste (de 0 à 10 s, 0 pour aucun fondu)
-- ✂️ **Onglet Découpage** : on découpe un ou plusieurs fichiers en versions à la main, sur une waveform zoomable, un onglet par fichier (ex. `exploration.mp3` → calme + tension, `boss.mp3` → combat). Le bouton ✂ ajoute aussi un fichier découpé à une piste existante. Les fichiers d'origine ne sont jamais modifiés. Un fichier d'1 h s'analyse en quelques secondes, sans saturer la mémoire
-- 🥁 **Synchronisation au tempo** (mode avancé) : avec un BPM et un premier temps par version, le changement reprend sur le même temps de la mesure
-- 🎯 **Version de lancement** : choisie par piste, d'un clic sur son nom de version
-- ⏯️ **Pause et reprise en fondu**, et **mute d'urgence** progressif
+### Music and versions
+- 🎵 **Several versions per track**, with a crossfade you can set per track (0 to 10 s, 0 for no fade)
+- ✂️ **Split tab**: cut one or more files into versions by hand on a zoomable waveform, one tab per file (e.g. `exploration.mp3` → calm + tension, `boss.mp3` → combat). The ✂ button also adds a split file to an existing track, and a version that was added as a whole file can be split too without leaving the track. Original files are never modified. A one-hour file is analysed in a few seconds without exhausting memory
+- 🥁 **Tempo sync** (advanced mode): with a BPM and a first beat per version, a switch resumes on the same beat of the bar, even before the first beat. A **Tap** button measures the BPM for you (average over your last 20 taps)
+- 🎯 **Launch version**: chosen per track by clicking its version name
+- ⏯️ **Fading pause and resume**, and a gradual **emergency mute**
 
-### Pendant la session
-- ⌨️ **Raccourcis globaux**, actifs même quand l'app est en arrière-plan :
-  - lecture/pause, piste suivante et précédente avec les touches média ;
-  - mute : `Ctrl+Alt+M` ;
-  - version suivante : `Ctrl+Alt+V` ; versions 1 à 3 : `Ctrl+Alt+1..3`, modifiables dans Réglages.
-- 🔁 **Modes de lecture** : Une fois, Boucle sur une piste, Tout répéter, **Défiler les versions** (chaque version enchaîne sur la suivante dès qu'elle se termine, puis retour à la première)
-- 📍 **Barre de progression manipulable** à la souris (glisser) et au clavier
+### During the session
+- ⌨️ **Global shortcuts**, active even when the app is in the background:
+  - play/pause, next and previous track with the media keys;
+  - mute: `Ctrl+Alt+M`;
+  - next version: `Ctrl+Alt+V`; versions 1 to 3: `Ctrl+Alt+1..3`, configurable in Settings.
+- 🔁 **Play modes**: Once, Loop one track, Repeat all, **Cycle versions** (each version flows into the next as soon as it ends, then back to the first)
+- 📍 **Draggable progress bar**, with the mouse or the keyboard
 
-### Bibliothèque
-- 📚 **Grimoire** (la bibliothèque) avec tags, recherche et bouton d'écoute
-- 📋 **Playlists** : réordonner les pistes, les retirer, annuler une suppression
-- 🎚️ **Volume par piste**, indépendant du volume général
-- 💾 **Export et import** de toute la bibliothèque (sauvegarde ou changement de machine)
-- 🔄 **Reprise de la dernière playlist** au démarrage
+### Library
+- 📚 **Grimoire** (the library) with tags, search and a preview button
+- 📋 **Playlists**: reorder tracks, remove them, undo a deletion
+- 🎚️ **Per-track volume**, independent of the master volume
+- 💾 **Export and import** of the whole library (backup or moving to another machine)
+- 🔄 **Resumes the last playlist** on startup
 
 ### Interface
-- 🌙 **8 thèmes** : nuit, grimoire, taverne, arcane, forêt, sang, givre, parchemin (le seul clair). Le contraste des textes est vérifié automatiquement (WCAG AA)
-- 🇫🇷 🇬🇧 **Français et anglais**, y compris les fenêtres système
-- ♿ **Utilisable au clavier** :
-  - bulles d'aide, curseurs, menu des playlists et fenêtres sur le modèle des composants shadcn/Radix ;
-  - le clavier reste dans une fenêtre ouverte, et Échap la ferme ;
-  - les animations sont réduites quand le système le demande.
+- 🌙 **8 themes**: night, grimoire, tavern, arcane, forest, blood, frost, parchment (the only light one). Text contrast is checked automatically (WCAG AA). The window title bar follows the theme
+- 📐 **Resizable window**: the layout adapts down to a narrow window
+- 🇫🇷 🇬🇧 **French and English**, including the system dialogs
+- ♿ **Keyboard friendly**:
+  - tooltips, sliders, the playlist menu and dialogs follow the shadcn/Radix component patterns;
+  - focus stays inside an open dialog, and Esc closes it;
+  - animations are reduced when the system asks for it.
 
-## 🧑‍💻 Développement
+## 🧑‍💻 Development
 
-### Prérequis
+### Requirements
 
-- **Node 24 LTS**, fixé par `mise.toml`. Avec [mise](https://mise.jdx.dev), la bonne version est prise automatiquement dans le dossier. Évitez Node 26 : l'installeur d'Electron 37 y échouait en silence, et Node 24 reste la version testée.
-- `make` (facultatif : chaque commande a son équivalent `npm`).
+- **Node 24 LTS**, pinned by `mise.toml`. With [mise](https://mise.jdx.dev), the right version is picked up automatically in the folder. Avoid Node 26: the Electron 37 installer failed silently on it, and Node 24 remains the tested version.
+- `make` (optional: every command has an `npm` equivalent).
 
 ```bash
 git clone https://github.com/RAbdGen/JukeBox_DnD.git
 cd JukeBox_DnD
 make install
-make dev          # Vite sur :3000 + Electron, rechargé à chaque modification
+make dev          # Vite on :3000 + Electron, reloaded on every change
 ```
 
-Le binaire Electron n'est pas téléchargé par `npm install` mais au premier lancement de `make dev` (ou à la main avec `npx install-electron --no`).
+The Electron binary is not downloaded by `npm install` but on the first run of `make dev` (or by hand with `npx install-electron --no`).
 
-> Sous Linux, si l'app refuse de démarrer à cause du sandbox : `make dev-nosandbox`
+> On Linux, if the app refuses to start because of the sandbox: `make dev-nosandbox`
 
-### Commandes
+### Commands
 
-| Commande | Description |
+| Command | Description |
 |---|---|
-| `make dev` | Mode développement |
-| `make dev-nosandbox` | Mode développement, sandbox désactivé (Linux) |
-| `make start` | Lance l'application à partir du build |
-| `make test` / `make test-watch` | Tests Vitest, une fois ou en continu |
-| `make lint` | ESLint (règles recommandées, `eslint.config.js`) |
-| `make build` | Build complet (Vite + electron-builder) |
-| `make build-linux` | AppImage Linux |
-| `make build-win` | Installeur NSIS Windows |
-| `make audit` | Audit de sécurité npm |
-| `make clean` / `make reset` | Nettoyage, ou nettoyage + réinstallation |
-| `make info` / `make status` | Versions et état du projet |
-| `make help` | Toutes les commandes |
+| `make dev` | Development mode |
+| `make dev-nosandbox` | Development mode, sandbox disabled (Linux) |
+| `make start` | Run the app from the build |
+| `make test` / `make test-watch` | Vitest tests, once or continuously |
+| `make lint` | ESLint (recommended rules, `eslint.config.js`) |
+| `make build` | Full build (Vite + electron-builder) |
+| `make build-linux` | Linux AppImage |
+| `make build-win` | Windows NSIS installer |
+| `make audit` | npm security audit |
+| `make clean` / `make reset` | Clean up, or clean up and reinstall |
+| `make info` / `make status` | Versions and project state |
+| `make help` | All commands |
 
 ### Structure
 
 ```
 JukeBox_DnD/
 ├── electron/
-│   ├── main.cjs            # Processus principal : fenêtre, IPC, raccourcis globaux, dialogues
+│   ├── main.cjs            # Main process: window, IPC, global shortcuts, dialogs
 │   └── preload.cjs         # contextBridge → window.electronAPI
-├── backend/                # Modules ESM partagés (logique pure testée)
-│   ├── AudioManager.js     # Playlist, lecture, changements de version
-│   ├── Track.js            # Une musique et ses versions Howler (fondus, pause, positions)
-│   ├── DatabaseManager.js  # Persistance lowdb (data.json)
-│   ├── FileManager.js      # Copie et suppression des fichiers audio
-│   ├── ImportManager.js    # Fusion d'une bibliothèque importée
-│   ├── segments.js         # Versions découpées
-│   ├── audioScan.js        # Analyse WAV / MP3 par blocs pour la waveform
-│   ├── tempo.js            # Synchronisation au tempo
-│   ├── shortcuts.js        # Raccourcis de version (validation, conflits)
-│   └── i18n.js             # Traductions français / anglais
+├── backend/                # Shared ESM modules (tested, mostly pure logic)
+│   ├── AudioManager.js     # Playlist, playback, version switches
+│   ├── Track.js            # One track and its Howler versions (fades, pause, positions)
+│   ├── DatabaseManager.js  # lowdb persistence (data.json)
+│   ├── FileManager.js      # Copying and deleting audio files
+│   ├── ImportManager.js    # Merging an imported library
+│   ├── segments.js         # Split versions
+│   ├── audioScan.js        # Chunked WAV / MP3 analysis for the waveform
+│   ├── tempo.js            # Tempo sync and tap tempo
+│   ├── shortcuts.js        # Version shortcuts (validation, conflicts)
+│   └── i18n.js             # French / English translations
 ├── frontend/
 │   ├── index.html
-│   ├── renderer.js         # Interface et appels IPC
-│   ├── cutterView.js       # Onglet Découpage (waveform.js, segmentModel.js)
+│   ├── renderer.js         # Interface and IPC calls
+│   ├── cutterView.js       # Split tab (waveform.js, segmentModel.js)
 │   ├── tooltip.js, listbox.js, modal.js, roving.js, progressSlider.js, rangeFill.js
-│   ├── styles.css          # Point d'entrée : uniquement des @import (ordre = cascade)
-│   └── styles/             # base, thèmes, lecteur, bibliothèque, modals, curseurs…
-├── tests/                  # 27 fichiers Vitest
-├── docs/superpowers/       # Specs et plans des grosses fonctionnalités
+│   ├── styles.css          # Entry point: @import only (order = cascade)
+│   └── styles/             # base, themes, player, library, modals, sliders, responsive…
+├── tests/                  # 31 Vitest files
+├── docs/superpowers/       # Specs and plans for the larger features
 ├── .github/workflows/release.yml
-├── eslint.config.js        # Règles par environnement (navigateur, Node, CommonJS)
+├── eslint.config.js        # Rules per environment (browser, Node, CommonJS)
 ├── Makefile
 └── mise.toml               # Node 24
 ```
 
-Les conventions du projet (thèmes, i18n, pièges de Howler, règles d'interface) sont détaillées dans [`CLAUDE.md`](CLAUDE.md), identique à [`AGENTS.md`](AGENTS.md).
+Project conventions (themes, i18n, Howler pitfalls, interface rules) are detailed in [`CLAUDE.md`](CLAUDE.md), identical to [`AGENTS.md`](AGENTS.md). Both are written in French.
 
 ### Stack
 
-| Rôle | Outil |
+| Role | Tool |
 |---|---|
 | Desktop | Electron 44 |
-| Audio | Howler.js (mode HTML5, sprites pour les versions découpées) |
-| Persistance | lowdb 7 (`data.json`) |
-| Interface | JavaScript et CSS natifs, sans framework, bundlés par Vite |
+| Audio | Howler.js (HTML5 mode, sprites for split versions) |
+| Persistence | lowdb 7 (`data.json`) |
+| Interface | Plain JavaScript and CSS, no framework, bundled by Vite |
 | Tests | Vitest |
-| Modules | ESM (`"type": "module"`), sauf les `.cjs` d'Electron |
+| Modules | ESM (`"type": "module"`), except Electron's `.cjs` files |
 
 ### Tests
 
@@ -137,24 +138,24 @@ Les conventions du projet (thèmes, i18n, pièges de Howler, règles d'interface
 make test
 ```
 
-313 tests, dont :
-- **Lecture** : fondus et actions pendant un fondu, pause et reprise en fondu, positions au changement de version, avec un faux Howler qui reproduit le comportement HTML5 ;
-- **Données** : bibliothèque, playlists, versions découpées, import et export, migrations ;
-- **Logique pure** : tempo, raccourcis, découpage, waveform, placement des bulles d'aide, navigation au clavier ;
-- **Interface** : contraste de chaque texte dans les 8 thèmes, parité des traductions, plus aucun `title` natif, modals en `<dialog>`, style unique des curseurs et des barres de défilement.
+346 tests, including:
+- **Playback**: fades and actions during a fade, fading pause and resume, positions on a version switch, using a fake Howler that reproduces HTML5 behaviour;
+- **Data**: library, playlists, split versions, import and export, migrations;
+- **Pure logic**: tempo and tap tempo, shortcuts, splitting, waveform, tooltip placement, keyboard navigation;
+- **Interface**: contrast of every text in the 8 themes, translation parity, no native `title` left, `<dialog>` modals, a single style for sliders and scrollbars, the responsive breakpoints and the custom title bar.
 
-## 🏗️ Publier une version
+## 🏗️ Publishing a release
 
-Les installeurs sont produits par GitHub Actions, sans passer par le dual-boot :
+Installers are built by GitHub Actions, without going through the dual-boot:
 
 ```bash
-npm version x.y.z --no-git-tag-version   # met à jour package.json
+npm version x.y.z --no-git-tag-version   # updates package.json
 git commit -am "chore(release): x.y.z" && git push
-git tag -a vx.y.z -m "Jukebox JDR x.y.z" && git push origin vx.y.z
+git tag -a vx.y.z -m "Jukebox RPG x.y.z" && git push origin vx.y.z
 ```
 
-Le tag `v*` lance la compilation Linux (AppImage) et Windows (NSIS), puis crée la Release avec les deux fichiers. Un lancement manuel du workflow (`workflow_dispatch`) teste la compilation sans rien publier.
+The `v*` tag starts the Linux (AppImage) and Windows (NSIS) builds, then creates the Release with both files. Running the workflow by hand (`workflow_dispatch`) tests the build without publishing anything.
 
-## 📄 Licence
+## 📄 License
 
-Projet personnel — usage libre.
+Personal project — free to use.
