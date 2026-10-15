@@ -6,7 +6,7 @@ import {
     normalizeCrossfadeDurationPercent,
     normalizeCrossfadeDurationSeconds,
 } from './crossfadeDuration.js';
-import { applySourcesUpdate, sanitizeSegments, sourceGroups, unusedPaths } from './segments.js';
+import { applySourcesUpdate, sanitizeSegments, sourceGroups, unusedPaths, wholeVersionGroups } from './segments.js';
 import { sanitizeTempo } from './tempo.js';
 
 /**
@@ -396,10 +396,8 @@ export class DatabaseManager {
 
         const existing = new Map(sourceGroups(track).map(group => [group.localPath, group.originalPath]));
         // Le fichier d'une version entière peut aussi être découpé (#53) ; la version reste entière
-        for (const [name, localPath] of Object.entries(track.localPaths || {})) {
-            if (!track.segments?.[name] && !existing.has(localPath)) {
-                existing.set(localPath, track.originalPaths?.[name] ?? localPath);
-            }
+        for (const { localPath, originalPath } of wholeVersionGroups(track)) {
+            if (!existing.has(localPath)) existing.set(localPath, originalPath);
         }
         const clean = sources.map(source => {
             const isNew = newLocalPaths.includes(source?.localPath);

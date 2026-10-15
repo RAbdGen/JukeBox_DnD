@@ -49,6 +49,24 @@ export function isPathSharedByOtherVersion(track, versionName) {
     return Boolean(target) && Object.entries(paths).some(([name, p]) => name !== versionName && p === target);
 }
 
+/**
+ * Fichiers des versions « fichier entier » (#53) : un groupe par fichier, avec les
+ * versions qui le portent. Même règle pour l'interface (quoi proposer) et la
+ * base (quoi accepter comme source).
+ */
+export function wholeVersionGroups(track) {
+    const segments = track?.segments || {};
+    const groups = new Map();
+    for (const [name, localPath] of Object.entries(track?.localPaths || {})) {
+        if (segments[name]) continue;
+        if (!groups.has(localPath)) {
+            groups.set(localPath, { localPath, originalPath: track.originalPaths?.[name] ?? localPath, names: [] });
+        }
+        groups.get(localPath).names.push(name);
+    }
+    return [...groups.values()];
+}
+
 export function uniquePaths(localPaths = {}) {
     return [...new Set(Object.values(localPaths || {}).filter(Boolean))];
 }

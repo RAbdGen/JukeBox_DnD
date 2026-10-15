@@ -4,6 +4,8 @@
  * plage ignorée), validation et passage vers/depuis `track.segments`.
  */
 
+import { wholeVersionGroups } from '../backend/segments.js';
+
 export const MIN_SEGMENT_SECONDS = 0.5;
 const EPSILON = 1e-9;
 
@@ -180,20 +182,10 @@ export function fileLabels(paths) {
 
 /**
  * Fichiers des versions « fichier entier » qu'on peut découper sans quitter la
- * piste (#53) : un par fichier (versions du même fichier regroupées), hors
- * fichiers déjà ouverts dans un onglet. Les versions entières restent entières.
+ * piste (#53), hors fichiers déjà ouverts dans un onglet. Les versions entières
+ * restent entières.
  */
 export function wholeVersionFiles(track, tabs) {
-    if (!track) return [];
-    const segments = track.segments || {};
     const open = new Set(tabs.map(tab => tab.localPath));
-    const files = new Map();
-    for (const [name, localPath] of Object.entries(track.localPaths || {})) {
-        if (segments[name] || open.has(localPath)) continue;
-        if (!files.has(localPath)) {
-            files.set(localPath, { localPath, originalPath: track.originalPaths?.[name] ?? localPath, names: [] });
-        }
-        files.get(localPath).names.push(name);
-    }
-    return [...files.values()];
+    return wholeVersionGroups(track).filter(file => !open.has(file.localPath));
 }

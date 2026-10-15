@@ -10,6 +10,7 @@ import {
     trackSignature,
     uniquePaths,
     unusedPaths,
+    wholeVersionGroups,
 } from '../backend/segments.js';
 
 describe('trackSignature', () => {
@@ -203,5 +204,19 @@ describe('orderedSegmentNames', () => {
     it('trie par début de segment', () => {
         expect(orderedSegmentNames({ b: { start: 5, end: 9 }, a: { start: 0, end: 5 } })).toEqual(['a', 'b']);
         expect(orderedSegmentNames()).toEqual([]);
+    });
+});
+
+describe('wholeVersionGroups (#53)', () => {
+    it('un groupe par fichier de version entière, avec ses versions et son chemin d\'origine', () => {
+        expect(wholeVersionGroups({
+            localPaths: { calm: '/a', boss: '/full', bis: '/full', solo: '/solo' },
+            originalPaths: { boss: '/home/boss.mp3', solo: '/home/solo.mp3' },
+            segments: { calm: { start: 0, end: 5 } },
+        })).toEqual([
+            { localPath: '/full', originalPath: '/home/boss.mp3', names: ['boss', 'bis'] },
+            { localPath: '/solo', originalPath: '/home/solo.mp3', names: ['solo'] },
+        ]);
+        expect(wholeVersionGroups(null)).toEqual([]);
     });
 });

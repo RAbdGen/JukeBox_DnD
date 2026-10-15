@@ -187,6 +187,9 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
         const container = $('split-whole-versions');
         const files = wholeVersionFiles(state.editingTrack, state.tabs);
         container.classList.toggle('hidden', files.length === 0);
+        const signature = files.map(file => `${file.localPath}\n${file.names.join('\n')}`).join('\n\n');
+        if (container.dataset.signature === signature) return; // refresh() passe à chaque coupe : ne pas recréer les boutons
+        container.dataset.signature = signature;
         container.replaceChildren(...files.map(file => {
             const names = file.names.join(', ');
             const button = document.createElement('button');
@@ -200,17 +203,28 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
     }
 
     /** Ouvre le fichier d'une version entière comme un onglet de plus ; la version reste entière (#53) */
-    function openWholeVersion(file) {
+    async function openWholeVersion(file) {
         stopAudition();
         const session = loads.current();
-        const target = { ...emptyTab(), localPath: file.localPath, readPath: file.localPath, originalPath: file.originalPath };
+        const target = { ...emptyTab(), wholeVersion: true, localPath: file.localPath, readPath: file.localPath, originalPath: file.originalPath };
         state.tabs.push(target);
         relabelTabs();
         state.active = state.tabs.length - 1;
         state.error = null;
         state.dirty = true;
         refresh();
-        loadTab(target, session);
+        $(`split-tab-${target.key}`)?.focus(); // le bouton cliqué vient d'être remplacé
+
+        await loadTab(target, session);
+        if (!isLive(session, target)) return;
+        if (target.loadError) {
+            // Fichier illisible ou analyse refusée : pas d'onglet, la version entière reste telle quelle
+            removeTab(state.tabs.indexOf(target));
+            state.message = { key: target.declined ? 'split.longFileCancelled' : 'split.loadError' };
+            refresh();
+        } else if (document.activeElement === document.body) {
+            $(`split-tab-${target.key}`)?.focus(); // le rendu de fin de chargement a recréé les onglets
+        }
     }
 
     /** Toutes les versions de la piste, sans changer d'onglet (#45) */
@@ -688,20 +702,23 @@ export function createCutterView({ root, electronAPI, t, createHowl, stopLibrary
     $('split-submit').addEventListener('click', async () => {
         if (state.tabs.some(target => target.loading)) return;
         const title = $('split-title').value.trim();
-        const sources = state.tabs.map(target => (target.loadError
+        // Une version entière ouverte sans qu'aucune plage soit nommée : rien à enregistrer, pas une erreur
+        const tabs = state.tabs.filter(target => !(target.wholeVersion && !target.loadError && target.names.every(name => !name.trim())));
+        const sources = tabs.map(target => (target.loadError
             ? { fileName: target.fileName, ranges: null, names: Object.keys(target.keptSegments || {}) }
             : { fileName: target.fileName, ranges: cutsToRanges(target.cuts, target.duration), names: target.names }));
         state.error = validateSources({ title, sources, reservedNames: state.reservedNames });
         if (state.error) {
-            if (state.error.sourceIndex !== undefined && state.error.sourceIndex !== state.active) {
+            const faulty = state.error.sourceIndex === undefined ? -1 : state.tabs.indexOf(tabs[state.error.sourceIndex]);
+            if (faulty !== -1 && faulty !== state.active) {
                 stopAudition();
-                state.active = state.error.sourceIndex; // affiche le fichier fautif
+                state.active = faulty; // affiche le fichier fautif
             }
             refresh();
             return;
         }
 
-        const requests = sourceRequests(state.tabs);
+        const requests = sourceRequests(tabs);
         try {
             if (state.editingTrack) {
                 await electronAPI.updateSources(state.editingTrack.id, requests, planLaunchVersion(state.editingTrack, requests));
