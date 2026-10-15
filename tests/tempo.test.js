@@ -73,23 +73,38 @@ describe('sanitizeTempo (#18)', () => {
     });
 });
 
-describe('createTapTempo (#56)', () => {
+describe('createTapTempo (#56, #61)', () => {
     it('un seul tap ne donne rien, le deuxième donne le BPM de l\'intervalle', () => {
         const tap = createTapTempo();
         expect(tap(1000)).toBeNull();
         expect(tap(1500)).toBe(120);
     });
 
-    it('moyenne tous les intervalles (derniers taps), arrondie au dixième', () => {
+    it('droite ajustée sur tous les taps, arrondie au dixième', () => {
         const tap = createTapTempo();
         [0, 510, 1000].forEach(at => tap(at));
-        expect(tap(1500)).toBe(120); // 4 taps : 1500 ms pour 3 intervalles
-        expect(tap(2010)).toBe(119.4); // 60000 × 4 / 2010 = 119,40…
+        expect(tap(1500)).toBe(120.2); // pente 499 ms par tap
     });
 
-    it('ne garde que les derniers taps : un début approximatif finit par être oublié', () => {
+    it('garde les 20 derniers taps par défaut : un début approximatif finit par être oublié', () => {
+        const tap = createTapTempo();
+        // 25 taps réguliers à 120 BPM, précédés de trois taps approximatifs
+        const times = [0, 300, 900, ...Array.from({ length: 25 }, (_, i) => 1500 + i * 500)];
+        const results = times.map(at => tap(at));
+        expect(results.at(-1)).toBe(120);
+    });
+
+    it('la régression absorbe le bruit des taps humains (±40 ms en alternance)', () => {
+        const tap = createTapTempo();
+        let bpm = null;
+        for (let i = 0; i < 20; i++) bpm = tap(i * 500 + (i % 2 ? 40 : -40));
+        expect(bpm).toBeGreaterThan(119);
+        expect(bpm).toBeLessThan(121);
+    });
+
+    it('le nombre de taps gardés est réglable', () => {
         const tap = createTapTempo({ maxTaps: 4 });
-        [0, 900, 1400, 1900].forEach(at => tap(at)); // 900 ms puis 500 ms
+        [0, 900, 1400, 1900].forEach(at => tap(at));
         expect(tap(2400)).toBe(120); // il ne reste que 900, 1400, 1900, 2400
     });
 
